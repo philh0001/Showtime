@@ -39,14 +39,17 @@ not public deployment.
 
 ## Phase 3 — Content Details
 
-- [ ] Create dynamic movie detail screen
-- [ ] Create dynamic TV detail screen
-- [ ] Display poster/backdrop
-- [ ] Display overview
-- [ ] Display rating
-- [ ] Display genres
-- [ ] Display release information
-- [ ] Display TV seasons
+Status: Complete. Movie and TV details, Back navigation and the four tabs were
+verified on a physical iPhone through Expo Go.
+
+- [x] Create dynamic movie detail screen
+- [x] Create dynamic TV detail screen
+- [x] Display poster/backdrop
+- [x] Display overview
+- [x] Display rating
+- [x] Display genres
+- [x] Display release information
+- [x] Display TV seasons
 
 ## Phase 4 — Watchlist
 

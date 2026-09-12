@@ -1,4 +1,6 @@
 // Server-only: never import this module into src/.
+import { handleDetails } from './details.mjs';
+
 export function createSearchHandler({ token, fetchImpl = fetch }) {
   return async (request, response) => {
     const send = (status, body) => {
@@ -12,6 +14,9 @@ export function createSearchHandler({ token, fetchImpl = fetch }) {
     };
     try {
       const incoming = new URL(request.url, 'http://localhost');
+      if (incoming.pathname.startsWith('/details/')) {
+        return await handleDetails({ pathname: incoming.pathname, method: request.method, token, fetchImpl, send });
+      }
       if (incoming.pathname !== '/search') return send(404, { error: 'Not found.' });
       if (request.method !== 'GET') return send(405, { error: 'Use GET.' });
       const query = incoming.searchParams.get('query')?.trim();

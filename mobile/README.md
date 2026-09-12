@@ -20,15 +20,14 @@ For the browser version, run `npm run web`.
 
 ## Source structure
 
-- `src/app/index.tsx`: Home screen.
-- `src/app/search.tsx`: Title search with loading, error and empty states.
-- `src/app/watchlist.tsx`: Watchlist placeholder.
-- `src/app/profile.tsx`: Profile placeholder.
-- `src/app/_layout.tsx`: Navigation theme and tab layout.
+- `src/app/(tabs)`: Home, Search, Watchlist and Profile screens and tab layout.
+- `src/app/movie/[id].tsx`: Dynamic movie detail route.
+- `src/app/tv/[id].tsx`: Dynamic TV detail route.
+- `src/app/_layout.tsx`: Root stack containing the tabs and detail routes.
 - `src/components/app-tabs.tsx`: Native tab navigation.
 - `src/components/app-tabs.web.tsx`: Browser tab navigation.
 - `src/components`, `src/hooks`, `src/constants`: Shared UI and theme helpers.
-- `src/services/search.ts`: Mobile requests to the local search server.
+- `src/services`: Mobile requests to the local search and detail server.
 - `server/`: Computer-only TMDB proxy and its tests. Never import into `src/`.
 
 Expo Router uses files in `src/app` to define routes. The `.web.tsx` suffix
@@ -68,9 +67,12 @@ It is a local development tool with no authentication and permissive web CORS.
 Do not expose or deploy it publicly as-is. A hosted version needs HTTPS, access
 controls and request limits. No database or account system is implemented.
 
-The first version shows only movie/TV matches from TMDB's first results page.
-Search by title, check missing artwork/date fallbacks, try a nonsense title,
-then stop the search server and submit again to check the error state.
+Search shows only movie/TV matches from TMDB's first results page. Selecting a
+result opens its detail screen with artwork, description, rating, genres and
+release information; TV titles also show seasons. Search by title, open one movie
+and one TV result, and use Back to confirm the search and results are preserved.
+Also check missing artwork/date fallbacks, try a nonsense title, then stop the
+search server and submit again to check the error state.
 
 `npm run search:tmdb -- "Batman"` is the independent computer-only API check.
 

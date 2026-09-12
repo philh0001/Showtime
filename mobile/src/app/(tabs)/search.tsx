@@ -102,8 +102,10 @@ export default function SearchScreen() {
 
 function ResultRow({ item }: { item: SearchResult }) {
   const [failed, setFailed] = useState(false);
+  const id = item.id.replace(/^(movie|tv)-/, '');
   return (
-    <View style={styles.row}>
+    <Link href={{ pathname: item.mediaType === 'Movie' ? '/movie/[id]' : '/tv/[id]', params: { id } }} asChild>
+    <Pressable accessibilityRole="link" accessibilityLabel={`View ${item.title}, ${item.mediaType}`} style={({ pressed }) => [styles.row, pressed && styles.dimmed]}>
       {item.posterUrl && !failed
         ? <Image source={{ uri: item.posterUrl }} style={styles.poster} contentFit="cover" onError={() => setFailed(true)} accessibilityLabel={`${item.title} poster`} />
         : <View style={[styles.poster, styles.placeholder]}><Text style={styles.placeholderText}>No poster</Text></View>}
@@ -111,7 +113,8 @@ function ResultRow({ item }: { item: SearchResult }) {
         <Text style={styles.resultTitle}>{item.title}</Text>
         <Text style={styles.subtitle}>{item.year ?? 'Year unknown'} · {item.mediaType}</Text>
       </View>
-    </View>
+    </Pressable>
+    </Link>
   );
 }
 

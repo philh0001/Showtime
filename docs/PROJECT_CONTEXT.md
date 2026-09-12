@@ -79,7 +79,8 @@ Cleanup commits: `4b8863e` and `4de47df` on `setup/foundation`.
 
 Showtime has entered Phase 2: Movie and TV Search.
 
-The first local TMDB Search implementation is verified on iPhone.
+The first local TMDB Search and Content Details implementations are verified on
+a physical iPhone through Expo Go.
 
 ## Planned core functionality
 
@@ -215,3 +216,14 @@ confirmed the token was absent from mobile source and exported iOS files.
 Public server deployment, detail screens, pagination and watchlist actions
 are not implemented.
 See `mobile/README.md` for the two-terminal startup steps.
+
+## Phase 3 implementation checkpoint
+
+Search results now open dynamic movie or TV routes above the existing tab
+navigator. The four tab URLs remain unchanged, and returning from a detail screen
+should preserve the current Search screen state. Detail pages request fresh TMDB
+data through the same computer-only server and display artwork, overview, rating,
+genres and release information. TV pages also list seasons and episode counts.
+Loading, retry, missing-data and invalid-route states are included. Automated
+server tests, lint, TypeScript and cross-platform export pass. Movie and TV
+details, Back navigation and all four tabs were verified on a physical iPhone.

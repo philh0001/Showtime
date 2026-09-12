@@ -41,7 +41,7 @@
     "lint": "expo lint",
     "search:tmdb": "node ./scripts/search-tmdb.mjs",
     "search:server": "node ./server/start.mjs",
-    "test:search": "node --test server/search.test.mjs"
+    "test:search": "node --test server/search.test.mjs server/details.test.mjs"
   },
   "private": true
 }
