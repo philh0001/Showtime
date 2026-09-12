@@ -38,7 +38,8 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "search:tmdb": "node ./scripts/search-tmdb.mjs"
   },
   "private": true
 }
