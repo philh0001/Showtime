@@ -77,10 +77,9 @@ Cleanup commits: `4b8863e` and `4de47df` on `setup/foundation`.
 
 ## Current development phase
 
-Showtime is in the foundation stage.
+Showtime has entered Phase 2: Movie and TV Search.
 
-The main focus is building a clean structure before adding significant
-application functionality.
+The first local TMDB Search implementation is verified on iPhone.
 
 ## Planned core functionality
 
@@ -194,15 +193,25 @@ Hands-on development is preferred over long theoretical explanations.
 
 The likely next stages are:
 
-1. Finish and verify the application foundation.
-2. Record the verified cleanup in the foundation milestone.
-3. Preserve the verified Home, Search, Watchlist and Profile navigation.
-4. Create the Search screen.
-5. Choose and integrate a movie/TV metadata API.
-6. Display real search results.
-7. Create movie and TV detail screens.
-8. Implement watchlist functionality.
-9. Add persistence.
-10. Add user/profile functionality as required.
+1. Preserve the verified Home, Search, Watchlist and Profile navigation.
+2. Create movie and TV detail screens from search results.
+3. Implement watchlist functionality.
+4. Add persistence.
+5. Add user/profile functionality as required.
+6. Plan a secured hosted search server before public distribution.
 
 These priorities may change as the project develops.
+
+## Phase 2 implementation checkpoint
+
+TMDB developer access and the computer-only search check work. The read access
+token is stored in ignored `mobile/.env.local` and used only by Node scripts.
+The app calls a separate local server on port 3001; it never receives the token.
+Search shows first-page movie/TV matches with title, poster, year and media type,
+plus loading, error and empty states. TMDB credits appear on Search.
+The user verified title search and the empty state on a physical iPhone through
+Expo Go. Lint, TypeScript, five server tests and an iOS export passed. A scan
+confirmed the token was absent from mobile source and exported iOS files.
+Public server deployment, detail screens, pagination and watchlist actions
+are not implemented.
+See `mobile/README.md` for the two-terminal startup steps.

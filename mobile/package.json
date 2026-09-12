@@ -39,7 +39,9 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "search:tmdb": "node ./scripts/search-tmdb.mjs"
+    "search:tmdb": "node ./scripts/search-tmdb.mjs",
+    "search:server": "node ./server/start.mjs",
+    "test:search": "node --test server/search.test.mjs"
   },
   "private": true
 }

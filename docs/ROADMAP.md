@@ -2,7 +2,7 @@
 
 ## Phase 1 — Foundation
 
-Status: In progress
+Status: Complete
 
 - [x] Create GitHub repository
 - [x] Clone repository locally
@@ -16,21 +16,26 @@ Status: In progress
 - [x] Add project context documentation
 - [x] Remove remaining Expo starter/demo code
 - [x] Verify clean project structure
-- [ ] Commit foundation milestone
+- [x] Commit foundation milestone
 
 Cleanup is committed and verified on a physical iPhone. Configured app icons and
 the native splash image remain placeholders for a later Showtime branding pass.
 
 ## Phase 2 — Movie & TV Search
 
-- [ ] Choose movie/TV data API
-- [ ] Configure API access securely
-- [ ] Build Search screen
-- [ ] Search movies and TV shows
-- [ ] Display posters, titles and release information
-- [ ] Add loading states
-- [ ] Add error handling
-- [ ] Add empty/no-results state
+Status: First local version complete. TMDB title search and the no-results
+state were verified on a physical iPhone through Expo Go. Server error paths
+are covered by automated tests. The server is for private local development,
+not public deployment.
+
+- [x] Choose movie/TV data API
+- [x] Configure API access securely
+- [x] Build Search screen
+- [x] Search movies and TV shows
+- [x] Display posters, titles and release information
+- [x] Add loading states
+- [x] Add error handling
+- [x] Add empty/no-results state
 
 ## Phase 3 — Content Details
 
