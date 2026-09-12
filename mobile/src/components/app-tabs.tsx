@@ -1,11 +1,9 @@
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
-import { useColorScheme } from 'react-native';
 
 import { Colors } from '@/constants/theme';
 
 export default function AppTabs() {
-  const scheme = useColorScheme();
-  const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
+  const colors = Colors.dark;
 
   return (
     <NativeTabs
@@ -13,7 +11,7 @@ export default function AppTabs() {
       indicatorColor={colors.backgroundElement}
       labelStyle={{ selected: { color: colors.text } }}
     >
-      <NativeTabs.Trigger name="index">
+      <NativeTabs.Trigger name="index" contentStyle={{ backgroundColor: colors.background }}>
         <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
           sf={{ default: 'house', selected: 'house.fill' }}
@@ -21,7 +19,7 @@ export default function AppTabs() {
         />
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="search">
+      <NativeTabs.Trigger name="search" contentStyle={{ backgroundColor: colors.background }}>
         <NativeTabs.Trigger.Label>Search</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
           sf="magnifyingglass"
@@ -29,7 +27,7 @@ export default function AppTabs() {
         />
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="watchlist">
+      <NativeTabs.Trigger name="watchlist" contentStyle={{ backgroundColor: colors.background }}>
         <NativeTabs.Trigger.Label>Watchlist</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
           sf={{ default: 'bookmark', selected: 'bookmark.fill' }}
@@ -37,7 +35,7 @@ export default function AppTabs() {
         />
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="profile">
+      <NativeTabs.Trigger name="profile" contentStyle={{ backgroundColor: colors.background }}>
         <NativeTabs.Trigger.Label>Profile</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
           sf={{ default: 'person.circle', selected: 'person.circle.fill' }}

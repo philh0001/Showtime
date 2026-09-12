@@ -1,12 +1,10 @@
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
-import { useColorScheme } from 'react-native';
+import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
 
 export const unstable_settings = { initialRouteName: '(tabs)' };
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={DarkTheme}>
       <Stack screenOptions={{
         headerStyle: { backgroundColor: '#0B0B0F' },
         headerTintColor: '#FFFFFF',
