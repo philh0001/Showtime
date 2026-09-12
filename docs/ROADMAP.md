@@ -23,10 +23,10 @@ the native splash image remain placeholders for a later Showtime branding pass.
 
 ## Phase 2 — Movie & TV Search
 
-Status: First local version complete. TMDB title search and the no-results
-state were verified on a physical iPhone through Expo Go. Server error paths
-are covered by automated tests. The server is for private local development,
-not public deployment.
+Status: First local version complete. TMDB title search, the no-results state,
+and five-item recent search suggestions were verified on a physical iPhone
+through Expo Go.
+The server is for private local development, not public deployment.
 
 - [x] Choose movie/TV data API
 - [x] Configure API access securely
@@ -36,6 +36,7 @@ not public deployment.
 - [x] Add loading states
 - [x] Add error handling
 - [x] Add empty/no-results state
+- [x] Remember and suggest five recent title searches
 
 ## Phase 3 — Content Details
 

@@ -5,16 +5,37 @@ import { ActivityIndicator, FlatList, Keyboard, Platform, Pressable, StyleSheet,
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { searchTitles, type SearchResult } from '@/services/search';
+import {
+  clearRecentSearches,
+  loadRecentSearches,
+  recordRecentSearch,
+} from '@/services/search-history';
+import { filterRecentSearches } from '@/services/search-history-rules';
 
 export default function SearchScreen() {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const activeRequest = useRef<AbortController | null>(null);
 
   useEffect(() => () => {
     activeRequest.current?.abort();
     activeRequest.current = null;
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    loadRecentSearches()
+      .then((searches) => {
+        if (active) setRecentSearches(searches);
+      })
+      .catch(() => {
+        // Search still works when optional local history is unavailable.
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
   function changeQuery(value: string) {
@@ -25,8 +46,10 @@ export default function SearchScreen() {
     setStatus('idle');
   }
 
-  async function submit() {
-    if (!query.trim()) return;
+  async function submit(value = query) {
+    const searchQuery = value.trim();
+    if (!searchQuery) return;
+    setQuery(searchQuery);
     Keyboard.dismiss();
     activeRequest.current?.abort();
     const controller = new AbortController();
@@ -35,16 +58,28 @@ export default function SearchScreen() {
     setResults([]);
     const timeout = setTimeout(() => controller.abort(), 15000);
     try {
-      const matches = await searchTitles(query, controller.signal);
+      const matches = await searchTitles(searchQuery, controller.signal);
       if (activeRequest.current !== controller) return;
       setResults(matches);
       setStatus('success');
+      recordRecentSearch(searchQuery).then(setRecentSearches).catch(() => {
+        // A storage failure must not turn a successful search into an error.
+      });
     } catch {
       if (activeRequest.current !== controller) return;
       setStatus('error');
     } finally {
       clearTimeout(timeout);
     }
+  }
+
+  const suggestions = filterRecentSearches(recentSearches, query);
+
+  function clearHistory() {
+    setRecentSearches([]);
+    clearRecentSearches().catch(() => {
+      // The in-memory list can still be cleared for this session.
+    });
   }
 
   return (
@@ -60,7 +95,7 @@ export default function SearchScreen() {
             placeholderTextColor="#A7A7B0"
             value={query}
             onChangeText={changeQuery}
-            onSubmitEditing={submit}
+            onSubmitEditing={() => void submit()}
             returnKeyType="search"
             maxLength={100}
             autoCorrect={false}
@@ -68,11 +103,33 @@ export default function SearchScreen() {
           <Pressable
             accessibilityRole="button"
             disabled={!query.trim() || status === 'loading'}
-            onPress={submit}
+            onPress={() => void submit()}
             style={({ pressed }) => [styles.button, (!query.trim() || status === 'loading' || pressed) && styles.dimmed]}>
             <Text style={styles.buttonText}>Search</Text>
           </Pressable>
         </View>
+        {status === 'idle' && suggestions.length > 0 && (
+          <View style={styles.suggestions}>
+            <View style={styles.suggestionHeader}>
+              <Text style={styles.suggestionHeading}>
+                {query.trim() ? 'Previous searches' : 'Recent searches'}
+              </Text>
+              <Pressable accessibilityRole="button" onPress={clearHistory} hitSlop={8}>
+                <Text style={styles.clearText}>Clear</Text>
+              </Pressable>
+            </View>
+            {suggestions.map((suggestion) => (
+              <Pressable
+                key={suggestion.toLocaleLowerCase()}
+                accessibilityRole="button"
+                accessibilityLabel={`Search again for ${suggestion}`}
+                onPress={() => void submit(suggestion)}
+                style={({ pressed }) => [styles.suggestion, pressed && styles.dimmed]}>
+                <Text style={styles.suggestionText}>{suggestion}</Text>
+              </Pressable>
+            ))}
+          </View>
+        )}
         {status === 'loading' && <ActivityIndicator accessibilityLabel="Searching" color="#FFFFFF" style={styles.message} />}
         {status === 'error' && <Text accessibilityRole="alert" style={styles.message}>Could not load results. Check your connection and try again.</Text>}
         <FlatList
@@ -124,6 +181,12 @@ const styles = StyleSheet.create({
   title: { color: '#FFFFFF', fontSize: 32, fontWeight: '800', marginBottom: 8 },
   subtitle: { color: '#A7A7B0', fontSize: 16, lineHeight: 24 },
   form: { flexDirection: 'row', gap: 12, marginVertical: 24 },
+  suggestions: { backgroundColor: '#16161B', borderRadius: 12, marginBottom: 20, overflow: 'hidden' },
+  suggestionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 14 },
+  suggestionHeading: { color: '#A7A7B0', fontSize: 13, fontWeight: '700', textTransform: 'uppercase' },
+  clearText: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
+  suggestion: { minHeight: 48, justifyContent: 'center', paddingHorizontal: 14, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#393940' },
+  suggestionText: { color: '#FFFFFF', fontSize: 16 },
   input: { flex: 1, minWidth: 0, color: '#FFFFFF', backgroundColor: '#212225', borderRadius: 12, padding: 14, fontSize: 16 },
   button: { backgroundColor: '#FFFFFF', borderRadius: 12, paddingHorizontal: 16, justifyContent: 'center', minHeight: 48 },
   buttonText: { color: '#0B0B0F', fontWeight: '700', fontSize: 16 },

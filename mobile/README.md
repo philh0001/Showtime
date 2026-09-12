@@ -39,6 +39,7 @@ selects the browser-specific implementation of a component.
 npm run lint
 npx tsc --noEmit
 npm run test:search
+npm run test:history
 ```
 
 Then reload in Expo Go and check Home, Search, Watchlist and Profile. Check the
@@ -73,6 +74,12 @@ release information; TV titles also show seasons. Search by title, open one movi
 and one TV result, and use Back to confirm the search and results are preserved.
 Also check missing artwork/date fallbacks, try a nonsense title, then stop the
 search server and submit again to check the error state.
+
+The five newest successful title searches are stored locally on the device.
+Clear the field to see all recent searches, or type part of a previous phrase to
+filter the suggestions. Tapping a suggestion runs it again. Use **Clear** to
+remove the saved list. Search history is convenience data stored unencrypted;
+never use this storage for API credentials or other sensitive information.
 
 `npm run search:tmdb -- "Batman"` is the independent computer-only API check.
 

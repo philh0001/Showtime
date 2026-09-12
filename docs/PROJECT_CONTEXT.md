@@ -217,6 +217,12 @@ Public server deployment, detail screens, pagination and watchlist actions
 are not implemented.
 See `mobile/README.md` for the two-terminal startup steps.
 
+Recent-search suggestions are implemented with device-local AsyncStorage and
+verified on a physical iPhone. Only the five newest successful title
+queries are retained. The list is case-insensitive for duplicates, filters as
+the user types, and can be cleared from Search. No search history is sent to a
+server until the user runs a search.
+
 ## Phase 3 implementation checkpoint
 
 Search results now open dynamic movie or TV routes above the existing tab
