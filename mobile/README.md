@@ -3,7 +3,8 @@
 A movie and TV tracking app built with Expo SDK 57, React Native and TypeScript.
 The foundation currently includes Home, Search, Watchlist and Profile tabs.
 Search displays movie and TV titles, posters, years and media types using TMDB.
-Watchlist storage and account functionality are planned.
+The first device-local Watchlist version is implemented. Account functionality
+is planned.
 
 ## Run locally
 
@@ -27,7 +28,7 @@ For the browser version, run `npm run web`.
 - `src/components/app-tabs.tsx`: Native tab navigation.
 - `src/components/app-tabs.web.tsx`: Browser tab navigation.
 - `src/components`, `src/hooks`, `src/constants`: Shared UI and theme helpers.
-- `src/services`: Mobile requests to the local search and detail server.
+- `src/services`: Mobile requests plus local search-history and watchlist storage.
 - `server/`: Computer-only TMDB proxy and its tests. Never import into `src/`.
 
 Expo Router uses files in `src/app` to define routes. The `.web.tsx` suffix
@@ -40,6 +41,7 @@ npm run lint
 npx tsc --noEmit
 npm run test:search
 npm run test:history
+npm run test:watchlist
 ```
 
 Then reload in Expo Go and check Home, Search, Watchlist and Profile. Check the
@@ -80,6 +82,15 @@ Clear the field to see all recent searches, or type part of a previous phrase to
 filter the suggestions. Tapping a suggestion runs it again. Use **Clear** to
 remove the saved list. Search history is convenience data stored unencrypted;
 never use this storage for API credentials or other sensitive information.
+
+## Watchlist
+
+Open a movie or TV detail screen and use **Add to Watchlist**. The Watchlist tab
+stores the title, year, media type and poster locally on this device, so it can
+render saved titles without another TMDB request. Open a saved row to revisit its
+details, or use **Remove** on either screen. Close and reopen Expo Go to verify
+that saved titles persist. The first version displays one saved title per row;
+a denser layout is planned as a later visual refinement.
 
 `npm run search:tmdb -- "Batman"` is the independent computer-only API check.
 

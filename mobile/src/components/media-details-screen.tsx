@@ -5,6 +5,8 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { DetailsError, fetchDetails, type MediaDetails, type MediaType } from '@/services/details';
+import { isInWatchlist, type WatchlistItem } from '@/services/watchlist-rules';
+import { addToWatchlist, loadWatchlist, removeFromWatchlist } from '@/services/watchlist';
 
 type LoadState =
   | { status: 'loading' }
@@ -78,6 +80,49 @@ function DetailsLoader({ mediaType, id }: { mediaType: MediaType; id: string }) 
 }
 
 function DetailsContent({ details }: { details: MediaDetails }) {
+  const [saved, setSaved] = useState<boolean | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [watchlistError, setWatchlistError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    loadWatchlist()
+      .then((watchlist) => {
+        if (active) setSaved(isInWatchlist(watchlist, details.id, details.mediaType));
+      })
+      .catch(() => {
+        if (active) setWatchlistError('Could not read your watchlist.');
+      });
+    return () => {
+      active = false;
+    };
+  }, [details.id, details.mediaType]);
+
+  async function toggleWatchlist() {
+    if (saved === null || saving) return;
+    setSaving(true);
+    setWatchlistError(null);
+    try {
+      if (saved) {
+        await removeFromWatchlist(details.id, details.mediaType);
+      } else {
+        const item: WatchlistItem = {
+          id: details.id,
+          mediaType: details.mediaType,
+          title: details.title,
+          year: details.releaseDate?.slice(0, 4) ?? null,
+          posterUrl: details.posterUrl,
+        };
+        await addToWatchlist(item);
+      }
+      setSaved(!saved);
+    } catch {
+      setWatchlistError('Could not update your watchlist. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <ScrollView contentContainerStyle={styles.scrollContent}>
       <View style={styles.content}>
@@ -90,6 +135,18 @@ function DetailsContent({ details }: { details: MediaDetails }) {
             <Text style={styles.body}>{details.rating === null ? 'Not yet rated' : `${details.rating.toFixed(1)} / 10 on TMDB`}</Text>
           </View>
         </View>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ disabled: saved === null || saving, busy: saving }}
+          disabled={saved === null || saving}
+          onPress={() => void toggleWatchlist()}
+          style={({ pressed }) => [styles.watchlistButton, pressed && styles.dimmed]}
+        >
+          <Text style={styles.watchlistButtonText}>
+            {saving ? 'Updatingâ€¦' : saved ? 'Remove from Watchlist' : 'Add to Watchlist'}
+          </Text>
+        </Pressable>
+        {watchlistError && <Text accessibilityRole="alert" style={styles.error}>{watchlistError}</Text>}
         <Text style={styles.secondary}>
           {details.mediaType === 'Movie' ? 'Release date' : 'First aired'}: {formatDate(details.releaseDate)}
         </Text>
@@ -157,6 +214,10 @@ const styles = StyleSheet.create({
   seasonTitle: { color: '#FFFFFF', fontSize: 17, fontWeight: '600' },
   retry: { backgroundColor: '#FFFFFF', borderRadius: 12, paddingHorizontal: 20, paddingVertical: 14 },
   retryText: { color: '#0B0B0F', fontSize: 16, fontWeight: '700' },
+  watchlistButton: { backgroundColor: '#FFFFFF', borderRadius: 12, paddingHorizontal: 20, paddingVertical: 14, alignItems: 'center' },
+  watchlistButtonText: { color: '#0B0B0F', fontSize: 16, fontWeight: '700' },
+  dimmed: { opacity: 0.65 },
+  error: { color: '#FF8A8A', fontSize: 14, marginTop: 10 },
   link: { color: '#FFFFFF', fontSize: 16, paddingVertical: 12, textDecorationLine: 'underline' },
   credits: { marginTop: 32, gap: 12 },
   tmdbLogo: { width: 100, height: 24 },

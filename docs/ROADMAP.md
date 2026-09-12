@@ -54,10 +54,16 @@ verified on a physical iPhone through Expo Go.
 
 ## Phase 4 — Watchlist
 
-- [ ] Add item to watchlist
-- [ ] Remove item from watchlist
-- [ ] Build Watchlist screen
-- [ ] Persist watchlist between app sessions
+Status: Complete. The device-local watchlist was verified on a physical iPhone
+through Expo Go.
+
+- [x] Add item to watchlist
+- [x] Remove item from watchlist
+- [x] Build Watchlist screen
+- [x] Persist watchlist between app sessions
+
+Future refinement: consider a denser layout that shows more than one saved title
+per row.
 
 ## Phase 5 — TV Tracking
 
