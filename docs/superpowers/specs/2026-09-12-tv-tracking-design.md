@@ -136,6 +136,8 @@ Loading `showtime.tv-progress.v1` treats stored JSON as untrusted data:
 - Season zero, negative values, fractions, strings, and unsafe integers are
   ignored.
 - Duplicate season numbers are removed from each array.
+- After parsing, merging, synchronization, toggling, and before every write, both
+  season arrays are stored as unique numbers in ascending numeric order.
 - Duplicate valid records with the same `tvId` are merged by taking the union of
   their valid `trackableSeasonNumbers` and `watchedSeasonNumbers` values.
 - Within a successfully parsed top-level array, malformed individual records are
@@ -221,6 +223,7 @@ Automated verification will cover:
   ignored.
 - Duplicate valid TV records being merged by union, plus duplicate and malformed
   stored TV IDs and season values.
+- Deterministic ascending order after deduplication and every persistence update.
 - Stale watched seasons remaining stored but excluded from displayed progress.
 - A simulated AsyncStorage write failure restoring the previous UI/domain state.
 - Removing and re-adding a Watchlist item preserving its separate progress record.
