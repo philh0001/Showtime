@@ -65,7 +65,15 @@ The app currently has four main navigation tabs:
 
 The application has successfully been tested on a physical iPhone using Expo Go.
 
-Linting currently completes without errors.
+Lint and TypeScript checks passed after both cleanup passes. Startup and all four
+tabs were then verified on a physical iPhone through Expo Go.
+
+The Expo tutorial route, unused demo components and images, animated startup
+overlay, and reset-project script have been removed. The mobile README now
+documents Showtime setup and verification. Shared navigation/theme helpers remain
+in use. Configured app icons and the native splash image remain placeholders.
+
+Cleanup commits: `4b8863e` and `4de47df` on `setup/foundation`.
 
 ## Current development phase
 
@@ -187,8 +195,8 @@ Hands-on development is preferred over long theoretical explanations.
 The likely next stages are:
 
 1. Finish and verify the application foundation.
-2. Clean up remaining Expo starter/demo code.
-3. Establish the final basic navigation structure.
+2. Record the verified cleanup in the foundation milestone.
+3. Preserve the verified Home, Search, Watchlist and Profile navigation.
 4. Create the Search screen.
 5. Choose and integrate a movie/TV metadata API.
 6. Display real search results.

@@ -14,9 +14,12 @@ Status: In progress
 - [x] Verify lint passes
 - [x] Add project development instructions
 - [x] Add project context documentation
-- [ ] Remove remaining Expo starter/demo code
-- [ ] Verify clean project structure
+- [x] Remove remaining Expo starter/demo code
+- [x] Verify clean project structure
 - [ ] Commit foundation milestone
+
+Cleanup is committed and verified on a physical iPhone. Configured app icons and
+the native splash image remain placeholders for a later Showtime branding pass.
 
 ## Phase 2 — Movie & TV Search
 
