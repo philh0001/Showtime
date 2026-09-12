@@ -11,7 +11,7 @@ as watched, see season progress, and see when TMDB says the next episode will ai
 - Specials (`seasonNumber === 0`) remain visible but are excluded from tracking.
 - Progress is displayed as `2 of 5 seasons watched`.
 - A known future episode is displayed as season number, episode number, optional
-  title, air date, and a calendar countdown.
+  title, UK-formatted air date, and a calendar countdown.
 - Season progress persists locally on the device with AsyncStorage.
 - Movies and the existing Watchlist behavior remain unchanged.
 - Episode-level watched tracking and exact broadcast times are outside this
@@ -28,9 +28,13 @@ language:
 - Same calendar date: `Airs today`
 - Missing next episode: `No upcoming episode announced`
 
+Dates are retained internally in TMDB's ISO `YYYY-MM-DD` format and displayed in
+UK `DD/MM/YYYY` format, for example `07/10/2026`. Formatting the value does not
+change the date itself or imply that a UK broadcaster has confirmed that date.
+
 The calculation will compare date-only values rather than treating the date as a
-local or UTC broadcast timestamp. The UI will never show hours or minutes from
-TMDB's date-only value.
+local or UTC broadcast timestamp. The current UK calendar date is used for the
+countdown. The UI will never show hours or minutes from TMDB's date-only value.
 
 The countdown appears on the TV detail screen, where the existing details request
 retrieves fresh data. The Watchlist will show locally stored season progress but
@@ -109,5 +113,5 @@ the points where it can have changed.
 - Existing search, details, history, and Watchlist tests continue to pass.
 - Lint, TypeScript, Expo dependency checks, and an iOS export pass.
 - Physical iPhone verification covers season toggles, progress on TV details and
-  Watchlist, persistence after restarting Expo Go, upcoming/missing episode copy,
-  and unchanged movie behavior.
+  Watchlist, persistence after restarting Expo Go, UK `DD/MM/YYYY` formatting,
+  upcoming/missing episode copy, and unchanged movie behavior.
