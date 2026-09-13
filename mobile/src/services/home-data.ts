@@ -4,6 +4,8 @@ import type {
 } from './recently-viewed-rules.ts';
 import type { MovieProgressLoadResult } from './movie-progress-rules.ts';
 import type { WatchlistItem } from './watchlist-rules.ts';
+import type { ProgressLoadResult } from './tv-progress-rules.ts';
+import type { ScheduleLoadResult } from './tv-schedule-rules.ts';
 
 export type HomeCollection<T> =
   | { status: 'available'; items: T[] }
@@ -13,22 +15,32 @@ export type HomeData = {
   recentlyViewed: RecentlyViewedLoadResult;
   watchlist: HomeCollection<WatchlistItem>;
   movieProgress: MovieProgressLoadResult;
+  tvProgress: ProgressLoadResult;
+  tvSchedules: ScheduleLoadResult;
 };
 
 type HomeLoaders = {
   loadRecentlyViewed: () => Promise<RecentlyViewedLoadResult>;
   loadWatchlist: () => Promise<WatchlistItem[]>;
   loadMovieProgress: () => Promise<MovieProgressLoadResult>;
+  loadTvProgress: () => Promise<ProgressLoadResult>;
+  loadTvSchedules: () => Promise<ScheduleLoadResult>;
 };
 
 export async function loadHomeData(loaders: HomeLoaders): Promise<HomeData> {
-  const [recentResult, watchlistResult, movieResult] = await Promise.allSettled([
+  const [recentResult, watchlistResult, movieResult, tvResult, scheduleResult] = await Promise.allSettled([
     loaders.loadRecentlyViewed(),
     loaders.loadWatchlist(),
     loaders.loadMovieProgress(),
+    loaders.loadTvProgress(),
+    loaders.loadTvSchedules(),
   ]);
 
   return {
+    tvSchedules: scheduleResult.status === 'fulfilled' ? scheduleResult.value : { status: 'unavailable' },
+    tvProgress: tvResult.status === 'fulfilled'
+      ? tvResult.value
+      : { status: 'unavailable', reason: 'read-error' },
     recentlyViewed: recentResult.status === 'fulfilled'
       ? recentResult.value
       : { status: 'unavailable', reason: 'read-error' },

@@ -1,27 +1,37 @@
 import { Link, useFocusEffect } from 'expo-router';
-import { useCallback, useState, type ReactNode } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useRef, useState, type ReactNode } from 'react';
+import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { HomePosterCard, type HomePosterItem } from '@/components/home-poster-card';
+import { DiscoverySection } from '@/components/discovery-section';
+import { UpcomingSection } from '@/components/upcoming-section';
 import { loadHomeData, type HomeData } from '@/services/home-data';
 import { findWatchedMovie, type WatchedMovie } from '@/services/movie-progress-rules';
 import { loadMovieProgress } from '@/services/movie-progress';
 import { loadRecentlyViewed } from '@/services/recently-viewed';
 import { loadWatchlist } from '@/services/watchlist';
+import { loadTvProgress } from '@/services/tv-progress';
+import { loadTvSchedules } from '@/services/tv-schedule';
+import { getContinueWatching, type ViewingProgress } from '@/services/viewing-summary';
 
 export default function HomeScreen() {
   const [data, setData] = useState<HomeData | null>(null);
   const [loading, setLoading] = useState(true);
+  const request = useRef(0);
 
   const refresh = useCallback(async () => {
+    const current = ++request.current;
     setLoading(true);
-    setData(await loadHomeData({ loadRecentlyViewed, loadWatchlist, loadMovieProgress }));
+    const next = await loadHomeData({ loadRecentlyViewed, loadWatchlist, loadMovieProgress, loadTvProgress, loadTvSchedules });
+    if (current !== request.current) return;
+    setData(next);
     setLoading(false);
   }, []);
 
   useFocusEffect(useCallback(() => {
     void refresh();
+    return () => { request.current += 1; };
   }, [refresh]));
 
   const recentItems = data?.recentlyViewed.status === 'available'
@@ -30,12 +40,17 @@ export default function HomeScreen() {
     ? data.watchlist.items : [];
   const watchedMovies = data?.movieProgress.status === 'available'
     ? data.movieProgress.records : [];
+  const continueWatching = data ? getContinueWatching(watchlistItems, recentItems, data.tvProgress,
+    data.tvSchedules.status === 'available' ? data.tvSchedules.records : []) : [];
   const hasError = data?.recentlyViewed.status === 'unavailable'
     || data?.watchlist.status === 'unavailable'
-    || data?.movieProgress.status === 'unavailable';
+    || data?.movieProgress.status === 'unavailable'
+    || data?.tvProgress.status === 'unavailable';
   const showFirstUse = data?.recentlyViewed.status === 'available'
     && data.watchlist.status === 'available'
     && data.movieProgress.status === 'available'
+    && data.tvProgress.status === 'available'
+    && data.tvProgress.records.length === 0
     && recentItems.length === 0
     && watchlistItems.length === 0
     && watchedMovies.length === 0;
@@ -49,7 +64,7 @@ export default function HomeScreen() {
           <Pressable
             accessibilityRole="link"
             accessibilityLabel="Search movies and TV"
-            style={({ pressed }) => [styles.searchButton, pressed && styles.pressed]}
+            style={Platform.OS === 'web' ? styles.searchButton : ({ pressed }) => [styles.searchButton, pressed && styles.pressed]}
           >
             <Text style={styles.searchButtonText}>Search movies and TV</Text>
           </Pressable>
@@ -60,8 +75,15 @@ export default function HomeScreen() {
           <Text style={styles.secondary}>Loading your Home screen…</Text>
         </View>}
 
+        {!loading && continueWatching.length > 0
+          && <PosterRail title="Continue Watching" items={continueWatching.slice(0, 20)}
+            getProgress={(item) => continueWatching.find((show) => show.id === item.id)?.progress} />}
+
         {!loading && recentItems.length > 0
           && <PosterRail title="Recently Viewed" items={recentItems} />}
+
+        {!loading && data && <UpcomingSection watchlist={watchlistItems} progress={data.tvProgress}
+          cache={data.tvSchedules} onRetry={refresh} />}
 
         {!loading && watchedMovies.length > 0
           && <PosterRail
@@ -98,6 +120,7 @@ export default function HomeScreen() {
             <Text style={styles.retryText}>Try again</Text>
           </Pressable>
         </View>}
+        <DiscoverySection />
       </ScrollView>
     </SafeAreaView>
   );
@@ -109,12 +132,14 @@ function PosterRail({
   action,
   statusLabel,
   getStatusLabel,
+  getProgress,
 }: {
   title: string;
   items: HomePosterItem[];
   action?: ReactNode;
   statusLabel?: 'Watched' | 'Completed';
   getStatusLabel?: (item: HomePosterItem) => 'Watched' | 'Completed' | undefined;
+  getProgress?: (item: HomePosterItem) => ViewingProgress | undefined;
 }) {
   return (
     <View style={styles.section}>
@@ -132,6 +157,7 @@ function PosterRail({
             key={`${item.mediaType}:${item.id}`}
             item={item}
             statusLabel={statusLabel ?? getStatusLabel?.(item)}
+            progress={getProgress?.(item)}
           />
         ))}
       </ScrollView>

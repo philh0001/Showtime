@@ -1,7 +1,8 @@
 import { Image } from 'expo-image';
 import { Link } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import type { ViewingProgress } from '@/services/viewing-summary';
 
 export type HomePosterItem = {
   id: number;
@@ -14,9 +15,11 @@ export type HomePosterItem = {
 export function HomePosterCard({
   item,
   statusLabel,
+  progress,
 }: {
   item: HomePosterItem;
   statusLabel?: 'Watched' | 'Completed';
+  progress?: ViewingProgress;
 }) {
   const [imageFailed, setImageFailed] = useState(false);
   return (
@@ -30,7 +33,7 @@ export function HomePosterCard({
       <Pressable
         accessibilityRole="link"
         accessibilityLabel={`Open ${item.title}, ${item.mediaType}${statusLabel ? `, ${statusLabel.toLowerCase()}` : ''}`}
-        style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+        style={Platform.OS === 'web' ? styles.card : ({ pressed }) => [styles.card, pressed && styles.pressed]}
       >
         <View style={styles.poster}>
           <View style={[styles.posterContent, statusLabel && styles.watchedPoster]}>
@@ -52,6 +55,21 @@ export function HomePosterCard({
         <Text numberOfLines={1} style={styles.meta}>
           {item.year ?? 'Year unknown'} · {item.mediaType}
         </Text>
+        {progress && <View style={styles.progressGroup}>
+          <View
+            accessibilityRole="progressbar"
+            accessibilityLabel={`${item.title} viewing progress`}
+            accessibilityValue={{ min: 0, max: 100, now: Math.round(progress.fraction * 100), text: `${progress.watched} of ${progress.total} seasons watched` }}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(progress.fraction * 100)}
+            aria-valuetext={`${progress.watched} of ${progress.total} seasons watched`}
+            style={styles.progressTrack}
+          >
+            <View style={[styles.progressFill, { width: `${progress.fraction * 100}%` }]} />
+          </View>
+          <Text style={styles.meta}>{progress.watched} of {progress.total} seasons</Text>
+        </View>}
       </Pressable>
     </Link>
   );
@@ -59,6 +77,9 @@ export function HomePosterCard({
 
 const styles = StyleSheet.create({
   card: { width: 126, gap: 6 },
+  progressGroup: { gap: 6, marginTop: 3 },
+  progressTrack: { height: 4, backgroundColor: '#38383F', borderRadius: 2, overflow: 'hidden' },
+  progressFill: { height: 4, backgroundColor: '#63D7BA' },
   poster: {
     width: 126,
     height: 189,
