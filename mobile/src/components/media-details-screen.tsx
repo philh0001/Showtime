@@ -4,9 +4,11 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { MovieWatchedControl } from '@/components/movie-watched-control';
 import { TvTrackingSection } from '@/components/tv-tracking-section';
 import { formatUkDate } from '@/services/air-date-rules';
 import { DetailsError, fetchDetails, type MediaDetails, type MediaType } from '@/services/details';
+import { createWatchedMovieSnapshot } from '@/services/movie-progress-rules';
 import { createRecentlyViewedSnapshot } from '@/services/recently-viewed-rules';
 import { recordRecentlyViewed } from '@/services/recently-viewed';
 import { isInWatchlist, type WatchlistItem } from '@/services/watchlist-rules';
@@ -155,6 +157,8 @@ function DetailsContent({ details }: { details: MediaDetails }) {
           </Text>
         </Pressable>
         {watchlistError && <Text accessibilityRole="alert" style={styles.error}>{watchlistError}</Text>}
+        {details.mediaType === 'Movie'
+          && <MovieWatchedControl snapshot={createWatchedMovieSnapshot(details)} />}
         <Text style={styles.secondary}>
           {details.mediaType === 'Movie' ? 'Release date' : 'First aired'}: {formatDate(details.releaseDate)}
         </Text>
