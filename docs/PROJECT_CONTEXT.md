@@ -41,7 +41,7 @@ the current milestone. Future phases and feature checklists belong in
 `iPhone / Expo Go → mobile app → local Node server on port 3001 → TMDB`
 
 The mobile app calls the local Node server for Search, movie details, TV details,
-and fresh next-episode data. The Node server calls TMDB and returns restricted
+fresh next-episode data, and cached weekly trending lists. The Node server calls TMDB and returns restricted
 display fields to the app. The mobile source must never import computer-only code
 from `mobile/server/`.
 
@@ -58,12 +58,18 @@ returns to the previous tab state.
 
 ### Home
 
-Home is a device-local dashboard with Showtime branding, a Search shortcut,
-horizontal Recently Viewed and Watchlist rails, poster fallbacks, and a useful
-first-use state. It refreshes both local collections whenever the tab gains focus
-and keeps either section usable if the other storage read fails. Home makes no
-TMDB or local-server request while loading. Continue Watching, Upcoming Episodes,
-Trending content, and personalised discovery have not been added.
+Home has Showtime branding, a Search shortcut, Continue Watching, Recently Viewed,
+Watched Movies, Watchlist, Upcoming Episodes, and Trending Movies/TV. Personal
+collections refresh from local storage on focus, with independent error handling.
+Continue Watching includes partial episode progress and uses persistent TV title
+snapshots when titles leave Recently Viewed. Upcoming uses schedules cached when
+TV details open, skips past/watched episodes and shows the last-checked date.
+
+Only Trending makes a Home network request: one `/discovery` call for both lists,
+with 30-minute server and in-memory client caches and shared concurrent requests.
+Failed refreshes retain previously loaded lists. Profile can disable Trending.
+No per-show Home requests or background polling run. Personalised discovery is
+future work. A chronological activity log now opens from Home and Profile.
 
 ### Search
 
@@ -83,6 +89,10 @@ include available poster/backdrop artwork, overview, rating, genres, release or
 first-air date, and Watchlist controls. TV details also show seasons and episode
 counts. Loading, retry, invalid-route, missing-data, and artwork fallback states
 are implemented.
+
+Details also include official YouTube trailer links, cast portraits and key crew.
+These optional fields are appended to the main TMDB detail request. TV cast is
+labelled as latest-season cast. Missing or malformed extras do not block details.
 
 A successfully displayed movie or TV detail is recorded in Recently Viewed.
 That non-blocking local write is independent from Watchlist membership and
@@ -109,8 +119,10 @@ is a later visual refinement recorded in the roadmap.
 
 ### Profile
 
-Profile remains a placeholder. Authentication, accounts, settings, and viewing
-statistics have not been introduced.
+Profile displays Watchlist size, watched movie and season totals, shows with
+viewing progress, and individually tracked watched episode totals. It distinguishes
+unreadable data from zero. It includes a persistent Trending switch, app version,
+device-local data notice and TMDB credits. Authentication and accounts remain future work.
 
 ## Local persistence
 
@@ -120,6 +132,10 @@ AsyncStorage currently holds:
 - the device-local movie and TV Watchlist
 - Phase 5 TV progress under the versioned key `showtime.tv-progress.v2`
 - the 20 most recently opened titles under `showtime.recently-viewed.v1`
+- current watched movies and timestamps under `showtime.movie-progress.v1`
+- TV title/schedule snapshots under `showtime.tv-schedule.v1`
+- the Trending preference under `showtime.settings.v1`
+- newly recorded viewing actions under `showtime.viewing-activity.v1`
 
 Recently Viewed stores the title, poster, year, media type, and view timestamp.
 Reopening a title replaces its display snapshot and moves it to the front. Movie
@@ -135,6 +151,12 @@ details but are not tracked.
 
 These values are local convenience data, not secure credential storage. No user
 account, database, cloud sync, or multi-device persistence exists.
+
+Viewing history preserves new movie, season and episode actions, reversals and
+rewatches independently of current watched status. It starts with this feature;
+earlier activity timestamps are not invented. Failed watched writes do not create
+events. A failed history write after a successful watched update reports the
+history failure without rolling back the primary change.
 
 ## Completed Phase 5 milestone
 
@@ -195,6 +217,14 @@ Before a milestone is considered complete:
 
 Project setup and startup commands belong in `mobile/README.md`. Future work and
 completion checklists belong in `docs/ROADMAP.md`.
+
+## Latest automated milestone
+
+The 13 September Home/Profile extension has passed automated and browser checks;
+its physical iPhone pass is pending. See
+`docs/verification/2026-09-13-roadmap-progress.md` for the commands, browser
+coverage, screenshots, storage semantics, and remaining work. Earlier statements
+about completed physical-device testing apply to those earlier increments only.
 
 ## Development approach
 

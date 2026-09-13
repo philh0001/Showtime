@@ -3,8 +3,10 @@
 A movie and TV tracking app built with Expo SDK 57, React Native and TypeScript.
 The foundation currently includes Home, Search, Watchlist and Profile tabs.
 Search displays movie and TV titles, posters, years and media types using TMDB.
-The device-local Watchlist and TV tracking are implemented. Home includes local
-Recently Viewed and Watchlist poster rails. Account functionality is planned.
+The device-local Watchlist, movie watched status and TV tracking are implemented.
+Home includes Continue Watching, Recently Viewed, Watched Movies, Watchlist,
+cached Upcoming Episodes and Trending Movies/TV. Profile includes local viewing
+statistics, a Trending preference, and credits. Accounts are planned.
 
 ## Run locally
 
@@ -39,11 +41,9 @@ selects the browser-specific implementation of a component.
 ```sh
 npm run lint
 npx tsc --noEmit
-npm run test:search
-npm run test:history
-npm run test:watchlist
-npm run test:tracking
-npm run test:home
+npm test
+npx expo install --check
+npx expo export --platform ios --max-workers 1
 ```
 
 Then reload in Expo Go and check Home, Search, Watchlist and Profile. Check the
@@ -96,8 +96,8 @@ a denser layout is planned as a later visual refinement.
 
 ## Home and Recently Viewed
 
-Home loads its Recently Viewed and Watchlist rails from AsyncStorage whenever the
-tab gains focus. It makes no TMDB request while loading. Use **Search movies and
+Home loads its personal rails from AsyncStorage whenever the tab gains focus.
+These collections make no TMDB requests. Use **Search movies and
 TV** to find a title, open its detail page successfully, then return Home to see
 it at the front of Recently Viewed. Opening a card refreshes its normal detail
 route; **See all** opens the full Watchlist.
@@ -107,6 +107,64 @@ Recently Viewed keeps the 20 newest movie and TV detail snapshots under
 and moves it to the front. This activity is independent from Watchlist and
 watched status. A failed history write does not block Details, and a failed Home
 collection read does not hide the other successfully loaded collection.
+
+Continue Watching joins TV progress to saved, recently viewed and cached TV title metadata.
+Untouched and completed shows are excluded. The progress bar counts completed
+seasons plus the watched fraction of episode-tracked seasons. Shows removed from
+Watchlist remain eligible through the persistent snapshot saved when TV details
+open. Existing progress without any title snapshot needs one detail visit.
+
+Movie watched status is stored independently under `showtime.movie-progress.v1`.
+Marking a movie watched never adds or removes it from Watchlist. Home previews the
+20 newest watched movies; the complete current watched collection is retained.
+Marking unwatched removes the current watched record, not Watchlist membership.
+This collection is current watched state. The separate viewing history below
+preserves newly recorded actions and repeat viewings.
+
+Upcoming Episodes uses `showtime.tv-schedule.v1`, refreshed after successful TV
+detail loads. It shows one next non-past, unwatched regular episode per saved or
+actively tracked show, ordered by air date. The last-checked date is displayed.
+Open TV details to refresh the schedule; no automatic per-show Home requests are
+made. The local countdown updates while Home is focused and on app resume.
+
+Trending Movies and TV use one `GET /discovery` call. The proxy fetches TMDB's
+weekly movie and TV lists and caches them for 30 minutes, sharing concurrent
+requests. The app also caches them in memory for 30 minutes and retains previous
+lists after a failed refresh. No background polling runs. Restart the local server
+after updating it to enable this endpoint. Trending can be disabled in Profile.
+
+## Profile
+
+Profile refreshes local statistics on focus. Movies and seasons watched are
+independent of Watchlist membership. Shows with viewing progress exclude shows
+merely opened in Details. Individually tracked episode totals do not estimate
+episodes from older whole-season marks. Unavailable collections display unknown
+totals, while other totals remain visible.
+
+The Trending preference is stored under `showtime.settings.v1`; unreadable settings
+disable discovery requests until the storage can be read again. The About area
+includes the Expo app version and TMDB attribution. No sign-in is needed.
+
+## Viewing history
+
+Open **Viewing history** from Profile or **History** beside Home's Watched Movies
+rail. The timeline keeps newly recorded movie, season, episode and bulk aired-episode
+actions under `showtime.viewing-activity.v1`, including reversals and rewatches.
+All/Movies/TV filters and title links are available. Dates and times use the device's
+local timezone and UK formatting. Previous TV activity is not reconstructed.
+
+Events are recorded only after watched state saves successfully. If history cannot
+be saved, the control reports that separately and retains the saved watched state.
+Unreadable history is never silently cleared. The list is virtualized and the full
+valid history is retained locally.
+
+## Cast and trailers
+
+Details append TMDB `credits,videos` to the normal request. Up to 12 cast members
+and 8 key crew entries are shown. TV's credits endpoint returns latest-season cast,
+which is labelled accordingly. Only official trailers on YouTube with validated
+video IDs are linked; videos do not autoplay. Missing optional metadata leaves
+the main detail and tracking experience available.
 
 ## TV tracking
 

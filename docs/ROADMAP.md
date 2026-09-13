@@ -220,6 +220,13 @@ Status: Current milestone
 Home now has its first local dashboard. Continue expanding it with viewing
 activity, upcoming episodes, and discovery content.
 
+13 September update: Continue Watching, movie watched status, local upcoming
+schedules, and Trending Movies/TV are implemented and browser-tested. The new
+features still need a physical iPhone pass. Upcoming schedules refresh when TV
+details open, and show their last-checked date; Home does not fetch every show.
+Chronological TV/movie activity history is also implemented for newly recorded
+actions, with filters and detail links. Earlier activity is not reconstructed.
+
 ### Home dashboard
 
 - [x] Redesign the Home screen
@@ -231,36 +238,36 @@ activity, upcoming episodes, and discovery content.
 
 ### Continue Watching
 
-- [ ] Show partially watched TV shows
-- [ ] Display season progress
-- [ ] Add visual progress bars
-- [ ] Open directly into the relevant TV detail page
+- [x] Show partially watched TV shows
+- [x] Display season progress
+- [x] Add visual progress bars
+- [x] Open directly into the relevant TV detail page
 
 ### Movie watched status
 
-- [ ] Add `Watched` status for movies
-- [ ] Keep `Want to Watch` and `Watched` as separate concepts
-- [ ] Keep watched movies in the Watchlist until they are manually removed
-- [ ] Show a clear watched badge and poster treatment
-- [ ] Add All, To Watch and Watched Watchlist filters
-- [ ] Persist movie watched state locally
+- [x] Add `Watched` status for movies
+- [x] Keep `Want to Watch` and `Watched` as separate concepts
+- [x] Keep watched movies in the Watchlist until they are manually removed
+- [x] Show a clear watched badge and poster treatment
+- [x] Add All, To Watch and Watched Watchlist filters
+- [x] Persist movie watched state locally
 
 ### Viewing history
 
-- [ ] Add viewing history
-- [ ] Record watched movies
-- [ ] Add a Watched Movies rail to Home
-- [ ] Record TV progress/activity
+- [x] Add viewing history
+- [x] Record watched movies
+- [x] Add a Watched Movies rail to Home
+- [x] Record TV progress/activity
 - [x] Add Recently Viewed titles
 - [x] Persist Recently Viewed locally
-- [ ] Persist full viewing history locally
+- [x] Persist full viewing history locally
 
 ### Upcoming episodes
 
-- [ ] Design how upcoming episode data should be cached/refreshed for Home
-- [ ] Add an Up Next / Upcoming Episodes section
-- [ ] Avoid one network request per tracked TV show
-- [ ] Show useful countdown information
+- [x] Design how upcoming episode data should be cached/refreshed for Home
+- [x] Add an Up Next / Upcoming Episodes section
+- [x] Avoid one network request per tracked TV show
+- [x] Show useful countdown information
 
 ### Watchlist preview
 
@@ -269,20 +276,21 @@ activity, upcoming episodes, and discovery content.
 
 ### Discovery
 
-- [ ] Add Trending Movies
-- [ ] Add Trending TV
+- [x] Add Trending Movies
+- [x] Add Trending TV
 - [ ] Add Popular Movies/TV if useful
-- [ ] Define sensible refresh behavior
-- [ ] Avoid unnecessary background requests
+- [x] Define sensible refresh behavior
+- [x] Avoid unnecessary background requests
 
 ### Verification
 
 - [x] Verify Home updates after Watchlist changes
 - [x] Verify Recently Viewed ordering and persistence
-- [ ] Verify Home updates after TV tracking changes
-- [ ] Verify Home updates after movie watched changes
-- [ ] Verify useful empty/new-user state
+- [x] Verify Home updates after TV tracking changes
+- [x] Verify Home updates after movie watched changes
+- [x] Verify useful empty/new-user state
 - [x] Verify Home on physical iPhone
+- [ ] Verify the expanded Home, viewing history and Profile on physical iPhone
 
 ---
 
@@ -295,20 +303,20 @@ content and completes the first major UI/branding pass.
 
 ### Profile
 
-- [ ] Add useful Profile content
-- [ ] Display Watchlist count
-- [ ] Display movies watched
-- [ ] Display TV seasons watched
-- [ ] Display shows being tracked
-- [ ] Add viewing statistics
-- [ ] Add settings
+- [x] Add useful Profile content
+- [x] Display Watchlist count
+- [x] Display movies watched
+- [x] Display TV seasons watched
+- [x] Display shows being tracked
+- [x] Add viewing statistics
+- [x] Add settings
 
 ### About & credits
 
-- [ ] Add About / Credits area
-- [ ] Add required TMDB attribution
-- [ ] Add approved TMDB logo/notice where required
-- [ ] Add application version information
+- [x] Add About / Credits area
+- [x] Add required TMDB attribution
+- [x] Add approved TMDB logo/notice where required
+- [x] Add application version information
 
 ### App polish
 
@@ -326,8 +334,8 @@ content and completes the first major UI/branding pass.
 
 - [ ] Investigate TMDB watch-provider information
 - [ ] Add Where to Watch if the data is useful/reliable
-- [ ] Add trailer links
-- [ ] Add cast/crew information
+- [x] Add trailer links
+- [x] Add cast/crew information
 
 ---
 
@@ -426,7 +434,7 @@ Throughout development:
 - [x] Document TMDB API integration
 - [x] Document secure credential handling
 - [x] Maintain project context and roadmap documentation
-- [ ] Add screenshots of key milestones
+- [x] Add screenshots of key milestones
 - [x] Document TV tracking architecture
 - [ ] Document hosted API architecture
 - [ ] Document database/authentication design if introduced

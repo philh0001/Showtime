@@ -8,16 +8,16 @@ schedules to Watchlist and TV progress. Reuse the date-only episode selection.
 
 ## Tasks
 
-- [ ] Add `tv-schedule-rules.ts` and `tests/tv-schedule.test.mjs`: test malformed
+- [x] Add `tv-schedule-rules.ts` and `tests/tv-schedule.test.mjs`: test malformed
   storage, newest duplicate snapshots, non-past selection, membership, watched
   episode exclusion, and deterministic ordering before implementing the rules.
-- [ ] Add `tv-schedule-storage.ts` with injected AsyncStorage interface: test
+- [x] Add `tv-schedule-storage.ts` with injected AsyncStorage interface: test
   failed reads/writes, preservation of unreadable storage, and concurrent writes.
   Implement a serialized read-modify-write queue under `showtime.tv-schedule.v1`.
-- [ ] Bind the adapter in `tv-schedule.ts`; record successful TV details in
+- [x] Bind the adapter in `tv-schedule.ts`; record successful TV details in
   `media-details-screen.tsx` without blocking its UI or altering watched state.
-- [ ] Add `upcoming-section.tsx`: load on focus, show dated entries with detail
+- [x] Add `upcoming-section.tsx`: load on focus, show dated entries with detail
   links and last-checked labels, handle unavailable and empty states, and update
   the local calendar date while the focused screen stays open.
-- [ ] Run all Node tests, lint, TypeScript, SDK checks and iOS export. Update the
+- [x] Run all Node tests, lint, TypeScript, SDK checks and iOS export. Update the
   roadmap and verification notes with actual results and phone-test limitations.
