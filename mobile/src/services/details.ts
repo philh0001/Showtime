@@ -1,4 +1,5 @@
 import { getServerUrl } from './server-url';
+import { normalizeDetailExtras, type DetailExtras } from './detail-extras-rules';
 import {
   getDeviceLocalIsoDate,
   parseIsoCalendarDate,
@@ -7,7 +8,7 @@ import {
 } from './air-date-rules';
 
 export type MediaType = 'movie' | 'tv';
-export type MediaDetails = {
+export type MediaDetails = DetailExtras & {
   id: number;
   mediaType: 'Movie' | 'TV';
   title: string;
@@ -87,6 +88,7 @@ export async function fetchDetails(mediaType: MediaType, id: string, signal: Abo
   const latestSeason = normalizeLatestSeason(details.latestSeason);
   return {
     ...details,
+    ...normalizeDetailExtras(details),
     latestSeason,
     nextEpisode: selectNextEpisode(details.nextEpisode, latestSeason?.episodes ?? [], todayIso),
   };

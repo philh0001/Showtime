@@ -37,6 +37,29 @@ function episodeOrNull(value, seasonNumber) {
   };
 }
 
+function mapExtras(data) {
+  const cast = new Map();
+  for (const person of Array.isArray(data.credits?.cast) ? data.credits.cast : []) {
+    if (!person || !Number.isSafeInteger(person.id) || person.id <= 0 || !textOrNull(person.name) || cast.has(person.id)) continue;
+    cast.set(person.id, { id: person.id, name: textOrNull(person.name), character: textOrNull(person.character), profileUrl: imageUrl(person.profile_path, 'w185') });
+    if (cast.size === 12) break;
+  }
+  const crew = new Map();
+  for (const person of Array.isArray(data.credits?.crew) ? data.credits.crew : []) {
+    if (!person || !Number.isSafeInteger(person.id) || person.id <= 0 || !textOrNull(person.name)
+      || !['Director', 'Writer', 'Screenplay', 'Creator', 'Executive Producer'].includes(person.job)) continue;
+    crew.set(`${person.id}:${person.job}`, { id: person.id, name: textOrNull(person.name), job: person.job });
+    if (crew.size === 8) break;
+  }
+  const video = (Array.isArray(data.videos?.results) ? data.videos.results : []).find((item) =>
+    item?.site === 'YouTube' && item.type === 'Trailer' && item.official === true
+    && typeof item.key === 'string' && /^[A-Za-z0-9_-]{11}$/.test(item.key));
+  return {
+    cast: [...cast.values()], crew: [...crew.values()],
+    trailer: video ? { name: textOrNull(video.name) ?? 'Official trailer', url: `https://www.youtube.com/watch?v=${video.key}` } : null,
+  };
+}
+
 async function loadLatestSeason({ tvId, season, token, fetchImpl }) {
   if (!season) return null;
   try {
@@ -75,7 +98,7 @@ export async function handleDetails({ pathname, method, token, fetchImpl, send }
   const [, mediaType, id] = match;
 
   try {
-    const upstream = await fetchImpl(`https://api.themoviedb.org/3/${mediaType}/${id}`, {
+    const upstream = await fetchImpl(`https://api.themoviedb.org/3/${mediaType}/${id}?append_to_response=credits,videos`, {
       headers: { Authorization: `Bearer ${token}`, accept: 'application/json' },
       signal: AbortSignal.timeout(10000),
     });
@@ -108,6 +131,7 @@ export async function handleDetails({ pathname, method, token, fetchImpl, send }
       fetchImpl,
     });
     send(200, { details: {
+      ...mapExtras(data),
       id: data.id,
       mediaType: movie ? 'Movie' : 'TV',
       title: textOrNull(movie ? data.title : data.name) ?? 'Untitled',

@@ -12,7 +12,7 @@ async function request(t, path, fetchImpl, method = 'GET') {
 
 test('movie details use the movie endpoint and return only display fields', async (t) => {
   const response = await request(t, '/details/movie/272', async (url, options) => {
-    if (String(url) !== 'https://api.themoviedb.org/3/movie/272'
+    if (String(url) !== 'https://api.themoviedb.org/3/movie/272?append_to_response=credits,videos'
       || options.headers.Authorization !== 'Bearer private-test-token') return new Response(null, { status: 401 });
     return Response.json({ id: 272, title: 'Batman Begins', overview: 'A new beginning.',
       release_date: '2005-06-10', vote_average: 7.7, vote_count: 150,
@@ -27,14 +27,47 @@ test('movie details use the movie endpoint and return only display fields', asyn
     backdropUrl: 'https://image.tmdb.org/t/p/w780/backdrop.jpg', seasons: [],
     nextEpisode: null,
     latestSeason: null,
+    cast: [], crew: [], trailer: null,
   } });
+});
+
+test('details include validated cast, key crew and only official YouTube trailers', async (t) => {
+  const response = await request(t, '/details/movie/1', async (url) => {
+    assert.equal(new URL(url).searchParams.get('append_to_response'), 'credits,videos');
+    return Response.json({ id: 1, title: 'Movie', credits: {
+      cast: [
+        { id: 10, name: ' Actor ', character: ' Hero ', profile_path: '/actor.jpg' },
+        { id: 10, name: 'Duplicate' }, { id: -1, name: 'Invalid' },
+      ],
+      crew: [{ id: 20, name: 'Director', job: 'Director' }, { id: 21, name: 'Other', job: 'Driver' }],
+    }, videos: { results: [
+      { site: 'YouTube', type: 'Trailer', official: false, key: 'abcdefghijk', name: 'Fan trailer' },
+      { site: 'YouTube', type: 'Trailer', official: true, key: 'javascript:bad', name: 'Invalid' },
+      { site: 'YouTube', type: 'Trailer', official: true, key: 'A1b2C3d4E5f', name: 'Official trailer' },
+    ] } });
+  });
+  assert.equal(response.status, 200);
+  const { details } = await response.json();
+  assert.deepEqual(details.cast, [{ id: 10, name: 'Actor', character: 'Hero', profileUrl: 'https://image.tmdb.org/t/p/w185/actor.jpg' }]);
+  assert.deepEqual(details.crew, [{ id: 20, name: 'Director', job: 'Director' }]);
+  assert.deepEqual(details.trailer, { name: 'Official trailer', url: 'https://www.youtube.com/watch?v=A1b2C3d4E5f' });
+});
+
+test('malformed optional extras cannot break otherwise valid details', async (t) => {
+  const response = await request(t, '/details/tv/1', async () => Response.json({ id: 1, name: 'Show',
+    credits: { cast: [null, { id: 2, name: '' }], crew: 'invalid' }, videos: { results: [null] } }));
+  const { details } = await response.json();
+  assert.equal(response.status, 200);
+  assert.deepEqual(details.cast, []);
+  assert.deepEqual(details.crew, []);
+  assert.equal(details.trailer, null);
 });
 
 test('TV details use TV names/dates and retain specials and season summaries', async (t) => {
   const urls = [];
   const response = await request(t, '/details/tv/1396', async (url) => {
     urls.push(String(url));
-    if (String(url) === 'https://api.themoviedb.org/3/tv/1396') {
+    if (String(url) === 'https://api.themoviedb.org/3/tv/1396?append_to_response=credits,videos') {
       return Response.json({ id: 1396, name: 'Breaking Bad', first_air_date: '2008-01-20',
         overview: 'A chemistry teacher changes course.', vote_average: 8.9, vote_count: 200,
         genres: [{ id: 18, name: 'Drama' }], seasons: [
@@ -83,7 +116,7 @@ test('TV details use TV names/dates and retain specials and season summaries', a
     ],
   });
   assert.deepEqual(urls, [
-    'https://api.themoviedb.org/3/tv/1396',
+    'https://api.themoviedb.org/3/tv/1396?append_to_response=credits,videos',
     'https://api.themoviedb.org/3/tv/1396/season/2',
   ]);
 });
@@ -99,12 +132,13 @@ test('missing metadata stays empty and unrated is not presented as zero', async 
     posterUrl: null, backdropUrl: null, rating: null, genres: [], seasons: [],
     nextEpisode: null,
     latestSeason: null,
+    cast: [], crew: [], trailer: null,
   } });
 });
 
 test('a newest-season request failure preserves otherwise valid TV details', async (t) => {
   const response = await request(t, '/details/tv/1', async (url) => {
-    if (String(url) === 'https://api.themoviedb.org/3/tv/1') {
+    if (String(url) === 'https://api.themoviedb.org/3/tv/1?append_to_response=credits,videos') {
       return Response.json({ id: 1, name: 'Example', seasons: [
         { id: 10, name: 'Season 1', season_number: 1, episode_count: 2, air_date: '2026-01-01' },
       ] });

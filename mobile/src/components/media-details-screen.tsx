@@ -5,6 +5,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MovieWatchedControl } from '@/components/movie-watched-control';
+import { DetailExtras } from '@/components/detail-extras';
 import { TvTrackingSection } from '@/components/tv-tracking-section';
 import { formatUkDate } from '@/services/air-date-rules';
 import { DetailsError, fetchDetails, type MediaDetails, type MediaType } from '@/services/details';
@@ -169,6 +170,7 @@ function DetailsContent({ details }: { details: MediaDetails }) {
         <Text accessibilityRole="header" style={styles.heading}>Genres</Text>
         <Text style={styles.body}>{details.genres.length ? details.genres.join(' · ') : 'Genres unavailable'}</Text>
         {details.mediaType === 'TV' && <TvTrackingSection details={details} />}
+        <DetailExtras cast={details.cast} crew={details.crew} trailer={details.trailer} mediaType={details.mediaType} />
         <View style={styles.credits}>
           <Text style={styles.secondary}>Credits</Text>
           <Link href="https://www.themoviedb.org" accessibilityLabel="Visit TMDB">
