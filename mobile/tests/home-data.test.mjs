@@ -20,9 +20,18 @@ const watchlistItems = [{
   posterUrl: null,
 }];
 
-test('loads both local Home collections exactly once', async () => {
+const watchedMovies = [{
+  movieId: 272,
+  title: 'Batman Begins',
+  year: '2005',
+  posterUrl: null,
+  watchedAt: '2026-09-13T12:00:00.000Z',
+}];
+
+test('loads all three local Home collections exactly once', async () => {
   let recentReads = 0;
   let watchlistReads = 0;
+  let movieProgressReads = 0;
   const data = await loadHomeData({
     loadRecentlyViewed: async () => {
       recentReads += 1;
@@ -32,25 +41,33 @@ test('loads both local Home collections exactly once', async () => {
       watchlistReads += 1;
       return watchlistItems;
     },
+    loadMovieProgress: async () => {
+      movieProgressReads += 1;
+      return { status: 'available', records: watchedMovies };
+    },
   });
 
   assert.deepEqual(data, {
     recentlyViewed: { status: 'available', items: recentItems },
     watchlist: { status: 'available', items: watchlistItems },
+    movieProgress: { status: 'available', records: watchedMovies },
   });
   assert.equal(recentReads, 1);
   assert.equal(watchlistReads, 1);
+  assert.equal(movieProgressReads, 1);
 });
 
 test('keeps Recently Viewed available when Watchlist loading fails', async () => {
   const data = await loadHomeData({
     loadRecentlyViewed: async () => ({ status: 'available', items: recentItems }),
     loadWatchlist: async () => { throw new Error('watchlist read failed'); },
+    loadMovieProgress: async () => ({ status: 'available', records: watchedMovies }),
   });
 
   assert.deepEqual(data, {
     recentlyViewed: { status: 'available', items: recentItems },
     watchlist: { status: 'unavailable' },
+    movieProgress: { status: 'available', records: watchedMovies },
   });
 });
 
@@ -58,11 +75,13 @@ test('keeps Watchlist available when Recently Viewed is unavailable', async () =
   const data = await loadHomeData({
     loadRecentlyViewed: async () => ({ status: 'unavailable', reason: 'malformed' }),
     loadWatchlist: async () => watchlistItems,
+    loadMovieProgress: async () => ({ status: 'available', records: watchedMovies }),
   });
 
   assert.deepEqual(data, {
     recentlyViewed: { status: 'unavailable', reason: 'malformed' },
     watchlist: { status: 'available', items: watchlistItems },
+    movieProgress: { status: 'available', records: watchedMovies },
   });
 });
 
@@ -70,10 +89,36 @@ test('converts a rejected Recently Viewed read without affecting Watchlist', asy
   const data = await loadHomeData({
     loadRecentlyViewed: async () => { throw new Error('unexpected read failure'); },
     loadWatchlist: async () => watchlistItems,
+    loadMovieProgress: async () => ({ status: 'available', records: watchedMovies }),
   });
 
   assert.deepEqual(data, {
     recentlyViewed: { status: 'unavailable', reason: 'read-error' },
     watchlist: { status: 'available', items: watchlistItems },
+    movieProgress: { status: 'available', records: watchedMovies },
+  });
+});
+
+test('keeps other Home collections available when movie progress fails', async () => {
+  const malformed = await loadHomeData({
+    loadRecentlyViewed: async () => ({ status: 'available', items: recentItems }),
+    loadWatchlist: async () => watchlistItems,
+    loadMovieProgress: async () => ({ status: 'unavailable', reason: 'malformed' }),
+  });
+  assert.deepEqual(malformed, {
+    recentlyViewed: { status: 'available', items: recentItems },
+    watchlist: { status: 'available', items: watchlistItems },
+    movieProgress: { status: 'unavailable', reason: 'malformed' },
+  });
+
+  const rejected = await loadHomeData({
+    loadRecentlyViewed: async () => ({ status: 'available', items: recentItems }),
+    loadWatchlist: async () => watchlistItems,
+    loadMovieProgress: async () => { throw new Error('movie progress failed'); },
+  });
+  assert.deepEqual(rejected, {
+    recentlyViewed: { status: 'available', items: recentItems },
+    watchlist: { status: 'available', items: watchlistItems },
+    movieProgress: { status: 'unavailable', reason: 'read-error' },
   });
 });

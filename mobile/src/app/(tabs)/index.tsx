@@ -5,6 +5,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { HomePosterCard, type HomePosterItem } from '@/components/home-poster-card';
 import { loadHomeData, type HomeData } from '@/services/home-data';
+import { findWatchedMovie, type WatchedMovie } from '@/services/movie-progress-rules';
+import { loadMovieProgress } from '@/services/movie-progress';
 import { loadRecentlyViewed } from '@/services/recently-viewed';
 import { loadWatchlist } from '@/services/watchlist';
 
@@ -14,7 +16,7 @@ export default function HomeScreen() {
 
   const refresh = useCallback(async () => {
     setLoading(true);
-    setData(await loadHomeData({ loadRecentlyViewed, loadWatchlist }));
+    setData(await loadHomeData({ loadRecentlyViewed, loadWatchlist, loadMovieProgress }));
     setLoading(false);
   }, []);
 
@@ -26,12 +28,17 @@ export default function HomeScreen() {
     ? data.recentlyViewed.items : [];
   const watchlistItems = data?.watchlist.status === 'available'
     ? data.watchlist.items : [];
+  const watchedMovies = data?.movieProgress.status === 'available'
+    ? data.movieProgress.records : [];
   const hasError = data?.recentlyViewed.status === 'unavailable'
-    || data?.watchlist.status === 'unavailable';
+    || data?.watchlist.status === 'unavailable'
+    || data?.movieProgress.status === 'unavailable';
   const showFirstUse = data?.recentlyViewed.status === 'available'
     && data.watchlist.status === 'available'
+    && data.movieProgress.status === 'available'
     && recentItems.length === 0
-    && watchlistItems.length === 0;
+    && watchlistItems.length === 0
+    && watchedMovies.length === 0;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -56,10 +63,19 @@ export default function HomeScreen() {
         {!loading && recentItems.length > 0
           && <PosterRail title="Recently Viewed" items={recentItems} />}
 
+        {!loading && watchedMovies.length > 0
+          && <PosterRail
+            title="Watched Movies"
+            items={watchedMovies.slice(0, 20).map(watchedMovieToPosterItem)}
+            statusLabel="Watched"
+          />}
+
         {!loading && watchlistItems.length > 0
           && <PosterRail
             title="Watchlist"
             items={watchlistItems.slice(0, 10)}
+            getStatusLabel={(item) => item.mediaType === 'Movie'
+              && findWatchedMovie(watchedMovies, item.id) ? 'Watched' : undefined}
             action={<Link href="/watchlist" style={styles.seeAll}>See all</Link>}
           />}
 
@@ -91,10 +107,14 @@ function PosterRail({
   title,
   items,
   action,
+  statusLabel,
+  getStatusLabel,
 }: {
   title: string;
   items: HomePosterItem[];
   action?: ReactNode;
+  statusLabel?: 'Watched' | 'Completed';
+  getStatusLabel?: (item: HomePosterItem) => 'Watched' | 'Completed' | undefined;
 }) {
   return (
     <View style={styles.section}>
@@ -108,11 +128,25 @@ function PosterRail({
         contentContainerStyle={styles.rail}
       >
         {items.map((item) => (
-          <HomePosterCard key={`${item.mediaType}:${item.id}`} item={item} />
+          <HomePosterCard
+            key={`${item.mediaType}:${item.id}`}
+            item={item}
+            statusLabel={statusLabel ?? getStatusLabel?.(item)}
+          />
         ))}
       </ScrollView>
     </View>
   );
+}
+
+function watchedMovieToPosterItem(movie: WatchedMovie): HomePosterItem {
+  return {
+    id: movie.movieId,
+    mediaType: 'Movie',
+    title: movie.title,
+    year: movie.year,
+    posterUrl: movie.posterUrl,
+  };
 }
 
 const styles = StyleSheet.create({
