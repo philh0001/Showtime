@@ -6,17 +6,12 @@ import {
   TabTriggerSlotProps,
   TabListProps,
 } from 'expo-router/ui';
-import { Pressable, StyleSheet, View } from 'react-native';
-
-import { ThemedText } from './themed-text';
-import { ThemedView } from './themed-view';
-
-import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 export default function AppTabs() {
   return (
-    <Tabs>
-      <TabSlot style={{ height: '100%' }} />
+    <Tabs style={styles.container}>
+      <TabSlot style={styles.slot} />
 
       <TabList asChild>
         <CustomTabList>
@@ -47,18 +42,13 @@ export function TabButton({
   ...props
 }: TabTriggerSlotProps) {
   return (
-    <Pressable {...props} style={({ pressed }) => pressed && styles.pressed}>
-      <ThemedView
-        type={isFocused ? 'backgroundSelected' : 'backgroundElement'}
-        style={styles.tabButtonView}
-      >
-        <ThemedText
-          type="small"
-          themeColor={isFocused ? 'text' : 'textSecondary'}
-        >
+    <Pressable {...props} accessibilityRole="tab" accessibilityState={{ selected: isFocused }}
+      style={({ pressed }) => [styles.tabButton, pressed && styles.pressed]}>
+      <View style={[styles.tabButtonView, isFocused && styles.selected]}>
+        <Text style={[styles.tabText, isFocused && styles.selectedText]}>
           {children}
-        </ThemedText>
-      </ThemedView>
+        </Text>
+      </View>
     </Pressable>
   );
 }
@@ -66,45 +56,46 @@ export function TabButton({
 export function CustomTabList(props: TabListProps) {
   return (
     <View {...props} style={styles.tabListContainer}>
-      <ThemedView type="backgroundElement" style={styles.innerContainer}>
-        <ThemedText type="smallBold" style={styles.brandText}>
-          Showtime
-        </ThemedText>
-
+      <View style={styles.innerContainer}>
         {props.children}
-      </ThemedView>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: { flex: 1, minHeight: 0, backgroundColor: '#0B0B0F' },
+  slot: { flex: 1, minHeight: 0 },
   tabListContainer: {
-    position: 'absolute',
     width: '100%',
-    padding: Spacing.three,
+    padding: 8,
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'row',
+    backgroundColor: '#16161B',
+    borderTopColor: '#29292F',
+    borderTopWidth: 1,
   },
   innerContainer: {
-    paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.five,
-    borderRadius: Spacing.five,
     flexDirection: 'row',
     alignItems: 'center',
     flexGrow: 1,
-    gap: Spacing.two,
-    maxWidth: MaxContentWidth,
+    flexShrink: 1,
+    maxWidth: 800,
+    gap: 4,
   },
-  brandText: {
-    marginRight: 'auto',
-  },
+  tabButton: { flex: 1, minWidth: 0 },
+  tabText: { color: '#A7A7B0', fontSize: 13, fontWeight: '600', textAlign: 'center' },
+  selected: { backgroundColor: '#29292F' },
+  selectedText: { color: '#FFFFFF' },
   pressed: {
     opacity: 0.7,
   },
   tabButtonView: {
-    paddingVertical: Spacing.one,
-    paddingHorizontal: Spacing.three,
-    borderRadius: Spacing.three,
+    minHeight: 44,
+    paddingVertical: 12,
+    paddingHorizontal: 4,
+    borderRadius: 8,
+    justifyContent: 'center',
   },
 });

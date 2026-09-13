@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { Link, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import type { MovieProgressLoadResult } from '@/services/movie-progress-rules';
@@ -183,7 +183,7 @@ function WatchlistRow({
           accessibilityRole="link"
           accessibilityLabel={`View ${item.title}, ${item.mediaType}${status === 'watched'
             ? `, ${item.mediaType === 'Movie' ? 'watched' : 'completed'}` : ''}`}
-          style={({ pressed }) => [styles.detailsLink, pressed && styles.dimmed]}
+          style={Platform.OS === 'web' ? styles.detailsLink : ({ pressed }) => [styles.detailsLink, pressed && styles.dimmed]}
         >
           <Artwork item={item} status={status} />
           <View style={styles.rowText}>

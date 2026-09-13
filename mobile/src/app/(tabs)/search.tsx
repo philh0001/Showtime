@@ -162,7 +162,7 @@ function ResultRow({ item }: { item: SearchResult }) {
   const id = item.id.replace(/^(movie|tv)-/, '');
   return (
     <Link href={{ pathname: item.mediaType === 'Movie' ? '/movie/[id]' : '/tv/[id]', params: { id } }} asChild>
-    <Pressable accessibilityRole="link" accessibilityLabel={`View ${item.title}, ${item.mediaType}`} style={({ pressed }) => [styles.row, pressed && styles.dimmed]}>
+    <Pressable accessibilityRole="link" accessibilityLabel={`View ${item.title}, ${item.mediaType}`} style={Platform.OS === 'web' ? styles.row : ({ pressed }) => [styles.row, pressed && styles.dimmed]}>
       {item.posterUrl && !failed
         ? <Image source={{ uri: item.posterUrl }} style={styles.poster} contentFit="cover" onError={() => setFailed(true)} accessibilityLabel={`${item.title} poster`} />
         : <View style={[styles.poster, styles.placeholder]}><Text style={styles.placeholderText}>No poster</Text></View>}
