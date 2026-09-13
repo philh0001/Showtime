@@ -325,20 +325,21 @@ content and completes the first major UI/branding pass.
 - [ ] Establish final Showtime branding
 - [ ] Review typography
 - [ ] Review spacing
-- [ ] Redesign Home for desktop/tablet widths to address unused horizontal space
+- [ ] Redesign Home across iPhone, tablet and desktop to address unused space
 - [ ] Evaluate responsive grids or side-by-side sections for short title lists and upcoming episodes
-- [ ] Define content widths and breakpoints while preserving the compact iPhone layout
+- [ ] Reassess iPhone content density alongside responsive content widths and breakpoints
 - [ ] Verify the design with sparse and populated collections on phone, tablet and desktop
 - [ ] Review poster/card consistency
 - [ ] Review loading/error/empty-state consistency
 - [ ] Simplify the TV tracking layout and reduce visual clutter
 - [ ] Improve accessibility labels where required
 
-Design feedback (13 September): the desktop Home screenshot shows short poster
-rails and episode rows clustered on the left, with large unused areas to the
-right. This is a responsive composition issue, not just excessive vertical
-spacing. Defer further layout changes to this design pass; smaller margins alone
-do not resolve it.
+Design feedback (13 September): the Home screenshot shows short poster rails and
+episode rows clustered on the left, with large unused areas to the right. The
+user confirms the same empty-space issue on iPhone, so this is not desktop-only.
+Review section composition and sparse-list layouts across all screen sizes,
+including iPhone content density. Defer further layout changes to this design
+pass; smaller margins alone do not resolve it.
 
 ### Useful detail enhancements
 
