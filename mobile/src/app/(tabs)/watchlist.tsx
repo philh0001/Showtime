@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { loadMovieProgress } from '@/services/movie-progress';
 import type { ProgressLoadResult } from '@/services/tv-progress-rules';
 import { loadTvProgress } from '@/services/tv-progress';
 import { getWatchlistProgressLabel, loadWatchlistProgressData } from '@/services/watchlist-progress';
@@ -15,15 +16,19 @@ export default function WatchlistScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [removing, setRemoving] = useState<string | null>(null);
-  const [progress, setProgress] = useState<ProgressLoadResult>({ status: 'available', records: [] });
+  const [tvProgress, setTvProgress] = useState<ProgressLoadResult>({ status: 'available', records: [] });
 
   const refresh = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await loadWatchlistProgressData({ loadWatchlist, loadProgress: loadTvProgress });
+      const data = await loadWatchlistProgressData({
+        loadWatchlist,
+        loadTvProgress,
+        loadMovieProgress,
+      });
       setItems(data.items);
-      setProgress(data.progress);
+      setTvProgress(data.tvProgress);
     } catch {
       setError('Could not load your watchlist. Please try again.');
     } finally {
@@ -75,7 +80,7 @@ export default function WatchlistScreen() {
         renderItem={({ item }) => (
           <WatchlistRow
             item={item}
-            progressLabel={getWatchlistProgressLabel(item, progress)}
+            progressLabel={getWatchlistProgressLabel(item, tvProgress)}
             removing={removing === itemKey(item)}
             onRemove={() => void remove(item)}
           />
