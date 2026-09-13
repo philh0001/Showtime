@@ -1,4 +1,10 @@
 import { getServerUrl } from './server-url';
+import {
+  getDeviceLocalIsoDate,
+  parseIsoCalendarDate,
+  selectNextEpisode,
+  type NextEpisode,
+} from './air-date-rules';
 
 export type MediaType = 'movie' | 'tv';
 export type MediaDetails = {
@@ -11,6 +17,8 @@ export type MediaDetails = {
   genres: string[];
   posterUrl: string | null;
   backdropUrl: string | null;
+  nextEpisode: NextEpisode | null;
+  latestSeason: LatestSeason | null;
   seasons: {
     id: number;
     name: string;
@@ -20,7 +28,46 @@ export type MediaDetails = {
   }[];
 };
 
+export type EpisodeSummary = Omit<NextEpisode, 'airDate'> & { airDate: string | null };
+export type LatestSeason = {
+  seasonNumber: number;
+  name: string;
+  episodes: EpisodeSummary[];
+};
+
 export class DetailsError extends Error {}
+
+function normalizeLatestSeason(value: unknown): LatestSeason | null {
+  if (!value || typeof value !== 'object') return null;
+  const season = value as Record<string, unknown>;
+  if (!Number.isSafeInteger(season.seasonNumber) || Number(season.seasonNumber) <= 0
+    || !Array.isArray(season.episodes)) return null;
+  const seasonNumber = Number(season.seasonNumber);
+  const episodes = season.episodes.flatMap((value): EpisodeSummary[] => {
+    if (!value || typeof value !== 'object') return [];
+    const episode = value as Record<string, unknown>;
+    const airDate = episode.airDate === null
+      ? null
+      : parseIsoCalendarDate(episode.airDate) ? String(episode.airDate) : undefined;
+    if (!Number.isSafeInteger(episode.id) || Number(episode.id) <= 0
+      || episode.seasonNumber !== seasonNumber
+      || !Number.isInteger(episode.episodeNumber) || Number(episode.episodeNumber) <= 0
+      || airDate === undefined) return [];
+    return [{
+      id: Number(episode.id),
+      name: typeof episode.name === 'string' && episode.name.trim() ? episode.name.trim() : null,
+      seasonNumber,
+      episodeNumber: Number(episode.episodeNumber),
+      airDate,
+    }];
+  }).sort((a, b) => a.episodeNumber - b.episodeNumber || a.id - b.id);
+  return {
+    seasonNumber,
+    name: typeof season.name === 'string' && season.name.trim()
+      ? season.name.trim() : `Season ${seasonNumber}`,
+    episodes,
+  };
+}
 
 export async function fetchDetails(mediaType: MediaType, id: string, signal: AbortSignal): Promise<MediaDetails> {
   const response = await fetch(`${getServerUrl()}/details/${mediaType}/${encodeURIComponent(id)}`, { signal });
@@ -36,5 +83,11 @@ export async function fetchDetails(mediaType: MediaType, id: string, signal: Abo
     || !Array.isArray(details.genres) || !Array.isArray(details.seasons)) {
     throw new DetailsError('Could not read this title. Please try again.');
   }
-  return details;
+  const todayIso = getDeviceLocalIsoDate();
+  const latestSeason = normalizeLatestSeason(details.latestSeason);
+  return {
+    ...details,
+    latestSeason,
+    nextEpisode: selectNextEpisode(details.nextEpisode, latestSeason?.episodes ?? [], todayIso),
+  };
 }

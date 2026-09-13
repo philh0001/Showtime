@@ -25,18 +25,38 @@ test('movie details use the movie endpoint and return only display fields', asyn
     releaseDate: '2005-06-10', rating: 7.7, genres: ['Action'],
     posterUrl: 'https://image.tmdb.org/t/p/w500/poster.jpg',
     backdropUrl: 'https://image.tmdb.org/t/p/w780/backdrop.jpg', seasons: [],
+    nextEpisode: null,
+    latestSeason: null,
   } });
 });
 
 test('TV details use TV names/dates and retain specials and season summaries', async (t) => {
+  const urls = [];
   const response = await request(t, '/details/tv/1396', async (url) => {
-    if (String(url) !== 'https://api.themoviedb.org/3/tv/1396') return new Response(null, { status: 404 });
-    return Response.json({ id: 1396, name: 'Breaking Bad', first_air_date: '2008-01-20',
-      overview: 'A chemistry teacher changes course.', vote_average: 8.9, vote_count: 200,
-      genres: [{ id: 18, name: 'Drama' }], seasons: [
-        { id: 2, name: 'Season 1', season_number: 1, episode_count: 7, air_date: '2008-01-20' },
-        { id: 1, name: 'Specials', season_number: 0, episode_count: 3, air_date: null },
+    urls.push(String(url));
+    if (String(url) === 'https://api.themoviedb.org/3/tv/1396') {
+      return Response.json({ id: 1396, name: 'Breaking Bad', first_air_date: '2008-01-20',
+        overview: 'A chemistry teacher changes course.', vote_average: 8.9, vote_count: 200,
+        genres: [{ id: 18, name: 'Drama' }], seasons: [
+          { id: 4, name: 'Season 3', season_number: 3, episode_count: 0, air_date: '2010-01-01' },
+          { id: 3, name: ' Season 2 ', season_number: 2, episode_count: 3, air_date: '2009-03-08' },
+          { id: 2, name: 'Season 1', season_number: 1, episode_count: 7, air_date: '2008-01-20' },
+          { id: 1, name: 'Specials', season_number: 0, episode_count: 3, air_date: null },
+        ], next_episode_to_air: {
+          id: 500, name: '  A New Start  ', season_number: 2, episode_number: 1,
+          air_date: '2030-02-28', overview: 'must-not-return', still_path: '/private.jpg',
+        } });
+    }
+    if (String(url) === 'https://api.themoviedb.org/3/tv/1396/season/2') {
+      return Response.json({ id: 3, name: ' Season 2 ', season_number: 2, episodes: [
+        { id: 202, name: ' Second ', season_number: 2, episode_number: 2, air_date: '2009-03-15', overview: 'private' },
+        { id: 201, name: '', season_number: 2, episode_number: 1, air_date: '2009-03-08', still_path: '/private.jpg' },
+        { id: 0, name: 'Malformed', season_number: 2, episode_number: 3, air_date: '2009-03-22' },
+        { id: 204, name: 'Unknown date', season_number: 2, episode_number: 4, air_date: null },
+        { id: 205, name: 'Wrong season', season_number: 1, episode_number: 5, air_date: '2009-04-01' },
       ] });
+    }
+    return new Response(null, { status: 404 });
   });
   assert.equal(response.status, 200);
   const { details } = await response.json();
@@ -46,6 +66,25 @@ test('TV details use TV names/dates and retain specials and season summaries', a
   assert.deepEqual(details.seasons, [
     { id: 1, name: 'Specials', seasonNumber: 0, episodeCount: 3, airDate: null },
     { id: 2, name: 'Season 1', seasonNumber: 1, episodeCount: 7, airDate: '2008-01-20' },
+    { id: 3, name: 'Season 2', seasonNumber: 2, episodeCount: 3, airDate: '2009-03-08' },
+    { id: 4, name: 'Season 3', seasonNumber: 3, episodeCount: 0, airDate: '2010-01-01' },
+  ]);
+  assert.deepEqual(details.nextEpisode, {
+    id: 500, name: 'A New Start', seasonNumber: 2, episodeNumber: 1,
+    airDate: '2030-02-28',
+  });
+  assert.deepEqual(details.latestSeason, {
+    seasonNumber: 2,
+    name: 'Season 2',
+    episodes: [
+      { id: 201, name: null, seasonNumber: 2, episodeNumber: 1, airDate: '2009-03-08' },
+      { id: 202, name: 'Second', seasonNumber: 2, episodeNumber: 2, airDate: '2009-03-15' },
+      { id: 204, name: 'Unknown date', seasonNumber: 2, episodeNumber: 4, airDate: null },
+    ],
+  });
+  assert.deepEqual(urls, [
+    'https://api.themoviedb.org/3/tv/1396',
+    'https://api.themoviedb.org/3/tv/1396/season/2',
   ]);
 });
 
@@ -58,7 +97,55 @@ test('missing metadata stays empty and unrated is not presented as zero', async 
   assert.deepEqual(await response.json(), { details: {
     id: 2, mediaType: 'Movie', title: 'Untitled', releaseDate: null, overview: null,
     posterUrl: null, backdropUrl: null, rating: null, genres: [], seasons: [],
+    nextEpisode: null,
+    latestSeason: null,
   } });
+});
+
+test('a newest-season request failure preserves otherwise valid TV details', async (t) => {
+  const response = await request(t, '/details/tv/1', async (url) => {
+    if (String(url) === 'https://api.themoviedb.org/3/tv/1') {
+      return Response.json({ id: 1, name: 'Example', seasons: [
+        { id: 10, name: 'Season 1', season_number: 1, episode_count: 2, air_date: '2026-01-01' },
+      ] });
+    }
+    throw new Error('season unavailable');
+  });
+
+  assert.equal(response.status, 200);
+  const { details } = await response.json();
+  assert.equal(details.title, 'Example');
+  assert.equal(details.latestSeason, null);
+  assert.equal(details.seasons.length, 1);
+});
+
+test('missing and malformed next episodes are returned as null', async (t) => {
+  const invalidValues = [
+    undefined,
+    { id: 4, name: 'Missing date', season_number: 2, episode_number: 3 },
+    { id: 4, name: 'Impossible date', season_number: 2, episode_number: 3, air_date: '2030-02-30' },
+    { id: 0, name: 'Invalid ID', season_number: 2, episode_number: 3, air_date: '2030-02-28' },
+  ];
+
+  for (const next_episode_to_air of invalidValues) {
+    const response = await request(t, '/details/tv/1', async () => Response.json({
+      id: 1, name: 'Example', seasons: [], next_episode_to_air,
+    }));
+    assert.equal(response.status, 200);
+    assert.equal((await response.json()).details.nextEpisode, null);
+  }
+});
+
+test('server preserves a structurally valid past-dated next episode', async (t) => {
+  const response = await request(t, '/details/tv/1', async () => Response.json({
+    id: 1, name: 'Example', seasons: [], next_episode_to_air: {
+      id: 4, name: null, season_number: 2, episode_number: 3, air_date: '2001-01-01',
+    },
+  }));
+
+  assert.deepEqual((await response.json()).details.nextEpisode, {
+    id: 4, name: null, seasonNumber: 2, episodeNumber: 3, airDate: '2001-01-01',
+  });
 });
 
 test('rejects invalid IDs/types and POST before contacting TMDB', async (t) => {

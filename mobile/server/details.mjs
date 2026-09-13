@@ -2,7 +2,68 @@
 const imageUrl = (path, size) => typeof path === 'string' && /^\/[\w.-]+$/.test(path)
   ? `https://image.tmdb.org/t/p/${size}${path}` : null;
 const textOrNull = (value) => typeof value === 'string' && value.trim() ? value.trim() : null;
-const dateOrNull = (value) => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null;
+const dateOrNull = (value) => {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const [year, month, day] = value.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1
+    && date.getUTCDate() === day ? value : null;
+};
+
+function nextEpisodeOrNull(value) {
+  if (!value || !Number.isSafeInteger(value.id) || value.id <= 0
+    || !Number.isInteger(value.season_number) || value.season_number < 0
+    || !Number.isInteger(value.episode_number) || value.episode_number <= 0) return null;
+  const airDate = dateOrNull(value.air_date);
+  return airDate ? {
+    id: value.id,
+    name: textOrNull(value.name),
+    seasonNumber: value.season_number,
+    episodeNumber: value.episode_number,
+    airDate,
+  } : null;
+}
+
+function episodeOrNull(value, seasonNumber) {
+  if (!value || !Number.isSafeInteger(value.id) || value.id <= 0
+    || value.season_number !== seasonNumber
+    || !Number.isInteger(value.episode_number) || value.episode_number <= 0) return null;
+  return {
+    id: value.id,
+    name: textOrNull(value.name),
+    seasonNumber,
+    episodeNumber: value.episode_number,
+    airDate: dateOrNull(value.air_date),
+  };
+}
+
+async function loadLatestSeason({ tvId, season, token, fetchImpl }) {
+  if (!season) return null;
+  try {
+    const upstream = await fetchImpl(
+      `https://api.themoviedb.org/3/tv/${tvId}/season/${season.seasonNumber}`,
+      {
+        headers: { Authorization: `Bearer ${token}`, accept: 'application/json' },
+        signal: AbortSignal.timeout(10000),
+      },
+    );
+    if (!upstream.ok) return null;
+    const data = await upstream.json();
+    if (!data || data.id !== season.id || data.season_number !== season.seasonNumber
+      || !Array.isArray(data.episodes)) return null;
+    const episodes = data.episodes
+      .map((episode) => episodeOrNull(episode, season.seasonNumber))
+      .filter(Boolean)
+      .sort((a, b) => a.episodeNumber - b.episodeNumber || a.id - b.id);
+    return {
+      seasonNumber: season.seasonNumber,
+      name: textOrNull(data.name) ?? season.name,
+      episodes,
+    };
+  } catch {
+    return null;
+  }
+}
 
 export async function handleDetails({ pathname, method, token, fetchImpl, send }) {
   if (method !== 'GET') return send(405, { error: 'Use GET.' });
@@ -37,6 +98,15 @@ export async function handleDetails({ pathname, method, token, fetchImpl, send }
           airDate: dateOrNull(season.air_date),
         })).sort((a, b) => a.seasonNumber - b.seasonNumber)
       : [];
+    const latestSeasonSummary = [...seasons].reverse().find(
+      (season) => season.seasonNumber > 0 && season.episodeCount !== 0,
+    ) ?? null;
+    const latestSeason = movie ? null : await loadLatestSeason({
+      tvId: data.id,
+      season: latestSeasonSummary,
+      token,
+      fetchImpl,
+    });
     send(200, { details: {
       id: data.id,
       mediaType: movie ? 'Movie' : 'TV',
@@ -49,6 +119,8 @@ export async function handleDetails({ pathname, method, token, fetchImpl, send }
         && data.vote_average >= 0 && data.vote_average <= 10 ? data.vote_average : null,
       genres: Array.isArray(data.genres) ? data.genres.map((genre) => textOrNull(genre?.name)).filter(Boolean) : [],
       seasons,
+      nextEpisode: movie ? null : nextEpisodeOrNull(data.next_episode_to_air),
+      latestSeason,
     } });
   } catch {
     // Do not forward TMDB bodies, credentials or raw network errors.

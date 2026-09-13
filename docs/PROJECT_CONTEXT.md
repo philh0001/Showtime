@@ -2,241 +2,176 @@
 
 ## Overview
 
-Showtime is a mobile app for people who want to track movies and TV shows,
-discover what to watch next, and maintain a personal watchlist.
+Showtime is a mobile app for discovering movies and TV shows, viewing title
+details, maintaining a personal Watchlist, and tracking TV viewing progress.
+It is being built incrementally as a working application and as a portfolio
+project for learning React Native, TypeScript, APIs, persistence, architecture,
+Git, and technical documentation.
 
-The project is being built incrementally as both:
+The Expo application is in `mobile/`. Development currently takes place on
+`setup/foundation`; feature work should not be made directly on `main`.
 
-- a real working application
-- a portfolio project demonstrating mobile development, APIs, Git, documentation,
-  architecture, and later backend/database work
+## Phase status
+
+| Phase | Status |
+| --- | --- |
+| Phase 1 — Foundation | Complete |
+| Phase 2 — Movie & TV Search | Complete |
+| Phase 3 — Content Details | Complete |
+| Phase 4 — Watchlist | Complete |
+| Phase 5 — TV Tracking and Air-Date Countdown | Complete |
+| Phase 6 — Home, Viewing History and Discovery | Active |
+
+Phase 5 has an approved design and a verified local implementation. Phase 6 is
+the current milestone. Future phases and feature checklists belong in
+`docs/ROADMAP.md`.
 
 ## Current technology
 
-The current mobile stack is:
-
-- React Native
-- Expo SDK 57
-- Expo Router
-- TypeScript
+- React Native and TypeScript
+- Expo SDK 57 and Expo Router
 - Expo Go for physical iPhone testing
-- Git
-- GitHub
-- VS Code
+- A computer-only Node server for TMDB requests
+- AsyncStorage for device-local persistence
+- Git and GitHub
 
-The mobile application is located in:
+## Current architecture
 
-`mobile/`
+`iPhone / Expo Go → mobile app → local Node server on port 3001 → TMDB`
 
-## Current Git workflow
+The mobile app calls the local Node server for Search, movie details, TV details,
+and fresh next-episode data. The Node server calls TMDB and returns restricted
+display fields to the app. The mobile source must never import computer-only code
+from `mobile/server/`.
 
-Repository:
+The TMDB API Read Access Token is stored only in the ignored
+`mobile/.env.local` file. It is read by computer-side Node processes, is never
+placed in an `EXPO_PUBLIC_` variable, and must never be hard-coded, logged,
+committed, or bundled into the mobile app.
 
-`showtime`
+## Current application
 
-Current development branch:
-
-`setup/foundation`
-
-Feature work should be completed on branches rather than directly on `main`.
-
-## Current application state
-
-The Expo project has been successfully created and runs on a physical iPhone.
-
-Expo CLI and Expo Go are configured and working.
-
-The generated Expo starter Home screen has been replaced with an initial
-Showtime screen.
-
-The current Home screen contains:
-
-- Showtime branding
-- tagline: "Track what you watch. Discover what's next."
-- Start exploring button
-- dark visual theme
-
-The app currently has four main navigation tabs:
-
-1. Home
-2. Search
-3. Watchlist
-4. Profile
-
-The application has successfully been tested on a physical iPhone using Expo Go.
-
-Lint and TypeScript checks passed after both cleanup passes. Startup and all four
-tabs were then verified on a physical iPhone through Expo Go.
-
-The Expo tutorial route, unused demo components and images, animated startup
-overlay, and reset-project script have been removed. The mobile README now
-documents Showtime setup and verification. Shared navigation/theme helpers remain
-in use. Configured app icons and the native splash image remain placeholders.
-
-Cleanup commits: `4b8863e` and `4de47df` on `setup/foundation`.
-
-## Current development phase
-
-Showtime has entered Phase 2: Movie and TV Search.
-
-The first local TMDB Search and Content Details implementations are verified on
-a physical iPhone through Expo Go.
-
-## Planned core functionality
+The app uses a dark theme and preserves four main tabs: Home, Search, Watchlist,
+and Profile. Movie and TV detail routes open above the tab navigator, and Back
+returns to the previous tab state.
 
 ### Home
 
-The Home screen will eventually provide useful personalised and discovery content,
-such as:
-
-- trending movies and TV shows
-- currently popular content
-- recommendations
-- recently watched or tracked content
-
-The exact Home experience will evolve as the rest of the application is built.
+Home currently provides Showtime branding, the tagline “Track what you watch.
+Discover what's next.”, and a route into Search. Discovery and personalised Home
+content have not been added.
 
 ### Search
 
-Users should be able to search for:
+Search sends title queries through the local Node server and displays first-page
+TMDB movie and TV matches. Each result contains a poster fallback, title, release
+year, and media type. The screen includes loading, error, and no-results states,
+plus TMDB attribution.
 
-- movies
-- TV shows
-
-Search results should display useful information such as:
-
-- poster
-- title
-- release year
-- media type
-
-Selecting a result should open a detailed page for that movie or TV show.
+The five newest successful title searches are remembered locally. Suggestions
+are deduplicated case-insensitively, filter as the user types, can be selected to
+run another search, and can be cleared.
 
 ### Movie and TV details
 
-A content detail screen should eventually include:
+Selecting a Search or Watchlist item opens its dynamic movie or TV route. Details
+include available poster/backdrop artwork, overview, rating, genres, release or
+first-air date, and Watchlist controls. TV details also show seasons and episode
+counts. Loading, retry, invalid-route, missing-data, and artwork fallback states
+are implemented.
 
-- poster/backdrop
-- title
-- description
-- release information
-- rating
-- genres
-- seasons for TV shows
-- watchlist controls
-- watched/tracking controls
+During Phase 5, the server also fetches episode details for the newest relevant
+regular season. Mobile prefers TMDB's shape-validated `next_episode_to_air`
+candidate and falls back to the earliest upcoming episode in that fresh season
+list. It compares ISO dates with the device-local calendar date, discards past
+dates, formats valid dates as UK `DD/MM/YYYY`, and shows `Airs today`, `Airs
+tomorrow`, or `Airs in N days`. TMDB supplies no exact broadcast time, so
+Showtime does not present an hours-and-minutes countdown or claim a UK broadcast
+schedule.
 
 ### Watchlist
 
-Users should be able to save movies and TV shows they want to watch.
+Movie and TV details can add or remove a title from the device-local Watchlist.
+The Watchlist renders stored posters, titles, years, and media types without a
+TMDB request, reopens saved details, supports removal, and includes loading,
+empty, and storage-error states. Saved items persist between app sessions.
 
-The watchlist should eventually persist between app sessions.
-
-### TV tracking
-
-For TV shows, users should eventually be able to track progress.
-
-Initial tracking may be deliberately simple.
-
-For example:
-
-- Season 1
-- Season 2
-- Season 3
-
-More detailed episode-level tracking can be considered later if useful.
+The current layout displays one saved title per row. A denser multi-column layout
+is a later visual refinement recorded in the roadmap.
 
 ### Profile
 
-The Profile section can eventually contain:
+Profile remains a placeholder. Authentication, accounts, settings, and viewing
+statistics have not been introduced.
 
-- user information
-- viewing statistics
-- settings
-- account controls
+## Local persistence
 
-Authentication does not need to be introduced until the app requires it.
+AsyncStorage currently holds:
 
-## Development principles
+- the five most recent successful Search queries
+- the device-local movie and TV Watchlist
+- Phase 5 TV progress under the versioned key `showtime.tv-progress.v2`
 
-Build the smallest useful version of each feature first.
+TV progress stores current trackable regular seasons, watched seasons, and
+per-season episode progress as sorted, unique arrays. Valid v1 season progress
+is migrated into v2 without losing whole-season choices. Watchlist reads that
+local collection once to display season and newest-season episode totals without
+per-title network requests. Progress is independent from Watchlist membership,
+so removing and re-adding a TV show preserves it. Specials remain visible on
+details but are not tracked.
 
-Avoid introducing backend services, authentication, databases, or complex state
-management before they are genuinely required.
+These values are local convenience data, not secure credential storage. No user
+account, database, cloud sync, or multi-device persistence exists.
 
-Prefer simple, understandable architecture.
+## Completed Phase 5 milestone
 
-Important technical decisions should be documented.
+The original TV Tracking and Air-Date Countdown design is in
+`docs/superpowers/specs/2026-09-12-tv-tracking-design.md`. Its approved
+newest-season episode-tracking extension is in
+`docs/superpowers/specs/2026-09-13-latest-season-episode-tracking-design.md`.
 
-Changes should be small enough to understand and verify.
+The completed milestone covers whole-season controls for older seasons, individual
+episode controls for the newest relevant regular season, device-local progress,
+progress totals on TV details and Watchlist, Specials exclusion, v1-to-v2
+migration, and TMDB date-only next-episode copy. Future episodes stay visible but
+disabled. Newest-season completion is derived from its episode progress, while a
+bulk action can mark or clear all episodes that have aired.
 
-## Learning approach
+The implementation passed automated checks, an iOS export, and physical iPhone
+verification through Expo Go.
 
-This project is also being used to learn application development.
+## Current limitations
 
-When introducing concepts such as:
+- TMDB-powered Search, Details, and next-episode refresh require the development
+  PC and local server on port 3001. They will not work independently on the phone
+  until a secured hosted proxy is deployed.
+- The local server is for private development only. It has no production access
+  controls or request limits and must not be exposed publicly.
+- Search returns only TMDB's first results page; pagination is not implemented.
+- Next-episode information is date-only and may not represent a UK broadcaster's
+  schedule or availability.
+- Watchlist, recent searches, and TV progress exist only on the current device.
+- Authentication, accounts, cloud sync, databases, and episode-level tracking
+  for older seasons are not implemented.
+- App icons and the native splash image remain placeholder assets.
 
-- React components
-- React hooks
-- TypeScript
-- APIs
-- asynchronous code
-- routing
-- state management
-- databases
-- authentication
+## Verification baseline
 
-they should be explained clearly rather than introduced as unexplained code.
+Before a milestone is considered complete:
 
-Hands-on development is preferred over long theoretical explanations.
+- Expo lint and TypeScript checks must pass.
+- Relevant automated tests must pass.
+- Expo SDK dependency validation and an iOS export must pass.
+- Exported mobile output must not contain the TMDB credential.
+- The complete user flow, navigation, errors, and persistence must be tested on a
+  physical iPhone through Expo Go.
 
-## Immediate next steps
+Project setup and startup commands belong in `mobile/README.md`. Future work and
+completion checklists belong in `docs/ROADMAP.md`.
 
-The likely next stages are:
+## Development approach
 
-1. Preserve the verified Home, Search, Watchlist and Profile navigation.
-2. Implement TV season tracking.
-3. Add user/profile functionality as required.
-4. Plan a secured hosted search server before public distribution.
-
-These priorities may change as the project develops.
-
-## Phase 2 implementation checkpoint
-
-TMDB developer access and the computer-only search check work. The read access
-token is stored in ignored `mobile/.env.local` and used only by Node scripts.
-The app calls a separate local server on port 3001; it never receives the token.
-Search shows first-page movie/TV matches with title, poster, year and media type,
-plus loading, error and empty states. TMDB credits appear on Search.
-The user verified title search and the empty state on a physical iPhone through
-Expo Go. Lint, TypeScript, five server tests and an iOS export passed. A scan
-confirmed the token was absent from mobile source and exported iOS files.
-Public server deployment and pagination are not implemented.
-See `mobile/README.md` for the two-terminal startup steps.
-
-Recent-search suggestions are implemented with device-local AsyncStorage and
-verified on a physical iPhone. Only the five newest successful title
-queries are retained. The list is case-insensitive for duplicates, filters as
-the user types, and can be cleared from Search. No search history is sent to a
-server until the user runs a search.
-
-## Phase 3 implementation checkpoint
-
-Search results now open dynamic movie or TV routes above the existing tab
-navigator. The four tab URLs remain unchanged, and returning from a detail screen
-should preserve the current Search screen state. Detail pages request fresh TMDB
-data through the same computer-only server and display artwork, overview, rating,
-genres and release information. TV pages also list seasons and episode counts.
-Loading, retry, missing-data and invalid-route states are included. Automated
-server tests, lint, TypeScript and cross-platform export pass. Movie and TV
-details, Back navigation and all four tabs were verified on a physical iPhone.
-
-## Phase 4 implementation checkpoint
-
-Movie and TV detail screens can add or remove a title from a device-local
-watchlist. Saved items contain only the fields required to render the Watchlist
-tab without another TMDB request. The tab reloads when focused, opens saved
-titles back into their detail routes, supports removal, and includes loading,
-empty and storage-error states. AsyncStorage persistence and the complete flow
-were verified on a physical iPhone. The first version displays one title per
-row; a denser multi-column layout is recorded as a future refinement.
+Build the smallest useful version of each feature, keep changes understandable,
+and explain new React Native, TypeScript, API, routing, and persistence concepts
+as they are introduced. Avoid adding backend services, authentication, databases,
+or complex state management until the application needs them.

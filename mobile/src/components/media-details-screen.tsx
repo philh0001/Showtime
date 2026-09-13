@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { TvTrackingSection } from '@/components/tv-tracking-section';
+import { formatUkDate } from '@/services/air-date-rules';
 import { DetailsError, fetchDetails, type MediaDetails, type MediaType } from '@/services/details';
 import { isInWatchlist, type WatchlistItem } from '@/services/watchlist-rules';
 import { addToWatchlist, loadWatchlist, removeFromWatchlist } from '@/services/watchlist';
@@ -154,18 +156,7 @@ function DetailsContent({ details }: { details: MediaDetails }) {
         <Text style={styles.body}>{details.overview ?? 'No description is available yet.'}</Text>
         <Text accessibilityRole="header" style={styles.heading}>Genres</Text>
         <Text style={styles.body}>{details.genres.length ? details.genres.join(' · ') : 'Genres unavailable'}</Text>
-        {details.mediaType === 'TV' && <View>
-          <Text accessibilityRole="header" style={styles.heading}>Seasons</Text>
-          {details.seasons.length ? details.seasons.map((season) => (
-            <View key={season.id} style={styles.season}>
-              <Text style={styles.seasonTitle}>{season.name}</Text>
-              <Text style={styles.secondary}>
-                {season.episodeCount === null ? 'Episode count unknown' : `${season.episodeCount} episode${season.episodeCount === 1 ? '' : 's'}`}
-                {' · '}{season.airDate?.slice(0, 4) ?? 'Year unknown'}
-              </Text>
-            </View>
-          )) : <Text style={styles.body}>Season information is unavailable.</Text>}
-        </View>}
+        {details.mediaType === 'TV' && <TvTrackingSection details={details} />}
         <View style={styles.credits}>
           <Text style={styles.secondary}>Credits</Text>
           <Link href="https://www.themoviedb.org" accessibilityLabel="Visit TMDB">
@@ -190,9 +181,7 @@ function Artwork({ url, label, wide = false }: { url: string | null; label: stri
 }
 
 function formatDate(value: string | null) {
-  if (!value) return 'Unknown';
-  const [year, month, day] = value.split('-');
-  return `${day}/${month}/${year}`;
+  return formatUkDate(value) ?? 'Unknown';
 }
 
 const styles = StyleSheet.create({
@@ -210,8 +199,6 @@ const styles = StyleSheet.create({
   heading: { color: '#FFFFFF', fontSize: 21, fontWeight: '700', marginTop: 24, marginBottom: 12 },
   body: { color: '#FFFFFF', fontSize: 16, lineHeight: 25 },
   secondary: { color: '#A7A7B0', fontSize: 14, lineHeight: 22 },
-  season: { gap: 4, paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#393940' },
-  seasonTitle: { color: '#FFFFFF', fontSize: 17, fontWeight: '600' },
   retry: { backgroundColor: '#FFFFFF', borderRadius: 12, paddingHorizontal: 20, paddingVertical: 14 },
   retryText: { color: '#0B0B0F', fontSize: 16, fontWeight: '700' },
   watchlistButton: { backgroundColor: '#FFFFFF', borderRadius: 12, paddingHorizontal: 20, paddingVertical: 14, alignItems: 'center' },

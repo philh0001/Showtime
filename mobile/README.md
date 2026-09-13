@@ -3,8 +3,8 @@
 A movie and TV tracking app built with Expo SDK 57, React Native and TypeScript.
 The foundation currently includes Home, Search, Watchlist and Profile tabs.
 Search displays movie and TV titles, posters, years and media types using TMDB.
-The first device-local Watchlist version is implemented. Account functionality
-is planned.
+The device-local Watchlist is verified, and the first TV season-tracking version
+is implemented. Account functionality is planned.
 
 ## Run locally
 
@@ -28,7 +28,7 @@ For the browser version, run `npm run web`.
 - `src/components/app-tabs.tsx`: Native tab navigation.
 - `src/components/app-tabs.web.tsx`: Browser tab navigation.
 - `src/components`, `src/hooks`, `src/constants`: Shared UI and theme helpers.
-- `src/services`: Mobile requests plus local search-history and watchlist storage.
+- `src/services`: Mobile requests plus local search-history, watchlist and TV-progress storage.
 - `server/`: Computer-only TMDB proxy and its tests. Never import into `src/`.
 
 Expo Router uses files in `src/app` to define routes. The `.web.tsx` suffix
@@ -42,6 +42,7 @@ npx tsc --noEmit
 npm run test:search
 npm run test:history
 npm run test:watchlist
+npm run test:tracking
 ```
 
 Then reload in Expo Go and check Home, Search, Watchlist and Profile. Check the
@@ -91,6 +92,29 @@ render saved titles without another TMDB request. Open a saved row to revisit it
 details, or use **Remove** on either screen. Close and reopen Expo Go to verify
 that saved titles persist. The first version displays one saved title per row;
 a denser layout is planned as a later visual refinement.
+
+## TV tracking
+
+Open a TV detail screen to refresh its season and next-episode data. The newest
+relevant regular season loads its episode list, appears first with a clear badge,
+and supports individual watched controls for episodes that have aired. Future and
+undated episodes remain visible but disabled. Older regular seasons keep their
+whole-season controls, and Specials remain visible but untracked.
+
+The next-episode card prefers TMDB's series-level candidate and falls back to the
+earliest upcoming episode in the freshly loaded newest season. Dates use the
+device's local calendar date for `Airs today`, `Airs tomorrow`, or `Airs in N
+days`, and display in UK `DD/MM/YYYY` format. Future seasons show their exact
+`Starts DD/MM/YYYY` date. TMDB supplies a date without an exact broadcast time,
+so the app does not show an hours-and-minutes countdown or claim a UK broadcast
+schedule.
+
+Progress persists under `showtime.tv-progress.v2`; valid v1 whole-season progress
+is preserved during migration. The per-season episode shape can later support
+older seasons without another storage rewrite. Progress remains independent from
+Watchlist membership, so removing and later re-adding a TV show preserves it.
+Watchlist progress uses local data only; opening TV details refreshes a show's
+season and episode metadata.
 
 `npm run search:tmdb -- "Batman"` is the independent computer-only API check.
 

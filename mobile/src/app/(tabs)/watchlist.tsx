@@ -4,6 +4,9 @@ import { useCallback, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import type { ProgressLoadResult } from '@/services/tv-progress-rules';
+import { loadTvProgress } from '@/services/tv-progress';
+import { getWatchlistProgressLabel, loadWatchlistProgressData } from '@/services/watchlist-progress';
 import type { WatchlistItem } from '@/services/watchlist-rules';
 import { loadWatchlist, removeFromWatchlist } from '@/services/watchlist';
 
@@ -12,12 +15,15 @@ export default function WatchlistScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [removing, setRemoving] = useState<string | null>(null);
+  const [progress, setProgress] = useState<ProgressLoadResult>({ status: 'available', records: [] });
 
   const refresh = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      setItems(await loadWatchlist());
+      const data = await loadWatchlistProgressData({ loadWatchlist, loadProgress: loadTvProgress });
+      setItems(data.items);
+      setProgress(data.progress);
     } catch {
       setError('Could not load your watchlist. Please try again.');
     } finally {
@@ -69,6 +75,7 @@ export default function WatchlistScreen() {
         renderItem={({ item }) => (
           <WatchlistRow
             item={item}
+            progressLabel={getWatchlistProgressLabel(item, progress)}
             removing={removing === itemKey(item)}
             onRemove={() => void remove(item)}
           />
@@ -81,10 +88,12 @@ export default function WatchlistScreen() {
 
 function WatchlistRow({
   item,
+  progressLabel,
   removing,
   onRemove,
 }: {
   item: WatchlistItem;
+  progressLabel: string | null;
   removing: boolean;
   onRemove: () => void;
 }) {
@@ -106,6 +115,7 @@ function WatchlistRow({
           <View style={styles.rowText}>
             <Text style={styles.itemTitle} numberOfLines={2}>{item.title}</Text>
             <Text style={styles.subtitle}>{item.year ?? 'Year unknown'} · {item.mediaType}</Text>
+            {progressLabel && <Text style={styles.progress}>{progressLabel}</Text>}
           </View>
         </Pressable>
       </Link>
@@ -162,6 +172,7 @@ const styles = StyleSheet.create({
   posterFallback: { color: '#A7A7B0', fontSize: 12, textAlign: 'center' },
   rowText: { flex: 1, gap: 6 },
   itemTitle: { color: '#FFFFFF', fontSize: 18, fontWeight: '700' },
+  progress: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
   removeButton: { alignSelf: 'flex-end', paddingHorizontal: 4, paddingVertical: 8 },
   removeText: { color: '#FF8A8A', fontSize: 15, fontWeight: '600' },
   separator: { height: StyleSheet.hairlineWidth, backgroundColor: '#393940', marginVertical: 18 },
