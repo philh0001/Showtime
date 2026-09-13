@@ -45,7 +45,8 @@
     "test:search": "node --test server/search.test.mjs server/details.test.mjs",
     "test:history": "node --no-warnings=ExperimentalWarning --experimental-strip-types --test tests/search-history-rules.test.mjs",
     "test:watchlist": "node --no-warnings=ExperimentalWarning --experimental-strip-types --test tests/watchlist-rules.test.mjs",
-    "test:tracking": "node --no-warnings=ExperimentalWarning --experimental-strip-types --test tests/air-date-rules.test.mjs tests/tv-progress-rules.test.mjs tests/watchlist-progress.test.mjs"
+    "test:tracking": "node --no-warnings=ExperimentalWarning --experimental-strip-types --test tests/air-date-rules.test.mjs tests/tv-progress-rules.test.mjs tests/watchlist-progress.test.mjs",
+    "test:home": "node --no-warnings=ExperimentalWarning --experimental-strip-types --test tests/recently-viewed-rules.test.mjs tests/home-data.test.mjs"
   },
   "private": true
 }
