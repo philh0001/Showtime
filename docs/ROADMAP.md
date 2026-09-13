@@ -217,17 +217,17 @@ Future refinement:
 
 Status: Current milestone
 
-The current Home screen is still an early placeholder. Replace it with a useful
-Showtime dashboard.
+Home now has its first local dashboard. Continue expanding it with viewing
+activity, upcoming episodes, and discovery content.
 
 ### Home dashboard
 
-- [ ] Redesign the Home screen
-- [ ] Add Showtime header/branding
-- [ ] Add useful first-use/empty state
-- [ ] Add quick access to Search
-- [ ] Use poster-based horizontal content rails
-- [ ] Add consistent card and spacing design
+- [x] Redesign the Home screen
+- [x] Add Showtime header/branding
+- [x] Add useful first-use/empty state
+- [x] Add quick access to Search
+- [x] Use poster-based horizontal content rails
+- [x] Add consistent card and spacing design
 
 ### Continue Watching
 
@@ -248,8 +248,9 @@ Showtime dashboard.
 - [ ] Add viewing history
 - [ ] Record watched movies
 - [ ] Record TV progress/activity
-- [ ] Add Recently Viewed titles
-- [ ] Persist history locally
+- [x] Add Recently Viewed titles
+- [x] Persist Recently Viewed locally
+- [ ] Persist full viewing history locally
 
 ### Upcoming episodes
 
@@ -260,8 +261,8 @@ Showtime dashboard.
 
 ### Watchlist preview
 
-- [ ] Add horizontal Watchlist preview
-- [ ] Add See All navigation into the full Watchlist
+- [x] Add horizontal Watchlist preview
+- [x] Add See All navigation into the full Watchlist
 
 ### Discovery
 
@@ -273,11 +274,12 @@ Showtime dashboard.
 
 ### Verification
 
-- [ ] Verify Home updates after Watchlist changes
+- [x] Verify Home updates after Watchlist changes
+- [x] Verify Recently Viewed ordering and persistence
 - [ ] Verify Home updates after TV tracking changes
 - [ ] Verify Home updates after movie watched changes
 - [ ] Verify useful empty/new-user state
-- [ ] Verify Home on physical iPhone
+- [x] Verify Home on physical iPhone
 
 ---
 

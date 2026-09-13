@@ -3,7 +3,8 @@
 ## Overview
 
 Showtime is a mobile app for discovering movies and TV shows, viewing title
-details, maintaining a personal Watchlist, and tracking TV viewing progress.
+details, maintaining a personal Watchlist, tracking TV viewing progress, and
+returning to recently viewed titles from Home.
 It is being built incrementally as a working application and as a portfolio
 project for learning React Native, TypeScript, APIs, persistence, architecture,
 Git, and technical documentation.
@@ -57,9 +58,12 @@ returns to the previous tab state.
 
 ### Home
 
-Home currently provides Showtime branding, the tagline “Track what you watch.
-Discover what's next.”, and a route into Search. Discovery and personalised Home
-content have not been added.
+Home is a device-local dashboard with Showtime branding, a Search shortcut,
+horizontal Recently Viewed and Watchlist rails, poster fallbacks, and a useful
+first-use state. It refreshes both local collections whenever the tab gains focus
+and keeps either section usable if the other storage read fails. Home makes no
+TMDB or local-server request while loading. Continue Watching, Upcoming Episodes,
+Trending content, and personalised discovery have not been added.
 
 ### Search
 
@@ -79,6 +83,10 @@ include available poster/backdrop artwork, overview, rating, genres, release or
 first-air date, and Watchlist controls. TV details also show seasons and episode
 counts. Loading, retry, invalid-route, missing-data, and artwork fallback states
 are implemented.
+
+A successfully displayed movie or TV detail is recorded in Recently Viewed.
+That non-blocking local write is independent from Watchlist membership and
+watched progress; a storage failure never prevents the detail screen loading.
 
 During Phase 5, the server also fetches episode details for the newest relevant
 regular season. Mobile prefers TMDB's shape-validated `next_episode_to_air`
@@ -111,6 +119,11 @@ AsyncStorage currently holds:
 - the five most recent successful Search queries
 - the device-local movie and TV Watchlist
 - Phase 5 TV progress under the versioned key `showtime.tv-progress.v2`
+- the 20 most recently opened titles under `showtime.recently-viewed.v1`
+
+Recently Viewed stores the title, poster, year, media type, and view timestamp.
+Reopening a title replaces its display snapshot and moves it to the front. Movie
+and TV records with the same TMDB ID remain separate.
 
 TV progress stores current trackable regular seasons, watched seasons, and
 per-season episode progress as sorted, unique arrays. Valid v1 season progress
@@ -140,6 +153,19 @@ bulk action can mark or clear all episodes that have aired.
 The implementation passed automated checks, an iOS export, and physical iPhone
 verification through Expo Go.
 
+## Current Phase 6 milestone
+
+The first Phase 6 increment replaces the placeholder Home screen and establishes
+versioned Recently Viewed storage. Its approved design is in
+`docs/superpowers/specs/2026-09-13-home-recently-viewed-design.md`.
+
+The implementation records successful detail views, loads Home collections from
+AsyncStorage only, and displays Recently Viewed and Watchlist poster rails. It
+provides the local title metadata that Continue Watching can later join to TV
+progress without changing either storage schema. The dashboard, poster rails,
+navigation, focus refresh, and persistence were verified on a physical iPhone
+through Expo Go.
+
 ## Current limitations
 
 - TMDB-powered Search, Details, and next-episode refresh require the development
@@ -150,7 +176,8 @@ verification through Expo Go.
 - Search returns only TMDB's first results page; pagination is not implemented.
 - Next-episode information is date-only and may not represent a UK broadcaster's
   schedule or availability.
-- Watchlist, recent searches, and TV progress exist only on the current device.
+- Watchlist, recent searches, Recently Viewed, and TV progress exist only on the
+  current device.
 - Authentication, accounts, cloud sync, databases, and episode-level tracking
   for older seasons are not implemented.
 - App icons and the native splash image remain placeholder assets.

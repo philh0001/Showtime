@@ -3,8 +3,8 @@
 A movie and TV tracking app built with Expo SDK 57, React Native and TypeScript.
 The foundation currently includes Home, Search, Watchlist and Profile tabs.
 Search displays movie and TV titles, posters, years and media types using TMDB.
-The device-local Watchlist is verified, and the first TV season-tracking version
-is implemented. Account functionality is planned.
+The device-local Watchlist and TV tracking are implemented. Home includes local
+Recently Viewed and Watchlist poster rails. Account functionality is planned.
 
 ## Run locally
 
@@ -28,7 +28,7 @@ For the browser version, run `npm run web`.
 - `src/components/app-tabs.tsx`: Native tab navigation.
 - `src/components/app-tabs.web.tsx`: Browser tab navigation.
 - `src/components`, `src/hooks`, `src/constants`: Shared UI and theme helpers.
-- `src/services`: Mobile requests plus local search-history, watchlist and TV-progress storage.
+- `src/services`: Mobile requests plus local search-history, watchlist, Recently Viewed and TV-progress storage.
 - `server/`: Computer-only TMDB proxy and its tests. Never import into `src/`.
 
 Expo Router uses files in `src/app` to define routes. The `.web.tsx` suffix
@@ -43,6 +43,7 @@ npm run test:search
 npm run test:history
 npm run test:watchlist
 npm run test:tracking
+npm run test:home
 ```
 
 Then reload in Expo Go and check Home, Search, Watchlist and Profile. Check the
@@ -92,6 +93,20 @@ render saved titles without another TMDB request. Open a saved row to revisit it
 details, or use **Remove** on either screen. Close and reopen Expo Go to verify
 that saved titles persist. The first version displays one saved title per row;
 a denser layout is planned as a later visual refinement.
+
+## Home and Recently Viewed
+
+Home loads its Recently Viewed and Watchlist rails from AsyncStorage whenever the
+tab gains focus. It makes no TMDB request while loading. Use **Search movies and
+TV** to find a title, open its detail page successfully, then return Home to see
+it at the front of Recently Viewed. Opening a card refreshes its normal detail
+route; **See all** opens the full Watchlist.
+
+Recently Viewed keeps the 20 newest movie and TV detail snapshots under
+`showtime.recently-viewed.v1`. Reopening a title updates its poster/title fields
+and moves it to the front. This activity is independent from Watchlist and
+watched status. A failed history write does not block Details, and a failed Home
+collection read does not hide the other successfully loaded collection.
 
 ## TV tracking
 
