@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import {
   addRecentlyViewedItem,
+  createRecentlyViewedSnapshot,
   parseRecentlyViewed,
 } from '../src/services/recently-viewed-rules.ts';
 import {
@@ -17,6 +18,29 @@ const movie = {
   year: '1995',
   posterUrl: 'https://image.tmdb.org/t/p/w500/seven.jpg',
 };
+
+test('creates a recently viewed snapshot from restricted detail fields', () => {
+  assert.deepEqual(createRecentlyViewedSnapshot({
+    id: 44006,
+    mediaType: 'TV',
+    title: 'Chicago Fire',
+    releaseDate: '2012-10-10',
+    posterUrl: 'https://image.tmdb.org/t/p/w500/poster.jpg',
+  }), {
+    id: 44006,
+    mediaType: 'TV',
+    title: 'Chicago Fire',
+    year: '2012',
+    posterUrl: 'https://image.tmdb.org/t/p/w500/poster.jpg',
+  });
+  assert.equal(createRecentlyViewedSnapshot({
+    id: 1,
+    mediaType: 'Movie',
+    title: 'Unknown date',
+    releaseDate: null,
+    posterUrl: null,
+  }).year, null);
+});
 
 test('missing storage and a valid empty array mean no recently viewed titles', () => {
   assert.deepEqual(parseRecentlyViewed(null), { status: 'available', items: [] });

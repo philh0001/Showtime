@@ -16,6 +16,22 @@ export type RecentlyViewedLoadResult =
   | { status: 'available'; items: RecentlyViewedItem[] }
   | { status: 'unavailable'; reason: 'malformed' | 'read-error' };
 
+export function createRecentlyViewedSnapshot(details: {
+  id: number;
+  mediaType: 'Movie' | 'TV';
+  title: string;
+  releaseDate: string | null;
+  posterUrl: string | null;
+}): RecentlyViewedSnapshot {
+  return {
+    id: details.id,
+    mediaType: details.mediaType,
+    title: details.title,
+    year: details.releaseDate?.slice(0, 4) ?? null,
+    posterUrl: details.posterUrl,
+  };
+}
+
 function itemKey(item: Pick<RecentlyViewedItem, 'id' | 'mediaType'>) {
   return `${item.mediaType}:${item.id}`;
 }

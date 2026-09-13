@@ -7,6 +7,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { TvTrackingSection } from '@/components/tv-tracking-section';
 import { formatUkDate } from '@/services/air-date-rules';
 import { DetailsError, fetchDetails, type MediaDetails, type MediaType } from '@/services/details';
+import { createRecentlyViewedSnapshot } from '@/services/recently-viewed-rules';
+import { recordRecentlyViewed } from '@/services/recently-viewed';
 import { isInWatchlist, type WatchlistItem } from '@/services/watchlist-rules';
 import { addToWatchlist, loadWatchlist, removeFromWatchlist } from '@/services/watchlist';
 
@@ -85,6 +87,10 @@ function DetailsContent({ details }: { details: MediaDetails }) {
   const [saved, setSaved] = useState<boolean | null>(null);
   const [saving, setSaving] = useState(false);
   const [watchlistError, setWatchlistError] = useState<string | null>(null);
+
+  useEffect(() => {
+    void recordRecentlyViewed(createRecentlyViewedSnapshot(details)).catch(() => undefined);
+  }, [details]);
 
   useEffect(() => {
     let active = true;
