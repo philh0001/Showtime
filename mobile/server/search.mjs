@@ -1,7 +1,9 @@
 // Server-only: never import this module into src/.
 import { handleDetails } from './details.mjs';
+import { createDiscoveryHandler } from './discovery.mjs';
 
 export function createSearchHandler({ token, fetchImpl = fetch }) {
+  const handleDiscovery = createDiscoveryHandler({ token, fetchImpl });
   return async (request, response) => {
     const send = (status, body) => {
       response.writeHead(status, {
@@ -14,6 +16,7 @@ export function createSearchHandler({ token, fetchImpl = fetch }) {
     };
     try {
       const incoming = new URL(request.url, 'http://localhost');
+      if (incoming.pathname === '/discovery') return await handleDiscovery({ method: request.method, send });
       if (incoming.pathname.startsWith('/details/')) {
         return await handleDetails({ pathname: incoming.pathname, method: request.method, token, fetchImpl, send });
       }
