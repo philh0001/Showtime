@@ -11,6 +11,7 @@ import { DetailsError, fetchDetails, type MediaDetails, type MediaType } from '@
 import { createWatchedMovieSnapshot } from '@/services/movie-progress-rules';
 import { createRecentlyViewedSnapshot } from '@/services/recently-viewed-rules';
 import { recordRecentlyViewed } from '@/services/recently-viewed';
+import { recordTvSchedule } from '@/services/tv-schedule';
 import { isInWatchlist, type WatchlistItem } from '@/services/watchlist-rules';
 import { addToWatchlist, loadWatchlist, removeFromWatchlist } from '@/services/watchlist';
 
@@ -92,6 +93,7 @@ function DetailsContent({ details }: { details: MediaDetails }) {
 
   useEffect(() => {
     void recordRecentlyViewed(createRecentlyViewedSnapshot(details)).catch(() => undefined);
+    void recordTvSchedule(details).catch(() => undefined);
   }, [details]);
 
   useEffect(() => {
