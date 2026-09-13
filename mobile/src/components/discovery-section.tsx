@@ -62,9 +62,9 @@ export function DiscoverySection() {
 }
 
 const styles = StyleSheet.create({
-  container: { marginTop: 32, gap: 32 },
-  section: { gap: 14 },
-  title: { color: '#FFFFFF', fontSize: 22, fontWeight: '800' },
+  container: { marginTop: 20, gap: 24 },
+  section: { gap: 10 },
+  title: { color: '#FFFFFF', fontSize: 20, fontWeight: '800' },
   rail: { gap: 14, paddingRight: 24 },
   secondary: { color: '#A7A7B0', fontSize: 14, lineHeight: 21 },
   errorGroup: { alignItems: 'flex-start', gap: 4 },

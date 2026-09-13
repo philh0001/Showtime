@@ -51,7 +51,7 @@ export function ProfileSettings() {
 }
 
 const styles = StyleSheet.create({
-  section: { marginTop: 20, paddingTop: 24, borderTopWidth: 1, borderTopColor: '#29292F', gap: 14 },
+  section: { marginTop: 12, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#29292F', gap: 10 },
   heading: { color: '#FFFFFF', fontSize: 22, fontWeight: '700' },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 16, paddingVertical: 8 },
   label: { color: '#DDDEE3', fontSize: 16, flexShrink: 1 },

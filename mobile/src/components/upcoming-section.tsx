@@ -50,9 +50,9 @@ export function UpcomingSection({ watchlist, progress, cache, onRetry }: {
 }
 
 const styles = StyleSheet.create({
-  section: { marginTop: 32, gap: 14 },
-  heading: { color: '#FFFFFF', fontSize: 22, fontWeight: '800' },
-  row: { flexDirection: 'row', gap: 14, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#29292F' },
+  section: { marginTop: 20, gap: 10 },
+  heading: { color: '#FFFFFF', fontSize: 20, fontWeight: '800' },
+  row: { flexDirection: 'row', gap: 14, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#29292F' },
   poster: { width: 64, height: 96, borderRadius: 8, backgroundColor: '#212225', overflow: 'hidden' },
   details: { flex: 1, gap: 4 },
   title: { color: '#FFFFFF', fontSize: 16, fontWeight: '700', lineHeight: 22 },

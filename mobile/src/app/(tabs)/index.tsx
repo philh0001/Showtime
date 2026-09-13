@@ -59,7 +59,6 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.logo}>SHOWTIME</Text>
-        <Text style={styles.tagline}>Track what you watch. Discover what&apos;s next.</Text>
         <Link href="/search" asChild>
           <Pressable
             accessibilityRole="link"
@@ -148,7 +147,8 @@ function PosterRail({
         <Text accessibilityRole="header" style={styles.sectionTitle}>{title}</Text>
         {action}
       </View>
-      <ScrollView
+      {items.length === 1 ? <HomePosterCard item={items[0]} compact
+        statusLabel={statusLabel ?? getStatusLabel?.(items[0])} progress={getProgress?.(items[0])} /> : <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.rail}
@@ -161,7 +161,7 @@ function PosterRail({
             progress={getProgress?.(item)}
           />
         ))}
-      </ScrollView>
+      </ScrollView>}
     </View>
   );
 }
@@ -178,26 +178,25 @@ function watchedMovieToPosterItem(movie: WatchedMovie): HomePosterItem {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0B0B0F' },
-  content: { paddingHorizontal: 24, paddingTop: 20, paddingBottom: 40 },
-  logo: { color: '#FFFFFF', fontSize: 34, fontWeight: '800', letterSpacing: 4 },
-  tagline: { color: '#A7A7B0', fontSize: 17, lineHeight: 25, marginTop: 8 },
+  content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 24 },
+  logo: { color: '#FFFFFF', fontSize: 28, fontWeight: '800', letterSpacing: 0 },
   searchButton: {
     alignSelf: 'flex-start',
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    marginTop: 24,
+    marginTop: 12,
     paddingHorizontal: 20,
     paddingVertical: 13,
   },
   searchButtonText: { color: '#0B0B0F', fontSize: 15, fontWeight: '700' },
   message: { minHeight: 180, gap: 14, alignItems: 'center', justifyContent: 'center' },
   secondary: { color: '#A7A7B0', fontSize: 15, lineHeight: 22 },
-  section: { marginTop: 32, gap: 14 },
+  section: { marginTop: 20, gap: 10 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  sectionTitle: { color: '#FFFFFF', fontSize: 22, fontWeight: '800' },
+  sectionTitle: { color: '#FFFFFF', fontSize: 20, fontWeight: '800' },
   seeAll: { color: '#FFFFFF', fontSize: 15, fontWeight: '700', paddingVertical: 8 },
   rail: { gap: 14, paddingRight: 24 },
-  firstUse: { backgroundColor: '#16161B', borderRadius: 14, gap: 8, marginTop: 32, padding: 20 },
+  firstUse: { gap: 6, marginTop: 20, paddingVertical: 8 },
   emptyTitle: { color: '#FFFFFF', fontSize: 19, fontWeight: '700' },
   errorCard: { alignItems: 'flex-start', gap: 12, marginTop: 28 },
   error: { color: '#FF8A8A', fontSize: 14 },

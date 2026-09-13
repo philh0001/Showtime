@@ -16,10 +16,12 @@ export function HomePosterCard({
   item,
   statusLabel,
   progress,
+  compact = false,
 }: {
   item: HomePosterItem;
   statusLabel?: 'Watched' | 'Completed';
   progress?: ViewingProgress;
+  compact?: boolean;
 }) {
   const [imageFailed, setImageFailed] = useState(false);
   return (
@@ -33,9 +35,10 @@ export function HomePosterCard({
       <Pressable
         accessibilityRole="link"
         accessibilityLabel={`Open ${item.title}, ${item.mediaType}${statusLabel ? `, ${statusLabel.toLowerCase()}` : ''}`}
-        style={Platform.OS === 'web' ? styles.card : ({ pressed }) => [styles.card, pressed && styles.pressed]}
+        style={Platform.OS === 'web' ? StyleSheet.flatten([styles.card, compact && styles.compactCard])
+          : ({ pressed }) => [styles.card, compact && styles.compactCard, pressed && styles.pressed]}
       >
-        <View style={styles.poster}>
+        <View style={[styles.poster, compact && styles.compactPoster]}>
           <View style={[styles.posterContent, statusLabel && styles.watchedPoster]}>
             {item.posterUrl && !imageFailed
               ? <Image
@@ -47,14 +50,16 @@ export function HomePosterCard({
               />
               : <Text style={styles.fallback}>No poster</Text>}
           </View>
-          {statusLabel && <View style={styles.statusBadge}>
+          {statusLabel && !compact && <View style={styles.statusBadge}>
             <Text style={styles.statusBadgeText}>{statusLabel}</Text>
           </View>}
         </View>
+        <View style={[styles.info, compact && styles.compactInfo]}>
         <Text numberOfLines={2} style={styles.title}>{item.title}</Text>
         <Text numberOfLines={1} style={styles.meta}>
           {item.year ?? 'Year unknown'} · {item.mediaType}
         </Text>
+        {compact && statusLabel && <Text style={styles.compactStatus}>{statusLabel}</Text>}
         {progress && <View style={styles.progressGroup}>
           <View
             accessibilityRole="progressbar"
@@ -70,6 +75,7 @@ export function HomePosterCard({
           </View>
           <Text style={styles.meta}>{progress.watched} of {progress.total} seasons</Text>
         </View>}
+        </View>
       </Pressable>
     </Link>
   );
@@ -77,6 +83,11 @@ export function HomePosterCard({
 
 const styles = StyleSheet.create({
   card: { width: 126, gap: 6 },
+  info: { gap: 6 },
+  compactCard: { width: '100%', flexDirection: 'row', alignItems: 'center', gap: 14 },
+  compactPoster: { width: 72, height: 108, borderRadius: 8 },
+  compactInfo: { flex: 1, gap: 8 },
+  compactStatus: { color: '#63D7BA', fontSize: 12, fontWeight: '700' },
   progressGroup: { gap: 6, marginTop: 3 },
   progressTrack: { height: 4, backgroundColor: '#38383F', borderRadius: 2, overflow: 'hidden' },
   progressFill: { height: 4, backgroundColor: '#63D7BA' },
