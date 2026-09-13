@@ -52,6 +52,7 @@ export default function ProfileScreen() {
           </Pressable>
         </View>}
         <Link href="/watchlist" style={styles.navigation}>Watchlist</Link>
+        <Link href="/history" style={styles.navigation}>Viewing history</Link>
         <ProfileSettings />
         <View style={styles.about}>
           <Text accessibilityRole="header" style={styles.heading}>About Showtime</Text>

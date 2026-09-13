@@ -90,6 +90,7 @@ export default function HomeScreen() {
             title="Watched Movies"
             items={watchedMovies.slice(0, 20).map(watchedMovieToPosterItem)}
             statusLabel="Watched"
+            action={<Link href="/history" style={styles.seeAll}>History</Link>}
           />}
 
         {!loading && watchlistItems.length > 0

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import {
@@ -27,6 +27,9 @@ import {
   setTvSeasonWatched,
   synchronizeTvTracking,
 } from '@/services/tv-progress';
+import { createRecentlyViewedSnapshot } from '@/services/recently-viewed-rules';
+import { recordViewingActivity } from '@/services/viewing-activity';
+import type { ViewingAction } from '@/services/viewing-activity-rules';
 
 type TrackingState =
   | { status: 'loading' }
@@ -37,6 +40,7 @@ export function TvTrackingSection({ details }: { details: MediaDetails }) {
   const [tracking, setTracking] = useState<TrackingState>({ status: 'loading' });
   const [savingKey, setSavingKey] = useState<string | null>(null);
   const [trackingError, setTrackingError] = useState<string | null>(null);
+  const busy = useRef(false);
   const todayIso = getDeviceLocalIsoDate();
   const trackableSeasons = useMemo(
     () => deriveTrackableSeasonNumbers(details.seasons, todayIso),
@@ -80,8 +84,10 @@ export function TvTrackingSection({ details }: { details: MediaDetails }) {
     optimistic: TvProgress[],
     write: () => Promise<TvProgress[]>,
     errorMessage: string,
+    action: ViewingAction,
   ) {
-    if (tracking.status !== 'ready' || savingKey !== null) return;
+    if (tracking.status !== 'ready' || busy.current) return;
+    busy.current = true;
     const previous = tracking.records;
     setTracking({ status: 'ready', records: optimistic });
     setSavingKey(key);
@@ -89,6 +95,11 @@ export function TvTrackingSection({ details }: { details: MediaDetails }) {
     const outcome = await commitTvProgressChange(previous, write);
     setTracking({ status: 'ready', records: outcome.records });
     if (!outcome.saved) setTrackingError(errorMessage);
+    else {
+      try { await recordViewingActivity(createRecentlyViewedSnapshot(details), action); }
+      catch { setTrackingError('Progress saved, but viewing history could not be updated.'); }
+    }
+    busy.current = false;
     setSavingKey(null);
   }
 
@@ -99,6 +110,7 @@ export function TvTrackingSection({ details }: { details: MediaDetails }) {
       setSeasonWatched(tracking.records, details.id, seasonNumber, watched),
       () => setTvSeasonWatched(details.id, seasonNumber, watched),
       'Could not save season progress. Please try again.',
+      { kind: 'season', seasonNumber, watched },
     );
   }
 
@@ -109,16 +121,23 @@ export function TvTrackingSection({ details }: { details: MediaDetails }) {
       setEpisodeWatched(tracking.records, details.id, seasonNumber, episodeNumber, watched),
       () => setTvEpisodeWatched(details.id, seasonNumber, episodeNumber, watched),
       'Could not save episode progress. Please try again.',
+      { kind: 'episode', seasonNumber, episodeNumber, watched },
     );
   }
 
   function toggleAiredEpisodes(seasonNumber: number, watched: boolean) {
     if (tracking.status !== 'ready') return;
+    const current = findTvProgress(tracking.records, details.id);
+    const episodeProgress = current && findEpisodeProgress(current, seasonNumber);
+    const episodeNumbers = episodeProgress?.trackableEpisodeNumbers.filter((number) =>
+      episodeProgress.watchedEpisodeNumbers.includes(number) !== watched) ?? [];
+    if (episodeNumbers.length === 0) return;
     void saveChange(
       `season-episodes-${seasonNumber}`,
       setAiredEpisodesWatched(tracking.records, details.id, seasonNumber, watched),
       () => setTvAiredEpisodesWatched(details.id, seasonNumber, watched),
       'Could not save episode progress. Please try again.',
+      { kind: 'aired', seasonNumber, episodeNumbers, watched },
     );
   }
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import {
@@ -15,6 +15,7 @@ import {
   markMovieUnwatched,
   markMovieWatched,
 } from '@/services/movie-progress';
+import { recordViewingActivity } from '@/services/viewing-activity';
 
 type LoadStatus = 'loading' | 'available' | 'unavailable';
 
@@ -24,6 +25,7 @@ export function MovieWatchedControl({ snapshot }: { snapshot: WatchedMovieSnapsh
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loadAttempt, setLoadAttempt] = useState(0);
+  const busy = useRef(false);
 
   useEffect(() => {
     let active = true;
@@ -54,7 +56,8 @@ export function MovieWatchedControl({ snapshot }: { snapshot: WatchedMovieSnapsh
   }
 
   async function toggleWatched() {
-    if (status !== 'available' || saving) return;
+    if (status !== 'available' || busy.current) return;
+    busy.current = true;
     const previous = records;
     const optimistic = watched
       ? setMovieUnwatched(previous, snapshot.movieId)
@@ -69,7 +72,15 @@ export function MovieWatchedControl({ snapshot }: { snapshot: WatchedMovieSnapsh
     setRecords(result.records);
     if (!result.saved) {
       setError('Could not update watched status. Please try again.');
+    } else {
+      try {
+        await recordViewingActivity({ id: snapshot.movieId, mediaType: 'Movie', title: snapshot.title,
+          year: snapshot.year, posterUrl: snapshot.posterUrl }, { kind: 'movie', watched: !watched });
+      } catch {
+        setError('Watched status saved, but viewing history could not be updated.');
+      }
     }
+    busy.current = false;
     setSaving(false);
   }
 
