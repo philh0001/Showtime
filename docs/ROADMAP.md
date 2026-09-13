@@ -240,13 +240,16 @@ activity, upcoming episodes, and discovery content.
 
 - [ ] Add `Watched` status for movies
 - [ ] Keep `Want to Watch` and `Watched` as separate concepts
-- [ ] Remove watched movies from the active Watchlist when appropriate
+- [ ] Keep watched movies in the Watchlist until they are manually removed
+- [ ] Show a clear watched badge and poster treatment
+- [ ] Add All, To Watch and Watched Watchlist filters
 - [ ] Persist movie watched state locally
 
 ### Viewing history
 
 - [ ] Add viewing history
 - [ ] Record watched movies
+- [ ] Add a Watched Movies rail to Home
 - [ ] Record TV progress/activity
 - [x] Add Recently Viewed titles
 - [x] Persist Recently Viewed locally
