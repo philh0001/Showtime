@@ -30,6 +30,11 @@ import {
 import { createRecentlyViewedSnapshot } from '@/services/recently-viewed-rules';
 import { recordViewingActivity } from '@/services/viewing-activity';
 import type { ViewingAction } from '@/services/viewing-activity-rules';
+import { useTheme } from '@/hooks/use-theme';
+import {
+  canToggleEpisodeExpansion,
+  getInitialEpisodeExpansion,
+} from '@/services/tv-tracking-layout-rules';
 
 type TrackingState =
   | { status: 'loading' }
@@ -37,6 +42,12 @@ type TrackingState =
   | { status: 'ready'; records: TvProgress[] };
 
 export function TvTrackingSection({ details }: { details: MediaDetails }) {
+  const styles = createStyles(useTheme());
+  const episodeCount = details.latestSeason?.episodes.length ?? 0;
+  const canToggleEpisodes = canToggleEpisodeExpansion(episodeCount);
+  const [episodesExpanded, setEpisodesExpanded] = useState(
+    () => getInitialEpisodeExpansion(episodeCount),
+  );
   const [tracking, setTracking] = useState<TrackingState>({ status: 'loading' });
   const [savingKey, setSavingKey] = useState<string | null>(null);
   const [trackingError, setTrackingError] = useState<string | null>(null);
@@ -182,7 +193,7 @@ export function TvTrackingSection({ details }: { details: MediaDetails }) {
           && episodeTotal.watched === episodeTotal.total;
 
         return (
-          <View key={season.id} style={styles.season}>
+          <View key={season.id} style={[styles.season, isLatest && styles.latestSeason]}>
             <View style={styles.seasonHeader}>
               <View style={styles.seasonText}>
                 <View style={styles.titleRow}>
@@ -222,7 +233,18 @@ export function TvTrackingSection({ details }: { details: MediaDetails }) {
                     : <Text style={styles.untracked}>Upcoming</Text>}
             </View>
 
-            {hasEpisodeDetails && <View style={styles.episodeList}>
+            {hasEpisodeDetails && canToggleEpisodes && <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ expanded: episodesExpanded }}
+              onPress={() => setEpisodesExpanded((value) => !value)}
+              style={({ pressed }) => [styles.episodeToggle, pressed && styles.dimmed]}
+            >
+              <Text style={styles.episodeToggleText}>
+                {episodesExpanded ? 'Hide episodes' : `Show ${episodeCount} episodes`}
+              </Text>
+            </Pressable>}
+
+            {hasEpisodeDetails && (!canToggleEpisodes || episodesExpanded) && <View style={styles.episodeList}>
               {details.latestSeason!.episodes.map((episode) => {
                 const episodeTrackable = latestEpisodeMetadata?.trackableEpisodeNumbers
                   .includes(episode.episodeNumber) ?? false;
@@ -285,6 +307,7 @@ function ProgressButton({
   disabled: boolean;
   onPress: () => void;
 }) {
+  const styles = createStyles(useTheme());
   return (
     <Pressable
       accessibilityRole="checkbox"
@@ -305,28 +328,33 @@ function ProgressButton({
   );
 }
 
-const styles = StyleSheet.create({
-  heading: { color: '#FFFFFF', fontSize: 21, fontWeight: '700', marginTop: 24, marginBottom: 12 },
-  body: { color: '#FFFFFF', fontSize: 16, lineHeight: 25 },
-  secondary: { color: '#A7A7B0', fontSize: 14, lineHeight: 22 },
-  nextEpisode: { backgroundColor: '#16161B', borderRadius: 12, padding: 16, gap: 6 },
-  progressText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600', marginBottom: 8 },
-  season: { gap: 12, paddingVertical: 16, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#393940' },
+function createStyles(colors: ReturnType<typeof useTheme>) {
+  return StyleSheet.create({
+  heading: { color: colors.text, fontSize: 21, fontWeight: '700', marginTop: 24, marginBottom: 12 },
+  body: { color: colors.text, fontSize: 16, lineHeight: 25 },
+  secondary: { color: colors.textSecondary, fontSize: 14, lineHeight: 22 },
+  nextEpisode: { backgroundColor: colors.surface, borderRadius: 12, padding: 16, gap: 6, borderColor: colors.border, borderWidth: StyleSheet.hairlineWidth },
+  progressText: { color: colors.text, fontSize: 16, fontWeight: '600', marginBottom: 8 },
+  season: { gap: 12, paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+  latestSeason: { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: StyleSheet.hairlineWidth, borderRadius: 12, paddingHorizontal: 14, marginBottom: 8 },
   seasonHeader: { flexDirection: 'row', gap: 12, alignItems: 'center' },
   seasonText: { flex: 1, gap: 4 },
   titleRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 },
-  seasonTitle: { color: '#FFFFFF', fontSize: 17, fontWeight: '600' },
-  latestBadge: { color: '#0B0B0F', backgroundColor: '#FFFFFF', borderRadius: 10, overflow: 'hidden', paddingHorizontal: 8, paddingVertical: 3, fontSize: 11, fontWeight: '800' },
-  episodeProgress: { color: '#FFFFFF', fontSize: 13, fontWeight: '600' },
-  episodeList: { marginTop: 4, paddingLeft: 12, borderLeftWidth: 2, borderLeftColor: '#393940' },
-  episodeRow: { flexDirection: 'row', gap: 12, alignItems: 'center', paddingVertical: 12, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#292930' },
+  seasonTitle: { color: colors.text, fontSize: 17, fontWeight: '600' },
+  latestBadge: { color: colors.onAccent, backgroundColor: colors.accent, borderRadius: 10, overflow: 'hidden', paddingHorizontal: 8, paddingVertical: 3, fontSize: 11, fontWeight: '800' },
+  episodeProgress: { color: colors.accent, fontSize: 13, fontWeight: '700' },
+  episodeToggle: { minHeight: 44, alignSelf: 'flex-start', justifyContent: 'center', paddingRight: 12 },
+  episodeToggleText: { color: colors.accent, fontSize: 14, fontWeight: '700' },
+  episodeList: { marginTop: 4, paddingLeft: 12, borderLeftWidth: 2, borderLeftColor: colors.border },
+  episodeRow: { flexDirection: 'row', gap: 12, alignItems: 'center', paddingVertical: 12, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
   episodeText: { flex: 1, gap: 3 },
-  episodeTitle: { color: '#FFFFFF', fontSize: 15, fontWeight: '600' },
-  progressButton: { borderWidth: 1, borderColor: '#FFFFFF', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9 },
-  progressButtonSelected: { backgroundColor: '#FFFFFF' },
-  progressButtonText: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
-  progressButtonTextSelected: { color: '#0B0B0F' },
-  untracked: { color: '#777780', fontSize: 13, maxWidth: 100, textAlign: 'right' },
+  episodeTitle: { color: colors.text, fontSize: 15, fontWeight: '600' },
+  progressButton: { minHeight: 44, justifyContent: 'center', borderWidth: 1, borderColor: colors.accent, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9 },
+  progressButtonSelected: { backgroundColor: colors.accent },
+  progressButtonText: { color: colors.accent, fontSize: 13, fontWeight: '700' },
+  progressButtonTextSelected: { color: colors.onAccent },
+  untracked: { color: colors.textSecondary, fontSize: 13, maxWidth: 100, textAlign: 'right' },
   dimmed: { opacity: 0.65 },
-  error: { color: '#FF8A8A', fontSize: 14, marginTop: 10 },
+  error: { color: colors.danger, fontSize: 14, marginTop: 10 },
 });
+}

@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { Link, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MovieWatchedControl } from '@/components/movie-watched-control';
@@ -15,6 +15,9 @@ import { recordRecentlyViewed } from '@/services/recently-viewed';
 import { recordTvSchedule } from '@/services/tv-schedule';
 import { isInWatchlist, type WatchlistItem } from '@/services/watchlist-rules';
 import { addToWatchlist, loadWatchlist, removeFromWatchlist } from '@/services/watchlist';
+import { useTheme } from '@/hooks/use-theme';
+import { getDetailsLayout } from '@/services/tv-tracking-layout-rules';
+import { Layout } from '@/constants/theme';
 
 type LoadState =
   | { status: 'loading' }
@@ -22,6 +25,7 @@ type LoadState =
   | { status: 'success'; details: MediaDetails };
 
 export default function MediaDetailsScreen({ mediaType }: { mediaType: MediaType }) {
+  const styles = createStyles(useTheme());
   const { id } = useLocalSearchParams<{ id: string }>();
   if (typeof id !== 'string' || !/^[1-9]\d*$/.test(id) || !Number.isSafeInteger(Number(id))) {
     return (
@@ -38,6 +42,7 @@ export default function MediaDetailsScreen({ mediaType }: { mediaType: MediaType
 }
 
 function DetailsLoader({ mediaType, id }: { mediaType: MediaType; id: string }) {
+  const styles = createStyles(useTheme());
   const [state, setState] = useState<LoadState>({ status: 'loading' });
   const [attempt, setAttempt] = useState(0);
 
@@ -88,6 +93,9 @@ function DetailsLoader({ mediaType, id }: { mediaType: MediaType; id: string }) 
 }
 
 function DetailsContent({ details }: { details: MediaDetails }) {
+  const styles = createStyles(useTheme());
+  const { width } = useWindowDimensions();
+  const split = getDetailsLayout(width) === 'split';
   const [saved, setSaved] = useState<boolean | null>(null);
   const [saving, setSaving] = useState(false);
   const [watchlistError, setWatchlistError] = useState<string | null>(null);
@@ -140,6 +148,8 @@ function DetailsContent({ details }: { details: MediaDetails }) {
     <ScrollView contentContainerStyle={styles.scrollContent}>
       <View style={styles.content}>
         <Artwork url={details.backdropUrl} label={`${details.title} backdrop`} wide />
+        <View style={[styles.detailsColumns, split && styles.detailsColumnsWide]}>
+        <View style={[styles.summaryColumn, split && styles.summaryColumnWide]}>
         <View style={styles.summary}>
           <Artwork url={details.posterUrl} label={`${details.title} poster`} />
           <View style={styles.titleBlock}>
@@ -165,6 +175,8 @@ function DetailsContent({ details }: { details: MediaDetails }) {
         <Text style={styles.secondary}>
           {details.mediaType === 'Movie' ? 'Release date' : 'First aired'}: {formatDate(details.releaseDate)}
         </Text>
+        </View>
+        <View style={[styles.bodyColumn, split && styles.bodyColumnWide]}>
         <Text accessibilityRole="header" style={styles.heading}>Overview</Text>
         <Text style={styles.body}>{details.overview ?? 'No description is available yet.'}</Text>
         <Text accessibilityRole="header" style={styles.heading}>Genres</Text>
@@ -178,6 +190,8 @@ function DetailsContent({ details }: { details: MediaDetails }) {
           </Link>
           <Text style={styles.secondary}>This product uses the TMDB API but is not endorsed or certified by TMDB.</Text>
         </View>
+        </View>
+        </View>
       </View>
     </ScrollView>
   );
@@ -185,6 +199,7 @@ function DetailsContent({ details }: { details: MediaDetails }) {
 
 function Artwork({ url, label, wide = false }: { url: string | null; label: string; wide?: boolean }) {
   const [failed, setFailed] = useState(false);
+  const styles = createStyles(useTheme());
   return (
     <View style={[styles.artwork, wide ? styles.backdrop : styles.poster]}>
       {url && !failed
@@ -198,28 +213,36 @@ function formatDate(value: string | null) {
   return formatUkDate(value) ?? 'Unknown';
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0B0B0F' },
+function createStyles(colors: ReturnType<typeof useTheme>) {
+  return StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   scrollContent: { paddingBottom: 32, alignItems: 'center' },
-  content: { width: '100%', maxWidth: 800, padding: 24 },
+  content: { width: '100%', maxWidth: Layout.contentMaxWidth, padding: 24 },
   messageContainer: { padding: 24, gap: 20, alignItems: 'center' },
-  artwork: { overflow: 'hidden', borderRadius: 12, backgroundColor: '#212225', alignItems: 'center', justifyContent: 'center' },
+  artwork: { overflow: 'hidden', borderRadius: 12, backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
   backdrop: { width: '100%', aspectRatio: 16 / 9 },
   poster: { width: 100, height: 150 },
-  artworkFallback: { color: '#A7A7B0', fontSize: 13 },
+  artworkFallback: { color: colors.textSecondary, fontSize: 13 },
+  detailsColumns: { width: '100%' },
+  detailsColumnsWide: { flexDirection: 'row', alignItems: 'flex-start', gap: 32 },
+  summaryColumn: { minWidth: 0 },
+  summaryColumnWide: { flexBasis: 320, flexGrow: 0, flexShrink: 0 },
+  bodyColumn: { minWidth: 0 },
+  bodyColumnWide: { flex: 1 },
   summary: { flexDirection: 'row', gap: 16, marginVertical: 24, alignItems: 'center' },
   titleBlock: { flex: 1, gap: 8 },
-  title: { color: '#FFFFFF', fontSize: 26, fontWeight: '800' },
-  heading: { color: '#FFFFFF', fontSize: 21, fontWeight: '700', marginTop: 24, marginBottom: 12 },
-  body: { color: '#FFFFFF', fontSize: 16, lineHeight: 25 },
-  secondary: { color: '#A7A7B0', fontSize: 14, lineHeight: 22 },
-  retry: { backgroundColor: '#FFFFFF', borderRadius: 12, paddingHorizontal: 20, paddingVertical: 14 },
-  retryText: { color: '#0B0B0F', fontSize: 16, fontWeight: '700' },
-  watchlistButton: { backgroundColor: '#FFFFFF', borderRadius: 12, paddingHorizontal: 20, paddingVertical: 14, alignItems: 'center' },
-  watchlistButtonText: { color: '#0B0B0F', fontSize: 16, fontWeight: '700' },
+  title: { color: colors.text, fontSize: 26, fontWeight: '800' },
+  heading: { color: colors.text, fontSize: 21, fontWeight: '700', marginTop: 24, marginBottom: 12 },
+  body: { color: colors.text, fontSize: 16, lineHeight: 25 },
+  secondary: { color: colors.textSecondary, fontSize: 14, lineHeight: 22 },
+  retry: { backgroundColor: colors.accent, borderRadius: 12, paddingHorizontal: 20, paddingVertical: 14 },
+  retryText: { color: colors.onAccent, fontSize: 16, fontWeight: '700' },
+  watchlistButton: { minHeight: 48, backgroundColor: colors.accent, borderRadius: 12, paddingHorizontal: 20, paddingVertical: 14, alignItems: 'center' },
+  watchlistButtonText: { color: colors.onAccent, fontSize: 16, fontWeight: '700' },
   dimmed: { opacity: 0.65 },
-  error: { color: '#FF8A8A', fontSize: 14, marginTop: 10 },
-  link: { color: '#FFFFFF', fontSize: 16, paddingVertical: 12, textDecorationLine: 'underline' },
+  error: { color: colors.danger, fontSize: 14, marginTop: 10 },
+  link: { color: colors.accent, fontSize: 16, paddingVertical: 12, textDecorationLine: 'underline' },
   credits: { marginTop: 32, gap: 12 },
   tmdbLogo: { width: 100, height: 24 },
 });
+}

@@ -16,10 +16,12 @@ import {
   markMovieWatched,
 } from '@/services/movie-progress';
 import { recordViewingActivity } from '@/services/viewing-activity';
+import { useTheme } from '@/hooks/use-theme';
 
 type LoadStatus = 'loading' | 'available' | 'unavailable';
 
 export function MovieWatchedControl({ snapshot }: { snapshot: WatchedMovieSnapshot }) {
+  const styles = createStyles(useTheme());
   const [records, setRecords] = useState<WatchedMovie[]>([]);
   const [status, setStatus] = useState<LoadStatus>('loading');
   const [saving, setSaving] = useState(false);
@@ -127,27 +129,29 @@ export function MovieWatchedControl({ snapshot }: { snapshot: WatchedMovieSnapsh
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ReturnType<typeof useTheme>) {
+  return StyleSheet.create({
   group: { gap: 8, marginTop: 12 },
   errorGroup: { alignItems: 'flex-start', gap: 10, marginTop: 12 },
   button: {
     alignItems: 'center',
-    borderColor: '#FFFFFF',
+    borderColor: colors.accent,
     borderRadius: 12,
     borderWidth: 1,
     paddingHorizontal: 20,
     paddingVertical: 13,
   },
-  buttonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
-  watchedDate: { color: '#A7A7B0', fontSize: 14, textAlign: 'center' },
-  error: { color: '#FF8A8A', fontSize: 14 },
+  buttonText: { color: colors.accent, fontSize: 16, fontWeight: '700' },
+  watchedDate: { color: colors.textSecondary, fontSize: 14, textAlign: 'center' },
+  error: { color: colors.danger, fontSize: 14 },
   retryButton: {
-    borderColor: '#FFFFFF',
+    borderColor: colors.accent,
     borderRadius: 10,
     borderWidth: 1,
     paddingHorizontal: 14,
     paddingVertical: 9,
   },
-  retryText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
+  retryText: { color: colors.accent, fontSize: 14, fontWeight: '700' },
   dimmed: { opacity: 0.65 },
 });
+}
