@@ -60,35 +60,82 @@ function mapExtras(data) {
   };
 }
 
-async function loadLatestSeason({ tvId, season, token, fetchImpl }) {
-  if (!season) return null;
+function logTmdbResult(logger, message, { endpoint, status = null, error = null, startedAt }) {
+  logger?.info?.(message, {
+    endpoint,
+    status,
+    ...(error ? { error: error instanceof Error ? error.name : 'UnknownError' } : {}),
+    durationMs: Date.now() - startedAt,
+  });
+}
+
+async function fetchTmdb({ endpoint, token, fetchImpl, logger, timeoutMs }) {
+  const startedAt = Date.now();
   try {
-    const upstream = await fetchImpl(
-      `https://api.themoviedb.org/3/tv/${tvId}/season/${season.seasonNumber}`,
-      {
-        headers: { Authorization: `Bearer ${token}`, accept: 'application/json' },
-        signal: AbortSignal.timeout(10000),
-      },
-    );
-    if (!upstream.ok) return null;
-    const data = await upstream.json();
-    if (!data || data.id !== season.id || data.season_number !== season.seasonNumber
-      || !Array.isArray(data.episodes)) return null;
-    const episodes = data.episodes
-      .map((episode) => episodeOrNull(episode, season.seasonNumber))
-      .filter(Boolean)
-      .sort((a, b) => a.episodeNumber - b.episodeNumber || a.id - b.id);
-    return {
-      seasonNumber: season.seasonNumber,
-      name: textOrNull(data.name) ?? season.name,
-      episodes,
-    };
+    const response = await fetchImpl(`https://api.themoviedb.org${endpoint}`, {
+      headers: { Authorization: `Bearer ${token}`, accept: 'application/json' },
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+    logTmdbResult(logger, response.ok ? 'TMDB request completed' : 'TMDB request failed', {
+      endpoint,
+      status: response.status,
+      startedAt,
+    });
+    return response;
+  } catch (error) {
+    logTmdbResult(logger, 'TMDB request failed', { endpoint, error, startedAt });
+    throw error;
+  }
+}
+
+async function loadOptionalJson({ endpoint, token, fetchImpl, logger, timeoutMs }) {
+  try {
+    const response = await fetchTmdb({ endpoint, token, fetchImpl, logger, timeoutMs });
+    return response.ok ? await response.json() : null;
   } catch {
     return null;
   }
 }
 
-export async function handleDetails({ pathname, method, token, fetchImpl, send }) {
+async function loadExtras({ mediaType, id, token, fetchImpl, logger, timeoutMs }) {
+  const [credits, videos] = await Promise.all([
+    loadOptionalJson({ endpoint: `/3/${mediaType}/${id}/credits`, token, fetchImpl, logger, timeoutMs }),
+    loadOptionalJson({ endpoint: `/3/${mediaType}/${id}/videos`, token, fetchImpl, logger, timeoutMs }),
+  ]);
+  return mapExtras({ credits, videos });
+}
+
+async function loadLatestSeason({ tvId, season, token, fetchImpl, logger, timeoutMs }) {
+  if (!season) return null;
+  const data = await loadOptionalJson({
+    endpoint: `/3/tv/${tvId}/season/${season.seasonNumber}`,
+    token,
+    fetchImpl,
+    logger,
+    timeoutMs,
+  });
+  if (!data || data.id !== season.id || data.season_number !== season.seasonNumber
+    || !Array.isArray(data.episodes)) return null;
+  const episodes = data.episodes
+    .map((episode) => episodeOrNull(episode, season.seasonNumber))
+    .filter(Boolean)
+    .sort((a, b) => a.episodeNumber - b.episodeNumber || a.id - b.id);
+  return {
+    seasonNumber: season.seasonNumber,
+    name: textOrNull(data.name) ?? season.name,
+    episodes,
+  };
+}
+
+export async function handleDetails({
+  pathname,
+  method,
+  token,
+  fetchImpl,
+  send,
+  logger = console,
+  optionalTimeoutMs = 3000,
+}) {
   if (method !== 'GET') return send(405, { error: 'Use GET.' });
   const match = /^\/details\/(movie|tv)\/([1-9]\d*)$/.exec(pathname);
   if (!match || !Number.isSafeInteger(Number(match[2]))) {
@@ -98,9 +145,13 @@ export async function handleDetails({ pathname, method, token, fetchImpl, send }
   const [, mediaType, id] = match;
 
   try {
-    const upstream = await fetchImpl(`https://api.themoviedb.org/3/${mediaType}/${id}?append_to_response=credits,videos`, {
-      headers: { Authorization: `Bearer ${token}`, accept: 'application/json' },
-      signal: AbortSignal.timeout(10000),
+    const mainEndpoint = `/3/${mediaType}/${id}`;
+    const upstream = await fetchTmdb({
+      endpoint: mainEndpoint,
+      token,
+      fetchImpl,
+      logger,
+      timeoutMs: 10000,
     });
     if (!upstream.ok) {
       if (upstream.status === 404) return send(404, { error: 'This title could not be found.' });
@@ -124,14 +175,19 @@ export async function handleDetails({ pathname, method, token, fetchImpl, send }
     const latestSeasonSummary = [...seasons].reverse().find(
       (season) => season.seasonNumber > 0 && season.episodeCount !== 0,
     ) ?? null;
-    const latestSeason = movie ? null : await loadLatestSeason({
-      tvId: data.id,
-      season: latestSeasonSummary,
-      token,
-      fetchImpl,
-    });
+    const [extras, latestSeason] = await Promise.all([
+      loadExtras({ mediaType, id, token, fetchImpl, logger, timeoutMs: optionalTimeoutMs }),
+      movie ? null : loadLatestSeason({
+        tvId: data.id,
+        season: latestSeasonSummary,
+        token,
+        fetchImpl,
+        logger,
+        timeoutMs: optionalTimeoutMs,
+      }),
+    ]);
     send(200, { details: {
-      ...mapExtras(data),
+      ...extras,
       id: data.id,
       mediaType: movie ? 'Movie' : 'TV',
       title: textOrNull(movie ? data.title : data.name) ?? 'Untitled',

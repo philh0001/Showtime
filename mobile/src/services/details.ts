@@ -38,6 +38,15 @@ export type LatestSeason = {
 
 export class DetailsError extends Error {}
 
+function logDetailsFailure(endpoint: string, status: number | null, error?: unknown) {
+  if (!__DEV__) return;
+  console.error('[details] request failed', {
+    endpoint,
+    status,
+    error: error instanceof Error ? error.name : null,
+  });
+}
+
 function normalizeLatestSeason(value: unknown): LatestSeason | null {
   if (!value || typeof value !== 'object') return null;
   const season = value as Record<string, unknown>;
@@ -71,15 +80,29 @@ function normalizeLatestSeason(value: unknown): LatestSeason | null {
 }
 
 export async function fetchDetails(mediaType: MediaType, id: string, signal: AbortSignal): Promise<MediaDetails> {
-  const response = await fetch(`${getServerUrl()}/details/${mediaType}/${encodeURIComponent(id)}`, { signal });
+  const endpoint = `${getServerUrl()}/details/${mediaType}/${encodeURIComponent(id)}`;
+  let response: Response;
+  try {
+    response = await fetch(endpoint, { signal });
+  } catch (error) {
+    logDetailsFailure(endpoint, null, error);
+    throw error;
+  }
   if (!response.ok) {
+    logDetailsFailure(endpoint, response.status);
     throw new DetailsError(response.status === 404
       ? 'This title could not be found.'
       : response.status === 429
         ? 'Please wait a moment and try again.'
         : 'Details are temporarily unavailable. Please try again.');
   }
-  const { details } = await response.json();
+  let details;
+  try {
+    ({ details } = await response.json());
+  } catch (error) {
+    logDetailsFailure(endpoint, response.status, error);
+    throw new DetailsError('Could not read this title. Please try again.');
+  }
   if (!details || details.id !== Number(id) || typeof details.title !== 'string'
     || !Array.isArray(details.genres) || !Array.isArray(details.seasons)) {
     throw new DetailsError('Could not read this title. Please try again.');

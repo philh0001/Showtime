@@ -2,7 +2,12 @@
 import { handleDetails } from './details.mjs';
 import { createDiscoveryHandler } from './discovery.mjs';
 
-export function createSearchHandler({ token, fetchImpl = fetch }) {
+export function createSearchHandler({
+  token,
+  fetchImpl = fetch,
+  logger = console,
+  detailsOptionalTimeoutMs,
+}) {
   const handleDiscovery = createDiscoveryHandler({ token, fetchImpl });
   return async (request, response) => {
     const send = (status, body) => {
@@ -18,7 +23,15 @@ export function createSearchHandler({ token, fetchImpl = fetch }) {
       const incoming = new URL(request.url, 'http://localhost');
       if (incoming.pathname === '/discovery') return await handleDiscovery({ method: request.method, send });
       if (incoming.pathname.startsWith('/details/')) {
-        return await handleDetails({ pathname: incoming.pathname, method: request.method, token, fetchImpl, send });
+        return await handleDetails({
+          pathname: incoming.pathname,
+          method: request.method,
+          token,
+          fetchImpl,
+          send,
+          logger,
+          optionalTimeoutMs: detailsOptionalTimeoutMs,
+        });
       }
       if (incoming.pathname !== '/search') return send(404, { error: 'Not found.' });
       if (request.method !== 'GET') return send(405, { error: 'Use GET.' });

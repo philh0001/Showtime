@@ -3,8 +3,13 @@ import test from 'node:test';
 import { createServer } from 'node:http';
 import { createSearchHandler } from './search.mjs';
 
-async function request(t, path, fetchImpl, method = 'GET') {
-  const server = createServer(createSearchHandler({ token: 'private-test-token', fetchImpl }));
+async function request(t, path, fetchImpl, method = 'GET', options = {}) {
+  const server = createServer(createSearchHandler({
+    token: 'private-test-token',
+    fetchImpl,
+    logger: { info() {} },
+    ...options,
+  }));
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   t.after(() => new Promise((resolve) => { server.close(resolve); server.closeAllConnections(); }));
   return fetch(`http://127.0.0.1:${server.address().port}${path}`, { method });
@@ -12,12 +17,14 @@ async function request(t, path, fetchImpl, method = 'GET') {
 
 test('movie details use the movie endpoint and return only display fields', async (t) => {
   const response = await request(t, '/details/movie/272', async (url, options) => {
-    if (String(url) !== 'https://api.themoviedb.org/3/movie/272?append_to_response=credits,videos'
-      || options.headers.Authorization !== 'Bearer private-test-token') return new Response(null, { status: 401 });
-    return Response.json({ id: 272, title: 'Batman Begins', overview: 'A new beginning.',
-      release_date: '2005-06-10', vote_average: 7.7, vote_count: 150,
-      poster_path: '/poster.jpg', backdrop_path: '/backdrop.jpg',
-      genres: [{ id: 28, name: 'Action' }], private_field: 'must-not-return' });
+    if (options.headers.Authorization !== 'Bearer private-test-token') return new Response(null, { status: 401 });
+    if (String(url) === 'https://api.themoviedb.org/3/movie/272') {
+      return Response.json({ id: 272, title: 'Batman Begins', overview: 'A new beginning.',
+        release_date: '2005-06-10', vote_average: 7.7, vote_count: 150,
+        poster_path: '/poster.jpg', backdrop_path: '/backdrop.jpg',
+        genres: [{ id: 28, name: 'Action' }], private_field: 'must-not-return' });
+    }
+    return new Response(null, { status: 404 });
   });
   assert.equal(response.status, 200);
   assert.deepEqual(await response.json(), { details: {
@@ -33,18 +40,20 @@ test('movie details use the movie endpoint and return only display fields', asyn
 
 test('details include validated cast, key crew and only official YouTube trailers', async (t) => {
   const response = await request(t, '/details/movie/1', async (url) => {
-    assert.equal(new URL(url).searchParams.get('append_to_response'), 'credits,videos');
-    return Response.json({ id: 1, title: 'Movie', credits: {
-      cast: [
+    if (String(url) === 'https://api.themoviedb.org/3/movie/1') {
+      return Response.json({ id: 1, title: 'Movie' });
+    }
+    if (String(url).endsWith('/credits')) return Response.json({ cast: [
         { id: 10, name: ' Actor ', character: ' Hero ', profile_path: '/actor.jpg' },
         { id: 10, name: 'Duplicate' }, { id: -1, name: 'Invalid' },
       ],
       crew: [{ id: 20, name: 'Director', job: 'Director' }, { id: 21, name: 'Other', job: 'Driver' }],
-    }, videos: { results: [
+    });
+    return Response.json({ results: [
       { site: 'YouTube', type: 'Trailer', official: false, key: 'abcdefghijk', name: 'Fan trailer' },
       { site: 'YouTube', type: 'Trailer', official: true, key: 'javascript:bad', name: 'Invalid' },
       { site: 'YouTube', type: 'Trailer', official: true, key: 'A1b2C3d4E5f', name: 'Official trailer' },
-    ] } });
+    ] });
   });
   assert.equal(response.status, 200);
   const { details } = await response.json();
@@ -67,7 +76,7 @@ test('TV details use TV names/dates and retain specials and season summaries', a
   const urls = [];
   const response = await request(t, '/details/tv/1396', async (url) => {
     urls.push(String(url));
-    if (String(url) === 'https://api.themoviedb.org/3/tv/1396?append_to_response=credits,videos') {
+    if (String(url) === 'https://api.themoviedb.org/3/tv/1396') {
       return Response.json({ id: 1396, name: 'Breaking Bad', first_air_date: '2008-01-20',
         overview: 'A chemistry teacher changes course.', vote_average: 8.9, vote_count: 200,
         genres: [{ id: 18, name: 'Drama' }], seasons: [
@@ -115,10 +124,12 @@ test('TV details use TV names/dates and retain specials and season summaries', a
       { id: 204, name: 'Unknown date', seasonNumber: 2, episodeNumber: 4, airDate: null },
     ],
   });
-  assert.deepEqual(urls, [
-    'https://api.themoviedb.org/3/tv/1396?append_to_response=credits,videos',
+  assert.deepEqual(urls.sort(), [
+    'https://api.themoviedb.org/3/tv/1396',
+    'https://api.themoviedb.org/3/tv/1396/credits',
+    'https://api.themoviedb.org/3/tv/1396/videos',
     'https://api.themoviedb.org/3/tv/1396/season/2',
-  ]);
+  ].sort());
 });
 
 test('missing metadata stays empty and unrated is not presented as zero', async (t) => {
@@ -138,7 +149,7 @@ test('missing metadata stays empty and unrated is not presented as zero', async 
 
 test('a newest-season request failure preserves otherwise valid TV details', async (t) => {
   const response = await request(t, '/details/tv/1', async (url) => {
-    if (String(url) === 'https://api.themoviedb.org/3/tv/1?append_to_response=credits,videos') {
+    if (String(url) === 'https://api.themoviedb.org/3/tv/1') {
       return Response.json({ id: 1, name: 'Example', seasons: [
         { id: 10, name: 'Season 1', season_number: 1, episode_count: 2, air_date: '2026-01-01' },
       ] });
@@ -151,6 +162,68 @@ test('a newest-season request failure preserves otherwise valid TV details', asy
   assert.equal(details.title, 'Example');
   assert.equal(details.latestSeason, null);
   assert.equal(details.seasons.length, 1);
+});
+
+test('credits, videos and newest-season failures preserve the main TV details', async (t) => {
+  const urls = [];
+  const response = await request(t, '/details/tv/1', async (url) => {
+    urls.push(String(url));
+    if (String(url) === 'https://api.themoviedb.org/3/tv/1') {
+      return Response.json({ id: 1, name: 'Example', seasons: [
+        { id: 10, name: 'Season 1', season_number: 1, episode_count: 2, air_date: '2026-01-01' },
+      ] });
+    }
+    if (String(url).endsWith('/videos')) throw new TypeError('network unavailable');
+    return new Response(null, { status: 503 });
+  });
+
+  assert.equal(response.status, 200);
+  const { details } = await response.json();
+  assert.equal(details.title, 'Example');
+  assert.deepEqual(details.cast, []);
+  assert.deepEqual(details.crew, []);
+  assert.equal(details.trailer, null);
+  assert.equal(details.latestSeason, null);
+  assert.deepEqual(urls.sort(), [
+    'https://api.themoviedb.org/3/tv/1',
+    'https://api.themoviedb.org/3/tv/1/credits',
+    'https://api.themoviedb.org/3/tv/1/season/1',
+    'https://api.themoviedb.org/3/tv/1/videos',
+  ].sort());
+});
+
+test('a hanging optional request cannot outlive the details response budget', async (t) => {
+  const startedAt = Date.now();
+  const response = await request(t, '/details/tv/1', async (url, options) => {
+    if (String(url) === 'https://api.themoviedb.org/3/tv/1') {
+      return Response.json({ id: 1, name: 'Example', seasons: [
+        { id: 10, name: 'Season 1', season_number: 1, episode_count: 2, air_date: '2026-01-01' },
+      ] });
+    }
+    return new Promise((resolve, reject) => {
+      options.signal.addEventListener('abort', () => reject(options.signal.reason), { once: true });
+    });
+  }, 'GET', { detailsOptionalTimeoutMs: 20 });
+
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).details.title, 'Example');
+  assert.ok(Date.now() - startedAt < 500);
+});
+
+test('development logs identify failed TMDB endpoints without response bodies', async (t) => {
+  const entries = [];
+  const logger = { info: (message, context) => entries.push([message, context]) };
+  const response = await request(t, '/details/tv/1', async (url) => {
+    if (String(url) === 'https://api.themoviedb.org/3/tv/1') {
+      return Response.json({ id: 1, name: 'Example', seasons: [] });
+    }
+    return new Response('private-upstream-body', { status: 503 });
+  }, 'GET', { logger });
+
+  assert.equal(response.status, 200);
+  assert.ok(entries.some(([message, context]) => message === 'TMDB request failed'
+    && context.endpoint === '/3/tv/1/credits' && context.status === 503));
+  assert.equal(JSON.stringify(entries).includes('private-upstream-body'), false);
 });
 
 test('missing and malformed next episodes are returned as null', async (t) => {
