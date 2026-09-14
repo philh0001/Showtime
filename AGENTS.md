@@ -79,16 +79,17 @@ The application currently has four primary areas:
 
 ## Current development phase
 
-The project is still in its foundation stage.
+The project is in Phase 6, with the core navigation, Search, Watchlist, Profile,
+movie/TV details, tracking, viewing history and Home dashboard implemented.
 
 Priorities are:
 
-1. Establish a clean application structure.
-2. Build the core navigation.
-3. Add movie and TV discovery/search.
-4. Add watchlist functionality.
-5. Add user/profile functionality.
-6. Add persistence/backend functionality when required.
+1. Complete Phase 6 physical-device verification.
+2. Polish the UI and simplify TV tracking where needed.
+3. Finish the remaining responsive, accessibility, branding and product
+   refinements.
+4. Then prepare the production API and public Web/PWA described in
+   `docs/DEPLOYMENT-AND-DISTRIBUTION.md`.
 
 Prefer building the simplest useful version first and expanding it
 incrementally.

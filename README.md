@@ -5,11 +5,13 @@ TypeScript. Search TMDB, save a Watchlist, track seasons and episodes, and see
 viewing progress, upcoming episodes and trending titles on Home.
 
 The mobile app is in [`mobile/`](mobile/README.md). Its local Node proxy keeps
-the TMDB credential off the device. The current build runs in Expo Go or a browser;
-a hosted API and standalone iOS distribution are later milestones.
+the TMDB credential off the device. The current build runs in Expo Go or a browser.
+The planned public path is a Cloudflare-hosted API and Web/PWA first, with native
+iOS distribution considered later only if it adds enough value.
 
 - [Setup and verification](mobile/README.md)
 - [Roadmap](docs/ROADMAP.md)
+- [Deployment and distribution](docs/DEPLOYMENT-AND-DISTRIBUTION.md)
 - [Project context](docs/PROJECT_CONTEXT.md)
 - [Latest implementation and verification notes](docs/verification/2026-09-13-roadmap-progress.md)
 - [Home screenshot](docs/screenshots/home-web-390.png)

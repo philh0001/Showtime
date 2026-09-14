@@ -84,9 +84,9 @@ Status: Complete
 
 Future refinements:
 
-- Cast and crew
-- Official trailers
 - Streaming/watch-provider information
+
+Official trailers and cast/crew information are implemented.
 
 ---
 
@@ -350,29 +350,35 @@ pass; smaller margins alone do not resolve it.
 
 ---
 
-## Phase 8 — Hosted Backend & Standalone App
+## Phase 8 — Production Hosting & Public Web/PWA
 
 Status: Planned
 
-The application should be functionally complete locally before this phase.
+The application should finish its current physical-device verification and
+major product/UI polish before this phase. The detailed strategy is in
+[`DEPLOYMENT-AND-DISTRIBUTION.md`](DEPLOYMENT-AND-DISTRIBUTION.md).
 
 The current architecture is:
 
-`iPhone / Expo Go → Showtime mobile app → local Node server → TMDB`
+`Expo Go / browser -> Showtime -> local Node server -> TMDB`
 
-The goal of this phase is to remove the dependency on the development PC.
+The planned production architecture is:
 
-### Hosted API
+`Showtime Web/PWA (and a future native client if required) -> Cloudflare Worker API -> TMDB`
 
-- [ ] Choose hosting platform
-- [ ] Consider Azure Functions as the primary option
-- [ ] Deploy the Showtime TMDB proxy
-- [ ] Move TMDB credential into secure hosted configuration
+The goal is to remove the dependency on the development PC and make Showtime
+easy to try from a normal URL. Cloudflare is planned, not deployed.
+
+### Production API
+
+- [ ] Adapt the Showtime TMDB proxy for a Cloudflare Worker
+- [ ] Store the TMDB credential as a server-side Worker secret
 - [ ] Ensure the TMDB credential is never bundled into the mobile app
-- [ ] Configure mobile app to use the hosted endpoint
+- [ ] Configure production clients to use the hosted endpoint
 - [ ] Add production-safe server error handling
-- [ ] Add appropriate logging/monitoring
-- [ ] Review API security before public distribution
+- [ ] Add proportionate logging/monitoring without recording secrets
+- [ ] Add suitable request validation and public-traffic protections
+- [ ] Scan source and generated client output for credentials
 
 ### Independent operation
 
@@ -381,13 +387,25 @@ The goal of this phase is to remove the dependency on the development PC.
 - [ ] Verify Showtime works over mobile data
 - [ ] Verify Showtime works with the development PC switched off
 
-### Standalone iOS app
+### Public Web/PWA
 
-- [ ] Configure Expo/EAS production build
-- [ ] Create standalone iOS build
-- [ ] Test installation outside Expo Go
-- [ ] Test through TestFlight or equivalent distribution
-- [ ] Verify all major flows in the standalone build
+- [ ] Export the Expo web build for production
+- [ ] Deploy it using the appropriate current Cloudflare hosting approach
+- [ ] Use a Cloudflare-provided hostname initially
+- [ ] Verify navigation and major flows in iPhone Safari
+- [ ] Verify navigation and major flows in supported desktop browsers
+- [ ] Verify persistent local storage for Watchlist, progress, history and settings
+- [ ] Verify local data survives reloads and browser restarts on the same device
+- [ ] Verify Add to Home Screen on iPhone
+- [ ] Verify app-like standalone presentation where supported
+- [ ] Test production-safe API, network and offline error behaviour
+
+### Real-user feedback
+
+- [ ] Share the public URL without mandatory signup
+- [ ] Observe onboarding, navigation, layout and persistence issues
+- [ ] Decide from real usage whether accounts/cloud sync are needed
+- [ ] Decide whether a later native application would add enough value
 
 ---
 
@@ -395,8 +413,9 @@ The goal of this phase is to remove the dependency on the development PC.
 
 Status: Future
 
-Only introduce accounts and a database when cross-device persistence provides
-real value.
+Only introduce accounts and a database after the Web/PWA has real users and
+cross-device persistence or cloud backup demonstrates real value. Accounts are
+not required for public release; guest/local mode remains available.
 
 - [ ] Decide whether authentication is required
 - [ ] Choose authentication/database platform
@@ -410,6 +429,9 @@ real value.
 
 Possible platforms can be evaluated when this phase begins rather than being
 chosen prematurely.
+
+The possible model is guest/local mode plus an optional account for cloud backup
+and synchronisation. No provider is selected yet.
 
 ---
 
@@ -429,6 +451,9 @@ These are intentionally outside the core v1 path.
 - [ ] More detailed viewing statistics
 - [ ] Improved discovery categories
 - [ ] Optional recommendations based on viewing history
+- [ ] Native iOS distribution through Expo/EAS, TestFlight and the App Store if
+  Web/PWA feedback shows that native capabilities justify it
+- [ ] Native iOS widget if a later native application makes it worthwhile
 
 Avoid adding social features, reviews, friends, chat or other large subsystems
 until the core Showtime experience is complete.
@@ -447,7 +472,7 @@ Throughout development:
 - [x] Maintain project context and roadmap documentation
 - [x] Add screenshots of key milestones
 - [x] Document TV tracking architecture
-- [ ] Document hosted API architecture
+- [x] Document planned hosted API and public-distribution architecture
 - [ ] Document database/authentication design if introduced
 - [ ] Add final architecture overview
 - [ ] Add final app screenshots

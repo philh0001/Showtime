@@ -25,7 +25,8 @@ The Expo application is in `mobile/`. Development currently takes place on
 
 Phase 5 has an approved design and a verified local implementation. Phase 6 is
 the current milestone. Future phases and feature checklists belong in
-`docs/ROADMAP.md`.
+`docs/ROADMAP.md`. The planned production and public-distribution direction is
+documented separately in `docs/DEPLOYMENT-AND-DISTRIBUTION.md`.
 
 ## Current technology
 
@@ -49,6 +50,20 @@ The TMDB API Read Access Token is stored only in the ignored
 `mobile/.env.local` file. It is read by computer-side Node processes, is never
 placed in an `EXPO_PUBLIC_` variable, and must never be hard-coded, logged,
 committed, or bundled into the mobile app.
+
+## Planned production architecture
+
+The future production direction is Web/PWA first:
+
+`Showtime Web/PWA (and a future native client only if required) -> Cloudflare Worker API -> TMDB`
+
+Cloudflare is not currently deployed. The plan is to replace the development-PC
+dependency with a Cloudflare Worker that keeps the TMDB credential server-side,
+then publish the Expo web output using an appropriate current Cloudflare hosting
+approach. The first public version remains account-free and uses persistent
+local browser/device storage for personal state. See
+`docs/DEPLOYMENT-AND-DISTRIBUTION.md` for the full distinction between current
+and planned architecture.
 
 ## Current application
 
@@ -198,8 +213,9 @@ through Expo Go.
 - Search returns only TMDB's first results page; pagination is not implemented.
 - Next-episode information is date-only and may not represent a UK broadcaster's
   schedule or availability.
-- Watchlist, recent searches, Recently Viewed, and TV progress exist only on the
-  current device.
+- Watchlist, recent searches, Recently Viewed, viewing history, settings, movie
+  status and TV progress exist only on the current device. Clearing local data
+  can remove them, and they are not a cloud backup.
 - Authentication, accounts, cloud sync, databases, and episode-level tracking
   for older seasons are not implemented.
 - App icons and the native splash image remain placeholder assets.
@@ -216,7 +232,8 @@ Before a milestone is considered complete:
   physical iPhone through Expo Go.
 
 Project setup and startup commands belong in `mobile/README.md`. Future work and
-completion checklists belong in `docs/ROADMAP.md`.
+completion checklists belong in `docs/ROADMAP.md`. Production hosting and public
+distribution decisions belong in `docs/DEPLOYMENT-AND-DISTRIBUTION.md`.
 
 ## Latest automated milestone
 

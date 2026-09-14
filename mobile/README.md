@@ -6,7 +6,8 @@ Search displays movie and TV titles, posters, years and media types using TMDB.
 The device-local Watchlist, movie watched status and TV tracking are implemented.
 Home includes Continue Watching, Recently Viewed, Watched Movies, Watchlist,
 cached Upcoming Episodes and Trending Movies/TV. Profile includes local viewing
-statistics, a Trending preference, and credits. Accounts are planned.
+statistics, a Trending preference, and credits. Optional accounts remain future
+work and are not required for the planned public Web/PWA.
 
 ## Run locally
 
@@ -204,3 +205,4 @@ animation has been removed. App icons and the native splash image referenced in
 
 - [Project context](../docs/PROJECT_CONTEXT.md)
 - [Roadmap](../docs/ROADMAP.md)
+- [Deployment and distribution](../docs/DEPLOYMENT-AND-DISTRIBUTION.md)
