@@ -2,7 +2,7 @@ import Constants from 'expo-constants';
 import { Image } from 'expo-image';
 import { Link, useFocusEffect } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ProfileSettings } from '@/components/profile-settings';
 
@@ -13,8 +13,14 @@ import { loadTvProgress } from '@/services/tv-progress';
 import { loadTvSchedules } from '@/services/tv-schedule';
 import { getViewingStats } from '@/services/viewing-summary';
 import { loadWatchlist } from '@/services/watchlist';
+import { getProfileColumns } from '@/services/collection-layout-rules';
+import { Layout } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 
 export default function ProfileScreen() {
+  const styles = createStyles(useTheme());
+  const { width } = useWindowDimensions();
+  const wideStats = getProfileColumns(width) === 2;
   const [data, setData] = useState<HomeData | null>(null);
   const [loading, setLoading] = useState(true);
   const request = useRef(0);
@@ -38,12 +44,12 @@ export default function ProfileScreen() {
         <Text style={styles.title}>Profile</Text>
         <Text style={styles.subtitle}>Your viewing activity</Text>
         {loading ? <ActivityIndicator style={styles.loading} color="#FFFFFF" accessibilityLabel="Loading viewing statistics" />
-          : stats && <View style={styles.stats}>
-            <Stat label="Titles in Watchlist" value={stats.watchlist} />
-            <Stat label="Movies watched" value={stats.moviesWatched} />
-            <Stat label="TV seasons watched" value={stats.seasonsWatched} />
-            <Stat label="Shows with viewing progress" value={stats.showsTracked} />
-            <Stat label="Individually tracked episodes watched" value={stats.episodesWatched} />
+          : stats && <View style={[styles.stats, wideStats && styles.statsWide]}>
+            <Stat label="Titles in Watchlist" value={stats.watchlist} wide={wideStats} />
+            <Stat label="Movies watched" value={stats.moviesWatched} wide={wideStats} />
+            <Stat label="TV seasons watched" value={stats.seasonsWatched} wide={wideStats} />
+            <Stat label="Shows with viewing progress" value={stats.showsTracked} wide={wideStats} />
+            <Stat label="Individually tracked episodes watched" value={stats.episodesWatched} wide={wideStats} />
           </View>}
         {!loading && hasError && <View style={styles.errorGroup}>
           <Text accessibilityRole="alert" style={styles.error}>Some viewing statistics could not be loaded.</Text>
@@ -51,8 +57,11 @@ export default function ProfileScreen() {
             <Text style={styles.link}>Try again</Text>
           </Pressable>
         </View>}
-        <Link href="/watchlist" style={styles.navigation}>Watchlist</Link>
-        <Link href="/history" style={styles.navigation}>Viewing history</Link>
+        <View style={styles.group}>
+          <Text accessibilityRole="header" style={styles.heading}>Library</Text>
+          <Link href="/watchlist" style={styles.navigation}>Watchlist</Link>
+          <Link href="/history" style={styles.navigation}>Viewing history</Link>
+        </View>
         <ProfileSettings />
         <View style={styles.about}>
           <Text accessibilityRole="header" style={styles.heading}>About Showtime</Text>
@@ -68,46 +77,55 @@ export default function ProfileScreen() {
   );
 }
 
-function Stat({ label, value }: { label: string; value: number | null }) {
-  return <View style={styles.stat} accessible accessibilityLabel={`${label}: ${value ?? 'Unavailable'}`}>
+function Stat({ label, value, wide }: { label: string; value: number | null; wide: boolean }) {
+  const styles = createStyles(useTheme());
+  return <View style={[styles.stat, wide && styles.statWide]} accessible accessibilityLabel={`${label}: ${value ?? 'Unavailable'}`}>
     <Text style={styles.statLabel}>{label}</Text>
     <Text style={styles.statValue}>{value ?? '?'}</Text>
   </View>;
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ReturnType<typeof useTheme>) {
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0B0B0F',
+    backgroundColor: colors.background,
   },
   content: {
+    width: '100%',
+    maxWidth: Layout.readingMaxWidth,
+    alignSelf: 'center',
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 24,
   },
   title: {
-    color: '#FFFFFF',
+    color: colors.text,
     fontSize: 28,
     fontWeight: '800',
     marginBottom: 8,
   },
   subtitle: {
-    color: '#A7A7B0',
+    color: colors.textSecondary,
     fontSize: 16,
     lineHeight: 24,
   },
   loading: { marginVertical: 40 },
-  stats: { marginTop: 12 },
-  stat: { flexDirection: 'row', alignItems: 'center', gap: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#29292F' },
-  statLabel: { flex: 1, color: '#DDDEE3', fontSize: 16, lineHeight: 23 },
-  statValue: { color: '#63D7BA', fontSize: 24, fontWeight: '700', minWidth: 44, textAlign: 'right' },
-  navigation: { color: '#FFFFFF', fontSize: 16, fontWeight: '700', paddingVertical: 12 },
-  about: { marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#29292F', gap: 10 },
-  heading: { color: '#FFFFFF', fontSize: 22, fontWeight: '700' },
+  stats: { marginTop: 12, gap: 10 },
+  statsWide: { flexDirection: 'row', flexWrap: 'wrap' },
+  stat: { flexDirection: 'row', alignItems: 'center', gap: 16, padding: 14, borderRadius: 12, backgroundColor: colors.surface, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
+  statWide: { flexBasis: '48%', flexGrow: 1 },
+  statLabel: { flex: 1, color: colors.text, fontSize: 16, lineHeight: 23 },
+  statValue: { color: colors.accent, fontSize: 24, fontWeight: '700', minWidth: 44, textAlign: 'right' },
+  group: { marginTop: 20, padding: 16, borderRadius: 12, backgroundColor: colors.surface, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border, gap: 2 },
+  navigation: { color: colors.accent, fontSize: 16, fontWeight: '700', paddingVertical: 12 },
+  about: { marginTop: 20, padding: 16, borderRadius: 12, backgroundColor: colors.surface, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border, gap: 10 },
+  heading: { color: colors.text, fontSize: 22, fontWeight: '700' },
   tmdb: { width: 100, height: 24, marginTop: 4 },
-  credit: { color: '#A7A7B0', fontSize: 13, lineHeight: 20 },
+  credit: { color: colors.textSecondary, fontSize: 13, lineHeight: 20 },
   errorGroup: { marginTop: 20, alignItems: 'flex-start' },
-  error: { color: '#FF8A8A', fontSize: 14 },
+  error: { color: colors.danger, fontSize: 14 },
   retry: { paddingVertical: 14 },
-  link: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
+  link: { color: colors.accent, fontSize: 15, fontWeight: '700' },
 });
+}

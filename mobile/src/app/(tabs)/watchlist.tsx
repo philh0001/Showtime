@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { Link, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, FlatList, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import type { MovieProgressLoadResult } from '@/services/movie-progress-rules';
@@ -18,8 +18,14 @@ import {
 } from '@/services/watchlist-progress';
 import type { WatchlistItem } from '@/services/watchlist-rules';
 import { loadWatchlist, removeFromWatchlist } from '@/services/watchlist';
+import { getWatchlistColumns } from '@/services/collection-layout-rules';
+import { Layout } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 
 export default function WatchlistScreen() {
+  const styles = createStyles(useTheme());
+  const { width } = useWindowDimensions();
+  const columns = getWatchlistColumns(width);
   const [items, setItems] = useState<WatchlistItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -72,7 +78,10 @@ export default function WatchlistScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <FlatList
+        key={`watchlist-${columns}`}
         data={visibleItems}
+        numColumns={columns}
+        columnWrapperStyle={columns > 1 ? styles.gridRow : undefined}
         keyExtractor={itemKey}
         contentContainerStyle={[styles.content, !loading && visibleItems.length === 0 && styles.emptyContent]}
         ListHeaderComponent={<View style={styles.header}>
@@ -111,6 +120,7 @@ export default function WatchlistScreen() {
             progressLabel={getWatchlistProgressLabel(item, tvProgress)}
             status={getWatchlistStatus(item, tvProgress, movieProgress)}
             removing={removing === itemKey(item)}
+            grid={columns > 1}
             onRemove={() => void remove(item)}
           />
         )}
@@ -133,6 +143,7 @@ function FilterControls({
   selected: WatchlistFilter;
   onChange: (filter: WatchlistFilter) => void;
 }) {
+  const styles = createStyles(useTheme());
   return (
     <View style={styles.filters}>
       {FILTERS.map((filter) => (
@@ -162,16 +173,19 @@ function WatchlistRow({
   progressLabel,
   status,
   removing,
+  grid,
   onRemove,
 }: {
   item: WatchlistItem;
   progressLabel: string | null;
   status: WatchlistStatus;
   removing: boolean;
+  grid: boolean;
   onRemove: () => void;
 }) {
+  const styles = createStyles(useTheme());
   return (
-    <View style={styles.row}>
+    <View style={[styles.row, grid && styles.gridCard]}>
       <Link
         href={{
           pathname: item.mediaType === 'Movie' ? '/movie/[id]' : '/tv/[id]',
@@ -183,9 +197,11 @@ function WatchlistRow({
           accessibilityRole="link"
           accessibilityLabel={`View ${item.title}, ${item.mediaType}${status === 'watched'
             ? `, ${item.mediaType === 'Movie' ? 'watched' : 'completed'}` : ''}`}
-          style={Platform.OS === 'web' ? styles.detailsLink : ({ pressed }) => [styles.detailsLink, pressed && styles.dimmed]}
+          style={Platform.OS === 'web'
+            ? [styles.detailsLink, grid && styles.detailsLinkGrid]
+            : ({ pressed }) => [styles.detailsLink, grid && styles.detailsLinkGrid, pressed && styles.dimmed]}
         >
-          <Artwork item={item} status={status} />
+          <Artwork item={item} status={status} grid={grid} />
           <View style={styles.rowText}>
             <Text style={styles.itemTitle} numberOfLines={2}>{item.title}</Text>
             <Text style={styles.subtitle}>{item.year ?? 'Year unknown'} · {item.mediaType}</Text>
@@ -207,11 +223,12 @@ function WatchlistRow({
   );
 }
 
-function Artwork({ item, status }: { item: WatchlistItem; status: WatchlistStatus }) {
+function Artwork({ item, status, grid }: { item: WatchlistItem; status: WatchlistStatus; grid: boolean }) {
   const [failed, setFailed] = useState(false);
+  const styles = createStyles(useTheme());
   const statusLabel = item.mediaType === 'Movie' ? 'Watched' : 'Completed';
   return (
-    <View style={styles.poster}>
+    <View style={[styles.poster, grid && styles.posterGrid]}>
       <View style={[styles.posterContent, status === 'watched' && styles.watchedPoster]}>
         {item.posterUrl && !failed
           ? <Image
@@ -234,36 +251,42 @@ function itemKey(item: WatchlistItem) {
   return `${item.mediaType}-${item.id}`;
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0B0B0F' },
-  content: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 32 },
+function createStyles(colors: ReturnType<typeof useTheme>) {
+  return StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
+  content: { width: '100%', maxWidth: Layout.contentMaxWidth, alignSelf: 'center', paddingHorizontal: 24, paddingTop: 24, paddingBottom: 32 },
   emptyContent: { flexGrow: 1 },
   header: { marginBottom: 24 },
-  title: { color: '#FFFFFF', fontSize: 32, fontWeight: '800', marginBottom: 8 },
-  subtitle: { color: '#A7A7B0', fontSize: 15, lineHeight: 22 },
+  title: { color: colors.text, fontSize: 32, fontWeight: '800', marginBottom: 8 },
+  subtitle: { color: colors.textSecondary, fontSize: 15, lineHeight: 22 },
   filters: { flexDirection: 'row', gap: 8, marginTop: 18 },
-  filterButton: { borderColor: '#45454E', borderRadius: 999, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 8 },
-  filterButtonSelected: { backgroundColor: '#FFFFFF', borderColor: '#FFFFFF' },
-  filterText: { color: '#C7C7CF', fontSize: 14, fontWeight: '700' },
-  filterTextSelected: { color: '#0B0B0F' },
-  error: { color: '#FF8A8A', fontSize: 14, marginTop: 12 },
+  filterButton: { minHeight: 44, justifyContent: 'center', borderColor: colors.border, borderRadius: 999, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 8 },
+  filterButtonSelected: { backgroundColor: colors.accent, borderColor: colors.accent },
+  filterText: { color: colors.textSecondary, fontSize: 14, fontWeight: '700' },
+  filterTextSelected: { color: colors.onAccent },
+  error: { color: colors.danger, fontSize: 14, marginTop: 12 },
   message: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 14, paddingHorizontal: 24 },
-  emptyTitle: { color: '#FFFFFF', fontSize: 20, fontWeight: '700' },
-  retry: { backgroundColor: '#FFFFFF', borderRadius: 12, paddingHorizontal: 20, paddingVertical: 12 },
-  retryText: { color: '#0B0B0F', fontSize: 15, fontWeight: '700' },
+  emptyTitle: { color: colors.text, fontSize: 20, fontWeight: '700' },
+  retry: { backgroundColor: colors.accent, borderRadius: 12, paddingHorizontal: 20, paddingVertical: 12 },
+  retryText: { color: colors.onAccent, fontSize: 15, fontWeight: '700' },
   row: { gap: 12 },
+  gridRow: { gap: 16 },
+  gridCard: { flex: 1, minWidth: 0, padding: 12, borderRadius: 12, backgroundColor: colors.surface, borderColor: colors.border, borderWidth: StyleSheet.hairlineWidth },
   detailsLink: { flexDirection: 'row', gap: 16, alignItems: 'center' },
-  poster: { width: 72, height: 108, borderRadius: 8, overflow: 'hidden', backgroundColor: '#212225', alignItems: 'center', justifyContent: 'center' },
+  detailsLinkGrid: { flexDirection: 'column', alignItems: 'stretch', gap: 10 },
+  poster: { width: 72, height: 108, borderRadius: 8, overflow: 'hidden', backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
+  posterGrid: { width: '100%', height: undefined, aspectRatio: 2 / 3 },
   posterContent: { position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center' },
   watchedPoster: { opacity: 0.55 },
-  posterFallback: { color: '#A7A7B0', fontSize: 12, textAlign: 'center' },
-  statusBadge: { position: 'absolute', left: 5, right: 5, bottom: 6, borderRadius: 5, backgroundColor: '#FFFFFF', paddingHorizontal: 4, paddingVertical: 3 },
-  statusBadgeText: { color: '#0B0B0F', fontSize: 10, fontWeight: '800', textAlign: 'center' },
+  posterFallback: { color: colors.textSecondary, fontSize: 12, textAlign: 'center' },
+  statusBadge: { position: 'absolute', left: 5, right: 5, bottom: 6, borderRadius: 5, backgroundColor: colors.accent, paddingHorizontal: 4, paddingVertical: 3 },
+  statusBadgeText: { color: colors.onAccent, fontSize: 10, fontWeight: '800', textAlign: 'center' },
   rowText: { flex: 1, gap: 6 },
-  itemTitle: { color: '#FFFFFF', fontSize: 18, fontWeight: '700' },
-  progress: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
+  itemTitle: { color: colors.text, fontSize: 18, fontWeight: '700' },
+  progress: { color: colors.accent, fontSize: 14, fontWeight: '600' },
   removeButton: { alignSelf: 'flex-end', paddingHorizontal: 4, paddingVertical: 8 },
-  removeText: { color: '#FF8A8A', fontSize: 15, fontWeight: '600' },
-  separator: { height: StyleSheet.hairlineWidth, backgroundColor: '#393940', marginVertical: 18 },
+  removeText: { color: colors.danger, fontSize: 15, fontWeight: '600' },
+  separator: { height: StyleSheet.hairlineWidth, backgroundColor: colors.border, marginVertical: 18 },
   dimmed: { opacity: 0.65 },
 });
+}

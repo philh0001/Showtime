@@ -3,8 +3,11 @@ import { useCallback, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { loadSettings, setShowTrending } from '@/services/settings';
 import type { SettingsResult } from '@/services/settings-storage';
+import { useTheme } from '@/hooks/use-theme';
 
 export function ProfileSettings() {
+  const colors = useTheme();
+  const styles = createStyles(colors);
   const [settings, setSettings] = useState<SettingsResult | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(false);
@@ -40,7 +43,7 @@ export function ProfileSettings() {
       <Text style={styles.label}>Trending on Home</Text>
       <Switch accessibilityLabel="Trending on Home" value={settings?.status === 'available' && settings.showTrending}
         disabled={settings?.status !== 'available' || saving} onValueChange={(value) => void toggle(value)}
-        trackColor={{ false: '#38383F', true: '#23886F' }} thumbColor="#FFFFFF" />
+        trackColor={{ false: colors.border, true: colors.accent }} thumbColor={colors.surface} />
     </View>
     {settings?.status === 'unavailable' && <View>
       <Text accessibilityRole="alert" style={styles.error}>Settings could not be loaded.</Text>
@@ -50,11 +53,13 @@ export function ProfileSettings() {
   </View>;
 }
 
-const styles = StyleSheet.create({
-  section: { marginTop: 12, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#29292F', gap: 10 },
-  heading: { color: '#FFFFFF', fontSize: 22, fontWeight: '700' },
+function createStyles(colors: ReturnType<typeof useTheme>) {
+  return StyleSheet.create({
+  section: { marginTop: 20, padding: 16, borderRadius: 12, backgroundColor: colors.surface, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border, gap: 10 },
+  heading: { color: colors.text, fontSize: 22, fontWeight: '700' },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 16, paddingVertical: 8 },
-  label: { color: '#DDDEE3', fontSize: 16, flexShrink: 1 },
-  error: { color: '#FF8A8A', fontSize: 14, lineHeight: 21 },
+  label: { color: colors.text, fontSize: 16, flexShrink: 1 },
+  error: { color: colors.danger, fontSize: 14, lineHeight: 21 },
   retry: { paddingVertical: 14, alignSelf: 'flex-start' },
 });
+}
