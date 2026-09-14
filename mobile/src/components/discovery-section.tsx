@@ -6,8 +6,11 @@ import { HomePosterCard } from '@/components/home-poster-card';
 import { loadDiscovery } from '@/services/discovery';
 import type { DiscoveryResult } from '@/services/discovery-cache';
 import { loadSettings } from '@/services/settings';
+import { useTheme } from '@/hooks/use-theme';
 
 export function DiscoverySection() {
+  const colors = useTheme();
+  const styles = createStyles(colors);
   const [data, setData] = useState<DiscoveryResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -61,13 +64,15 @@ export function DiscoverySection() {
   </View>;
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ReturnType<typeof useTheme>) {
+  return StyleSheet.create({
   container: { marginTop: 20, gap: 24 },
   section: { gap: 10 },
-  title: { color: '#FFFFFF', fontSize: 20, fontWeight: '800' },
+  title: { color: colors.text, fontSize: 20, fontWeight: '800' },
   rail: { gap: 14, paddingRight: 24 },
-  secondary: { color: '#A7A7B0', fontSize: 14, lineHeight: 21 },
+  secondary: { color: colors.textSecondary, fontSize: 14, lineHeight: 21 },
   errorGroup: { alignItems: 'flex-start', gap: 4 },
   retry: { paddingVertical: 12, paddingRight: 16 },
-  retryText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
+  retryText: { color: colors.text, fontSize: 15, fontWeight: '700' },
 });
+}

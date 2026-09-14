@@ -1,6 +1,6 @@
 import { Link, useFocusEffect } from 'expo-router';
 import { useCallback, useRef, useState, type ReactNode } from 'react';
-import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { HomePosterCard, type HomePosterItem } from '@/components/home-poster-card';
@@ -14,8 +14,14 @@ import { loadWatchlist } from '@/services/watchlist';
 import { loadTvProgress } from '@/services/tv-progress';
 import { loadTvSchedules } from '@/services/tv-schedule';
 import { getContinueWatching, type ViewingProgress } from '@/services/viewing-summary';
+import { getHomeLayout } from '@/services/home-layout-rules';
+import { Layout } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 
 export default function HomeScreen() {
+  const colors = useTheme();
+  const styles = createStyles(colors);
+  const { width } = useWindowDimensions();
   const [data, setData] = useState<HomeData | null>(null);
   const [loading, setLoading] = useState(true);
   const request = useRef(0);
@@ -54,10 +60,14 @@ export default function HomeScreen() {
     && recentItems.length === 0
     && watchlistItems.length === 0
     && watchedMovies.length === 0;
+  const wideModules = getHomeLayout(width, 0).moduleColumns === 2;
+  const hasUpcomingSource = watchlistItems.some((item) => item.mediaType === 'TV')
+    || (data?.tvProgress.status === 'available' && data.tvProgress.records.length > 0);
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.contentInner}>
         <Text style={styles.logo}>SHOWTIME</Text>
         <Link href="/search" asChild>
           <Pressable
@@ -74,32 +84,44 @@ export default function HomeScreen() {
           <Text style={styles.secondary}>Loading your Home screen…</Text>
         </View>}
 
-        {!loading && continueWatching.length > 0
-          && <PosterRail title="Continue Watching" items={continueWatching.slice(0, 20)}
-            getProgress={(item) => continueWatching.find((show) => show.id === item.id)?.progress} />}
+        {!loading && <View style={[styles.personalGrid, wideModules && styles.personalGridWide]}>
+          {continueWatching.length > 0 && <View style={[styles.module, wideModules && styles.moduleWide]}>
+            <PosterRail title="Continue Watching" items={continueWatching.slice(0, 20)}
+              compact={getHomeLayout(width, continueWatching.length).collectionMode === 'compact'}
+              getProgress={(item) => continueWatching.find((show) => show.id === item.id)?.progress} />
+          </View>}
 
-        {!loading && recentItems.length > 0
-          && <PosterRail title="Recently Viewed" items={recentItems} />}
+          {recentItems.length > 0 && <View style={[styles.module, wideModules && styles.moduleWide]}>
+            <PosterRail title="Recently Viewed" items={recentItems}
+              compact={getHomeLayout(width, recentItems.length).collectionMode === 'compact'} />
+          </View>}
 
-        {!loading && data && <UpcomingSection watchlist={watchlistItems} progress={data.tvProgress}
-          cache={data.tvSchedules} onRetry={refresh} />}
+          {data && hasUpcomingSource && <View style={[styles.module, wideModules && styles.moduleWide]}>
+            <UpcomingSection watchlist={watchlistItems} progress={data.tvProgress}
+              cache={data.tvSchedules} onRetry={refresh} />
+          </View>}
 
-        {!loading && watchedMovies.length > 0
-          && <PosterRail
-            title="Watched Movies"
-            items={watchedMovies.slice(0, 20).map(watchedMovieToPosterItem)}
-            statusLabel="Watched"
-            action={<Link href="/history" style={styles.seeAll}>History</Link>}
-          />}
+          {watchedMovies.length > 0 && <View style={[styles.module, wideModules && styles.moduleWide]}>
+            <PosterRail
+              title="Watched Movies"
+              items={watchedMovies.slice(0, 20).map(watchedMovieToPosterItem)}
+              compact={getHomeLayout(width, watchedMovies.length).collectionMode === 'compact'}
+              statusLabel="Watched"
+              action={<Link href="/history" style={styles.seeAll}>History</Link>}
+            />
+          </View>}
 
-        {!loading && watchlistItems.length > 0
-          && <PosterRail
-            title="Watchlist"
-            items={watchlistItems.slice(0, 10)}
-            getStatusLabel={(item) => item.mediaType === 'Movie'
-              && findWatchedMovie(watchedMovies, item.id) ? 'Watched' : undefined}
-            action={<Link href="/watchlist" style={styles.seeAll}>See all</Link>}
-          />}
+          {watchlistItems.length > 0 && <View style={[styles.module, wideModules && styles.moduleWide]}>
+            <PosterRail
+              title="Watchlist"
+              items={watchlistItems.slice(0, 10)}
+              compact={getHomeLayout(width, watchlistItems.length).collectionMode === 'compact'}
+              getStatusLabel={(item) => item.mediaType === 'Movie'
+                && findWatchedMovie(watchedMovies, item.id) ? 'Watched' : undefined}
+              action={<Link href="/watchlist" style={styles.seeAll}>See all</Link>}
+            />
+          </View>}
+        </View>}
 
         {!loading && showFirstUse && <View style={styles.firstUse}>
           <Text style={styles.emptyTitle}>Your Home screen is ready</Text>
@@ -121,6 +143,7 @@ export default function HomeScreen() {
           </Pressable>
         </View>}
         <DiscoverySection />
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -133,6 +156,7 @@ function PosterRail({
   statusLabel,
   getStatusLabel,
   getProgress,
+  compact = false,
 }: {
   title: string;
   items: HomePosterItem[];
@@ -140,15 +164,22 @@ function PosterRail({
   statusLabel?: 'Watched' | 'Completed';
   getStatusLabel?: (item: HomePosterItem) => 'Watched' | 'Completed' | undefined;
   getProgress?: (item: HomePosterItem) => ViewingProgress | undefined;
+  compact?: boolean;
 }) {
+  const styles = createStyles(useTheme());
   return (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
         <Text accessibilityRole="header" style={styles.sectionTitle}>{title}</Text>
         {action}
       </View>
-      {items.length === 1 ? <HomePosterCard item={items[0]} compact
-        statusLabel={statusLabel ?? getStatusLabel?.(items[0])} progress={getProgress?.(items[0])} /> : <ScrollView
+      {compact ? <View style={styles.compactList}>{items.map((item) => <HomePosterCard
+        key={`${item.mediaType}:${item.id}`}
+        item={item}
+        compact
+        statusLabel={statusLabel ?? getStatusLabel?.(item)}
+        progress={getProgress?.(item)}
+      />)}</View> : <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.rail}
@@ -176,31 +207,39 @@ function watchedMovieToPosterItem(movie: WatchedMovie): HomePosterItem {
   };
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0B0B0F' },
-  content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 24 },
-  logo: { color: '#FFFFFF', fontSize: 28, fontWeight: '800', letterSpacing: 0 },
+function createStyles(colors: ReturnType<typeof useTheme>) {
+  return StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
+  content: { alignItems: 'center', paddingBottom: 24 },
+  contentInner: { width: '100%', maxWidth: Layout.contentMaxWidth, paddingHorizontal: Layout.pagePadding, paddingTop: 16 },
+  logo: { color: colors.text, fontSize: 28, fontWeight: '800', letterSpacing: 0 },
   searchButton: {
     alignSelf: 'flex-start',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.accent,
     borderRadius: 12,
     marginTop: 12,
     paddingHorizontal: 20,
     paddingVertical: 13,
   },
-  searchButtonText: { color: '#0B0B0F', fontSize: 15, fontWeight: '700' },
+  searchButtonText: { color: colors.onAccent, fontSize: 15, fontWeight: '700' },
   message: { minHeight: 180, gap: 14, alignItems: 'center', justifyContent: 'center' },
-  secondary: { color: '#A7A7B0', fontSize: 15, lineHeight: 22 },
+  secondary: { color: colors.textSecondary, fontSize: 15, lineHeight: 22 },
+  personalGrid: { width: '100%' },
+  personalGridWide: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 24 },
+  module: { minWidth: 0, width: '100%' },
+  moduleWide: { flexBasis: '48%', flexGrow: 1 },
   section: { marginTop: 20, gap: 10 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  sectionTitle: { color: '#FFFFFF', fontSize: 20, fontWeight: '800' },
-  seeAll: { color: '#FFFFFF', fontSize: 15, fontWeight: '700', paddingVertical: 8 },
+  sectionTitle: { color: colors.text, fontSize: 20, fontWeight: '800' },
+  seeAll: { color: colors.accent, fontSize: 15, fontWeight: '700', paddingVertical: 8 },
   rail: { gap: 14, paddingRight: 24 },
+  compactList: { gap: 10 },
   firstUse: { gap: 6, marginTop: 20, paddingVertical: 8 },
-  emptyTitle: { color: '#FFFFFF', fontSize: 19, fontWeight: '700' },
+  emptyTitle: { color: colors.text, fontSize: 19, fontWeight: '700' },
   errorCard: { alignItems: 'flex-start', gap: 12, marginTop: 28 },
-  error: { color: '#FF8A8A', fontSize: 14 },
-  retryButton: { borderColor: '#FFFFFF', borderRadius: 10, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 9 },
-  retryText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
+  error: { color: colors.danger, fontSize: 14 },
+  retryButton: { borderColor: colors.border, borderRadius: 10, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 9 },
+  retryText: { color: colors.text, fontSize: 14, fontWeight: '700' },
   pressed: { opacity: 0.65 },
 });
+}

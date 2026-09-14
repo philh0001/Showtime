@@ -3,6 +3,7 @@ import { Link } from 'expo-router';
 import { useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import type { ViewingProgress } from '@/services/viewing-summary';
+import { useTheme } from '@/hooks/use-theme';
 
 export type HomePosterItem = {
   id: number;
@@ -23,6 +24,8 @@ export function HomePosterCard({
   progress?: ViewingProgress;
   compact?: boolean;
 }) {
+  const colors = useTheme();
+  const styles = createStyles(colors);
   const [imageFailed, setImageFailed] = useState(false);
   return (
     <Link
@@ -81,22 +84,23 @@ export function HomePosterCard({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ReturnType<typeof useTheme>) {
+  return StyleSheet.create({
   card: { width: 126, gap: 6 },
   info: { gap: 6 },
   compactCard: { width: '100%', flexDirection: 'row', alignItems: 'center', gap: 14 },
   compactPoster: { width: 72, height: 108, borderRadius: 8 },
   compactInfo: { flex: 1, gap: 8 },
-  compactStatus: { color: '#63D7BA', fontSize: 12, fontWeight: '700' },
+  compactStatus: { color: colors.accent, fontSize: 12, fontWeight: '700' },
   progressGroup: { gap: 6, marginTop: 3 },
-  progressTrack: { height: 4, backgroundColor: '#38383F', borderRadius: 2, overflow: 'hidden' },
-  progressFill: { height: 4, backgroundColor: '#63D7BA' },
+  progressTrack: { height: 4, backgroundColor: colors.border, borderRadius: 2, overflow: 'hidden' },
+  progressFill: { height: 4, backgroundColor: colors.accent },
   poster: {
     width: 126,
     height: 189,
     overflow: 'hidden',
     borderRadius: 12,
-    backgroundColor: '#212225',
+    backgroundColor: colors.surfaceMuted,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -107,14 +111,15 @@ const styles = StyleSheet.create({
     left: 8,
     right: 8,
     bottom: 8,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.accent,
     borderRadius: 6,
     paddingHorizontal: 6,
     paddingVertical: 4,
   },
-  statusBadgeText: { color: '#0B0B0F', fontSize: 11, fontWeight: '800', textAlign: 'center' },
-  fallback: { color: '#A7A7B0', fontSize: 13 },
-  title: { color: '#FFFFFF', fontSize: 15, fontWeight: '700', lineHeight: 20 },
-  meta: { color: '#A7A7B0', fontSize: 12 },
+  statusBadgeText: { color: colors.onAccent, fontSize: 11, fontWeight: '800', textAlign: 'center' },
+  fallback: { color: colors.textSecondary, fontSize: 13 },
+  title: { color: colors.text, fontSize: 15, fontWeight: '700', lineHeight: 20 },
+  meta: { color: colors.textSecondary, fontSize: 12 },
   pressed: { opacity: 0.65 },
 });
+}

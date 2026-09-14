@@ -8,10 +8,13 @@ import { formatLocalUkWatchedDate } from '@/services/movie-progress-rules';
 import { getUpcomingEpisodes, type ScheduleLoadResult } from '@/services/tv-schedule-rules';
 import type { ProgressLoadResult } from '@/services/tv-progress-rules';
 import type { WatchlistItem } from '@/services/watchlist-rules';
+import { useTheme } from '@/hooks/use-theme';
 
 export function UpcomingSection({ watchlist, progress, cache, onRetry }: {
   watchlist: WatchlistItem[]; progress: ProgressLoadResult; cache: ScheduleLoadResult; onRetry: () => Promise<void>;
 }) {
+  const colors = useTheme();
+  const styles = createStyles(colors);
   const [today, setToday] = useState(getDeviceLocalIsoDate);
   useFocusEffect(useCallback(() => {
     setToday(getDeviceLocalIsoDate());
@@ -49,16 +52,18 @@ export function UpcomingSection({ watchlist, progress, cache, onRetry }: {
   </View>;
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ReturnType<typeof useTheme>) {
+  return StyleSheet.create({
   section: { marginTop: 20, gap: 10 },
-  heading: { color: '#FFFFFF', fontSize: 20, fontWeight: '800' },
-  row: { flexDirection: 'row', gap: 14, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#29292F' },
-  poster: { width: 64, height: 96, borderRadius: 8, backgroundColor: '#212225', overflow: 'hidden' },
+  heading: { color: colors.text, fontSize: 20, fontWeight: '800' },
+  row: { flexDirection: 'row', gap: 14, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.border },
+  poster: { width: 64, height: 96, borderRadius: 8, backgroundColor: colors.surfaceMuted, overflow: 'hidden' },
   details: { flex: 1, gap: 4 },
-  title: { color: '#FFFFFF', fontSize: 16, fontWeight: '700', lineHeight: 22 },
-  countdown: { color: '#63D7BA', fontSize: 14, fontWeight: '700' },
-  meta: { color: '#A7A7B0', fontSize: 13, lineHeight: 20 },
-  checked: { color: '#A7A7B0', fontSize: 11, lineHeight: 18 },
+  title: { color: colors.text, fontSize: 16, fontWeight: '700', lineHeight: 22 },
+  countdown: { color: colors.accent, fontSize: 14, fontWeight: '700' },
+  meta: { color: colors.textSecondary, fontSize: 13, lineHeight: 20 },
+  checked: { color: colors.textSecondary, fontSize: 11, lineHeight: 18 },
   retry: { paddingVertical: 14, alignSelf: 'flex-start' },
   pressed: { opacity: 0.65 },
 });
+}
