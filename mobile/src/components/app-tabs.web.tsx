@@ -8,9 +8,12 @@ import {
 } from 'expo-router/ui';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { useTheme } from '@/hooks/use-theme';
+
 export default function AppTabs() {
+  const colors = useTheme();
   return (
-    <Tabs style={styles.container}>
+    <Tabs style={[styles.container, { backgroundColor: colors.background }]}>
       <TabSlot style={styles.slot} />
 
       <TabList asChild>
@@ -41,11 +44,12 @@ export function TabButton({
   isFocused,
   ...props
 }: TabTriggerSlotProps) {
+  const colors = useTheme();
   return (
     <Pressable {...props} accessibilityRole="tab" accessibilityState={{ selected: isFocused }}
       style={({ pressed }) => [styles.tabButton, pressed && styles.pressed]}>
-      <View style={[styles.tabButtonView, isFocused && styles.selected]}>
-        <Text style={[styles.tabText, isFocused && styles.selectedText]}>
+      <View style={[styles.tabButtonView, isFocused && { backgroundColor: colors.pressed }]}>
+        <Text style={[styles.tabText, { color: colors.textSecondary }, isFocused && { color: colors.text }]}>
           {children}
         </Text>
       </View>
@@ -54,8 +58,12 @@ export function TabButton({
 }
 
 export function CustomTabList(props: TabListProps) {
+  const colors = useTheme();
   return (
-    <View {...props} style={styles.tabListContainer}>
+    <View {...props} style={[styles.tabListContainer, {
+      backgroundColor: colors.surface,
+      borderTopColor: colors.border,
+    }]}>
       <View style={styles.innerContainer}>
         {props.children}
       </View>
@@ -64,7 +72,7 @@ export function CustomTabList(props: TabListProps) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, minHeight: 0, backgroundColor: '#0B0B0F' },
+  container: { flex: 1, minHeight: 0 },
   slot: { flex: 1, minHeight: 0 },
   tabListContainer: {
     width: '100%',
@@ -72,8 +80,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'row',
-    backgroundColor: '#16161B',
-    borderTopColor: '#29292F',
     borderTopWidth: 1,
   },
   innerContainer: {
@@ -85,9 +91,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   tabButton: { flex: 1, minWidth: 0 },
-  tabText: { color: '#A7A7B0', fontSize: 13, fontWeight: '600', textAlign: 'center' },
-  selected: { backgroundColor: '#29292F' },
-  selectedText: { color: '#FFFFFF' },
+  tabText: { fontSize: 13, fontWeight: '600', textAlign: 'center' },
   pressed: {
     opacity: 0.7,
   },
