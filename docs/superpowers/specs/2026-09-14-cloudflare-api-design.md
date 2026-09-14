@@ -111,6 +111,7 @@ The primary threats are:
 - open-proxy or server-side request forgery behavior;
 - malformed, oversized or deliberately expensive input;
 - accidental data leakage through errors and observability;
+- compromised or malicious build dependencies and deployment tooling;
 - unsafe cross-origin browser access; and
 - a defective deployment becoming the client's only API.
 
@@ -161,6 +162,11 @@ The primary threats are:
 13. Wrangler limits each invocation to at most eight external subrequests. The
     free-plan CPU ceiling is recorded and verified against real details
     responses before client cutover.
+14. Worker dependencies are kept minimal, pinned through the committed lockfile
+    and reviewed before installation. Dependency provenance, install scripts,
+    known vulnerabilities and the final bundled dependency tree are checked
+    before deployment. Automated update tools may propose changes but never
+    deploy them without tests and human review.
 
 ### Abuse controls
 
@@ -199,6 +205,20 @@ Cloudflare's limiter is permissive and eventually consistent, so monitoring and
 the ability to disable or tighten expensive routes remain necessary. Rate
 limiting is not treated as precise quota accounting.
 
+### Search privacy decision
+
+`/search` remains a `GET` endpoint for the first API release to preserve the
+existing client contract and the semantics of a read-only lookup. Search
+responses are never cached, full URLs are excluded from custom logs, and
+Cloudflare invocation logs are explicitly disabled. A sentinel query verifies
+those controls on the deployed Worker.
+
+Changing search to `POST` would reduce the chance of query text entering
+URL-oriented infrastructure, but it would not hide the request body from the
+service processing it and would expand this migration's client and validation
+surface. Reconsider `POST` before wider public use if real usage or privacy
+requirements make search terms sensitive.
+
 ## Error Handling
 
 The Worker keeps the current distinction between invalid requests, missing
@@ -226,6 +246,25 @@ Wrangler and Cloudflare Worker type dependencies are pinned through the existing
 package lock. Production and local configuration must not silently fall back to
 one another.
 
+## Account Ownership and Recovery
+
+The user owns the Cloudflare account, its verified email address, MFA factors
+and recovery codes. Recovery codes are stored outside the repository in a
+trusted password manager or equivalent secure location. At least one recovery
+method must be tested before production secrets are added.
+
+Wrangler authentication on a development computer must not be treated as the
+only recovery path. Active Cloudflare sessions and deployment tokens are
+reviewed after initial setup and after any suspected device compromise. Lost
+account access, an unavailable MFA factor or missing recovery codes blocks
+deployment; it must never be bypassed by placing account credentials or broad
+API tokens in repository files.
+
+The runbook records how to revoke local Wrangler access, rotate a deployment
+token, rotate the TMDB token and regain access through Cloudflare's supported
+account-recovery process. It records locations and responsible ownership, never
+secret values or recovery codes.
+
 ## Testing Strategy
 
 Implementation follows test-driven development. Existing Node contract tests
@@ -252,11 +291,35 @@ Verification before deployment includes TypeScript, ESLint, the complete test
 suite, Wrangler's local runtime, a dependency/security review and credential
 scans of source plus generated Expo output.
 
+## Mandatory No-Go Conditions
+
+A deployment or client cutover stops immediately when any of these is true:
+
+- a TMDB token, token-shaped canary, authorization header, complete search URL
+  or sentinel search phrase appears in a client bundle, response or retained
+  log;
+- automatic invocation logs or public version-preview URLs are enabled;
+- required-secret validation, request limits, rate limiting, fixed-origin fetch
+  enforcement, redirect rejection or the 4 MiB body limit is absent or failing;
+- CORS reflects an unapproved origin, omits `Vary: Origin`, or is stored inside
+  a shared cached payload;
+- contract, adversarial, type, lint, dependency or credential-scan checks fail;
+- the hosted smoke test cannot exercise every supported route and safe failure
+  class;
+- the last known-good deployment cannot be identified and restored in a real
+  rollback drill;
+- Cloudflare account recovery and MFA have not been secured; or
+- monitoring shows unexplained Worker `5xx`, CPU-limit failures, TMDB `429`
+  responses or quota growth that has not been investigated.
+
+No deadline or convenience exception overrides these conditions. Resolve the
+failure, repeat the relevant checks, and record new evidence before proceeding.
+
 ## Deployment Sequence
 
 1. Build and verify the shared core and both adapters locally.
 2. Create the Cloudflare account, verify its email, enable MFA, and store its
-   recovery codes securely.
+   recovery codes securely. Test one supported recovery path.
 3. Authenticate Wrangler using a least-privilege deployment flow.
 4. Create the Worker on the free plan with its generated `workers.dev` host.
 5. Confirm public version previews are disabled and required-secret validation
