@@ -6,7 +6,7 @@
 
 **Architecture:** Extract request validation, TMDB fetching, and response mapping into runtime-neutral ES modules used by both the existing Node HTTP adapter and a new module-format Worker. Keep Cloudflare-specific CORS, rate-limit bindings, Cache API use, request IDs, and structured logging in focused Worker modules so the shared core remains independently testable.
 
-**Tech Stack:** JavaScript ES modules, TypeScript for the Worker boundary, Node test runner for shared/Node contracts, Cloudflare Workers, Wrangler 4.132.0, Vitest 5.0.1, `@cloudflare/vitest-plugin` 1.1.10
+**Tech Stack:** JavaScript ES modules, TypeScript for the Worker boundary, Node test runner for shared/Node contracts, Cloudflare Workers, Wrangler 4.132.0, Vitest 4.1.0, `@cloudflare/vitest-plugin` 1.1.10
 
 **Spec:** `docs/superpowers/specs/2026-09-14-cloudflare-api-design.md`
 
@@ -25,66 +25,70 @@
 
 ---
 
-### Task 1: Worker project foundation and configuration guardrails
+### Task 1: Deployable top-level Worker foundation
 
 **Files:**
-- Modify: `mobile/.gitignore`
-- Modify: `mobile/package.json`
-- Modify: `mobile/package-lock.json`
-- Create: `mobile/wrangler.jsonc`
-- Create: `mobile/worker/tsconfig.json`
-- Create: `mobile/worker/vitest.config.ts`
-- Create: `mobile/worker/src/index.ts`
-- Create: `mobile/worker/test/index.spec.ts`
+- Create: `worker/.gitignore`
+- Create: `worker/package.json`
+- Create: `worker/package-lock.json`
+- Create: `worker/wrangler.jsonc`
+- Create: `worker/tsconfig.json`
+- Create: `worker/vitest.config.ts`
+- Create: `worker/src/index.ts`
+- Create: `worker/test/index.spec.ts`
 
 **Interfaces:**
 - Consumes: none
-- Produces: default `ExportedHandler<Env>` in `worker/src/index.ts`; generated `Env` bindings from `wrangler types`; `npm run worker:test`, `worker:typecheck`, and `worker:check` scripts
+- Produces: a self-contained top-level Worker project whose root response is `Showtime API is live`, plus `npm test`, `npm run typecheck`, and `npm run check` scripts
 
 - [ ] **Step 1: Write the failing configuration and smoke tests**
 
 ```ts
-// mobile/worker/test/index.spec.ts
+// worker/test/index.spec.ts
 import { exports } from "cloudflare:workers";
 import { describe, expect, it } from "vitest";
 
 describe("Showtime Worker foundation", () => {
-  it("returns a safe JSON 404 with a generated request ID", async () => {
-    const response = await exports.default.fetch("https://showtime.test/not-found");
-    expect(response.status).toBe(404);
-    expect(response.headers.get("content-type")).toBe("application/json; charset=utf-8");
-    expect(response.headers.get("x-content-type-options")).toBe("nosniff");
-    expect(response.headers.get("referrer-policy")).toBe("no-referrer");
-    expect(response.headers.get("x-request-id")).toMatch(/^[0-9a-f-]{36}$/);
-    await expect(response.json()).resolves.toEqual({ error: "Not found." });
+  it("returns the deployment smoke response", async () => {
+    const response = await exports.default.fetch("https://showtime.test/");
+    expect(response.status).toBe(200);
+    expect(await response.text()).toBe("Showtime API is live");
   });
 });
 ```
 
 - [ ] **Step 2: Run the smoke test and verify the Worker harness is absent**
 
-Run: `npm run worker:test -- --run worker/test/index.spec.ts`
+Run from `worker/`: `npm test -- --run test/index.spec.ts`
 
 Expected: FAIL because the Worker test script, configuration, and entrypoint do not exist.
 
-- [ ] **Step 3: Install and pin the reviewed Worker toolchain**
+- [ ] **Step 3: Create the package manifest and install the pinned Worker toolchain**
 
-Run: `npm install --save-dev --save-exact wrangler@4.132.0 vitest@5.0.1 @cloudflare/vitest-plugin@1.1.10`
+Create `worker/package.json` first:
+
+```json
+{
+  "name": "showtime-api-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "types": "wrangler types src/worker-configuration.d.ts",
+    "test": "vitest --config vitest.config.ts",
+    "typecheck": "tsc --project tsconfig.json --noEmit",
+    "check": "npm run types && npm run typecheck && npm test -- --run",
+    "deploy": "wrangler deploy"
+  }
+}
+```
+
+Run from `worker/`: `npm install --save-dev --save-exact wrangler@4.132.0 vitest@4.1.0 @cloudflare/vitest-plugin@1.1.10 typescript@6.0.3`
 
 Expected: `package.json` and `package-lock.json` contain exact versions and npm reports no unexplained install scripts or critical vulnerabilities. Stop and investigate any critical finding before continuing.
 
-- [ ] **Step 4: Add scripts, ignores, and a source-of-truth Wrangler configuration**
+- [ ] **Step 4: Add ignores and a source-of-truth Wrangler configuration**
 
-Add these scripts to `mobile/package.json`:
-
-```json
-"worker:types": "wrangler types --config wrangler.jsonc worker/src/worker-configuration.d.ts",
-"worker:test": "vitest --config worker/vitest.config.ts",
-"worker:typecheck": "tsc --project worker/tsconfig.json --noEmit",
-"worker:check": "npm run worker:types && npm run worker:typecheck && npm run worker:test -- --run"
-```
-
-Append to `mobile/.gitignore`:
+Append to `worker/.gitignore`:
 
 ```gitignore
 .dev.vars
@@ -96,44 +100,38 @@ Append to `mobile/.gitignore`:
 worker-dist/
 ```
 
-Create `mobile/wrangler.jsonc`:
+Create `worker/wrangler.jsonc`:
 
 ```jsonc
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "showtime-api",
-  "main": "worker/src/index.ts",
+  "main": "src/index.ts",
   "compatibility_date": "2026-09-15",
   "workers_dev": true,
   "preview_urls": false,
-  "secrets": { "required": ["TMDB_READ_ACCESS_TOKEN"] },
-  "vars": { "ALLOWED_ORIGINS": "" },
-  "limits": { "subrequests": 8 },
   "observability": {
     "enabled": true,
     "logs": { "invocation_logs": false }
-  },
-  "ratelimits": [
-    { "name": "SEARCH_LIMITER", "namespace_id": "1001", "simple": { "limit": 30, "period": 60 } },
-    { "name": "DISCOVERY_LIMITER", "namespace_id": "1002", "simple": { "limit": 30, "period": 60 } },
-    { "name": "DETAILS_LIMITER", "namespace_id": "1003", "simple": { "limit": 20, "period": 60 } },
-    { "name": "WORK_LIMITER", "namespace_id": "1004", "simple": { "limit": 100, "period": 60 } }
-  ]
+  }
 }
 ```
 
-Create `mobile/worker/tsconfig.json` and `mobile/worker/vitest.config.ts`:
+Create `worker/tsconfig.json` and `worker/vitest.config.ts`:
 
 ```json
 {
-  "extends": "../tsconfig.json",
   "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
     "moduleResolution": "bundler",
+    "strict": true,
+    "noEmit": true,
     "types": ["@cloudflare/vitest-plugin/types"],
     "allowJs": true,
     "checkJs": false
   },
-  "include": ["src/**/*.ts", "test/**/*.ts", "../api/**/*.mjs"]
+  "include": ["src/**/*.ts", "src/**/*.mjs", "test/**/*.ts"]
 }
 ```
 
@@ -146,46 +144,37 @@ export default defineConfig({
 });
 ```
 
-- [ ] **Step 5: Implement the minimal safe Worker entrypoint**
+- [ ] **Step 5: Implement the temporary deployment smoke response**
 
 ```ts
-const json = (status: number, body: unknown): Response => new Response(JSON.stringify(body), {
-  status,
-  headers: {
-    "Content-Type": "application/json; charset=utf-8",
-    "Cache-Control": "no-store",
-    "X-Content-Type-Options": "nosniff",
-    "Referrer-Policy": "no-referrer",
-    "X-Request-ID": crypto.randomUUID(),
-  },
-});
-
 export default {
-  fetch(): Response {
-    return json(404, { error: "Not found." });
+  async fetch(): Promise<Response> {
+    return new Response("Showtime API is live");
   },
-} satisfies ExportedHandler<Env>;
+};
 ```
 
 - [ ] **Step 6: Generate types and run the complete foundation check**
 
-Run: `npm run worker:check`
+Run from `worker/`: `npm run check`
 
-Expected: generated bindings include `TMDB_READ_ACCESS_TOKEN` and four `RateLimit` bindings; typecheck and smoke test PASS.
+Run from `worker/`: `npx wrangler deploy --dry-run --outdir worker-dist`
+
+Expected: typecheck and smoke test PASS, and Wrangler produces a deployable bundle without contacting or changing the Cloudflare account. Secret and rate-limit bindings are intentionally added in later tasks before the TMDB proxy exists.
 
 - [ ] **Step 7: Commit the foundation**
 
 ```bash
-git add mobile/.gitignore mobile/package.json mobile/package-lock.json mobile/wrangler.jsonc mobile/worker
+git add worker
 git commit -m "build: add Cloudflare Worker foundation"
 ```
 
 ### Task 2: Strict runtime-neutral request routing
 
 **Files:**
-- Create: `mobile/api/request.mjs`
-- Create: `mobile/api/request.test.mjs`
-- Modify: `mobile/package.json`
+- Create: `worker/src/api/request.mjs`
+- Create: `worker/src/api/request.test.mjs`
+- Modify: `worker/package.json`
 
 **Interfaces:**
 - Consumes: a standard `Request` or `{ method, url }` equivalent
@@ -223,7 +212,7 @@ test('rejects ambiguous, noncanonical, oversized, and unsupported requests befor
 
 - [ ] **Step 2: Run the request tests and verify failure**
 
-Run: `node --test api/request.test.mjs`
+Run from `worker/`: `node --test src/api/request.test.mjs`
 
 Expected: FAIL with `ERR_MODULE_NOT_FOUND` or a missing `parseApiRequest` export.
 
@@ -243,24 +232,24 @@ export function parseApiRequest({ method, url }) {
 
 - [ ] **Step 4: Run route tests and the existing Node proxy suite**
 
-Run: `node --test api/request.test.mjs server/*.test.mjs`
+Run from `worker/`: `node --test src/api/request.test.mjs ../mobile/server/*.test.mjs`
 
 Expected: PASS; the new parser is isolated and existing behavior is unchanged.
 
 - [ ] **Step 5: Add the shared API tests to the main test script and commit**
 
-Change the test glob to include `api/*.test.mjs`, run `npm test`, then:
+Add `"api:test": "node --test src/api/*.test.mjs"` to `worker/package.json`, prepend `npm run api:test &&` to its `check` script, run `npm run api:test`, then:
 
 ```bash
-git add mobile/api/request.mjs mobile/api/request.test.mjs mobile/package.json
+git add worker/src/api/request.mjs worker/src/api/request.test.mjs worker/package.json
 git commit -m "feat: add strict shared API routing"
 ```
 
 ### Task 3: Hardened TMDB transport and bounded JSON reader
 
 **Files:**
-- Create: `mobile/api/tmdb.mjs`
-- Create: `mobile/api/tmdb.test.mjs`
+- Create: `worker/src/api/tmdb.mjs`
+- Create: `worker/src/api/tmdb.test.mjs`
 
 **Interfaces:**
 - Consumes: `fetchTmdbJson({ endpoint, route, token, fetchImpl, timeoutMs, maxBytes, log })`
@@ -289,7 +278,7 @@ Add cases for timeout/abort, 404, 429, malformed JSON, a stream crossing 4 MiB, 
 
 - [ ] **Step 2: Run the transport test and verify failure**
 
-Run: `node --test api/tmdb.test.mjs`
+Run from `worker/`: `node --test src/api/tmdb.test.mjs`
 
 Expected: FAIL because `tmdb.mjs` is absent.
 
@@ -318,22 +307,22 @@ export async function fetchTmdbJson({ endpoint, route, token, fetchImpl = fetch,
 
 - [ ] **Step 4: Run transport and leak tests**
 
-Run: `node --test api/tmdb.test.mjs server/*.test.mjs`
+Run from `worker/`: `node --test src/api/tmdb.test.mjs ../mobile/server/*.test.mjs`
 
 Expected: PASS, including token-shaped canary assertions.
 
 - [ ] **Step 5: Commit the transport boundary**
 
 ```bash
-git add mobile/api/tmdb.mjs mobile/api/tmdb.test.mjs
+git add worker/src/api/tmdb.mjs worker/src/api/tmdb.test.mjs
 git commit -m "feat: harden TMDB transport"
 ```
 
 ### Task 4: Shared search core and Node adapter migration
 
 **Files:**
-- Create: `mobile/api/search.mjs`
-- Create: `mobile/api/search.test.mjs`
+- Create: `worker/src/api/search.mjs`
+- Create: `worker/src/api/search.test.mjs`
 - Modify: `mobile/server/search.mjs`
 - Modify: `mobile/server/search.test.mjs`
 
@@ -360,7 +349,7 @@ Also assert safe mappings for `not-found`/`throttled`/`upstream` transport error
 
 - [ ] **Step 2: Run the shared search test and verify failure**
 
-Run: `node --test api/search.test.mjs`
+Run from `worker/`: `node --test src/api/search.test.mjs`
 
 Expected: FAIL because `handleSearch` is absent.
 
@@ -385,26 +374,26 @@ export async function handleSearch(route, { token, fetchTmdbJson }) {
 
 - [ ] **Step 4: Make the Node adapter call the shared parser and core**
 
-Keep Node-only `writeHead`/`end` behavior and permissive development CORS in `server/search.mjs`. Pass an absolute local base into `parseApiRequest`, then dispatch the search route through `handleSearch`; do not import Worker modules.
+Keep Node-only `writeHead`/`end` behavior and permissive development CORS in `mobile/server/search.mjs`. Import shared runtime-neutral modules from `../../worker/src/api/`, pass an absolute local base into `parseApiRequest`, then dispatch the search route through `handleSearch`; do not import Worker-specific adapters.
 
 - [ ] **Step 5: Run shared and Node parity tests**
 
-Run: `node --test api/search.test.mjs server/search.test.mjs`
+Run from `worker/`: `node --test src/api/search.test.mjs ../mobile/server/search.test.mjs`
 
 Expected: PASS with byte-for-byte equivalent status/body contracts for the existing cases.
 
 - [ ] **Step 6: Commit shared search**
 
 ```bash
-git add mobile/api/search.mjs mobile/api/search.test.mjs mobile/server/search.mjs mobile/server/search.test.mjs
+git add worker/src/api/search.mjs worker/src/api/search.test.mjs mobile/server/search.mjs mobile/server/search.test.mjs
 git commit -m "refactor: share search API core"
 ```
 
 ### Task 5: Shared discovery core with runtime-provided caching
 
 **Files:**
-- Create: `mobile/api/discovery.mjs`
-- Create: `mobile/api/discovery.test.mjs`
+- Create: `worker/src/api/discovery.mjs`
+- Create: `worker/src/api/discovery.test.mjs`
 - Modify: `mobile/server/discovery.mjs`
 - Modify: `mobile/server/discovery.test.mjs`
 
@@ -418,7 +407,7 @@ Copy the bounded, deduplicated, adult-filtered movie/TV fixture from `server/dis
 
 - [ ] **Step 2: Run the shared discovery test and verify failure**
 
-Run: `node --test api/discovery.test.mjs`
+Run from `worker/`: `node --test src/api/discovery.test.mjs`
 
 Expected: FAIL because the shared handler is absent.
 
@@ -439,26 +428,26 @@ export async function handleDiscovery(route, { token, fetchTmdbJson }) {
 }
 ```
 
-Wrap this pure handler with the existing module-memory cache only in `server/discovery.mjs`; do not put a module-global production cache in `api/discovery.mjs`.
+Wrap this pure handler with the existing module-memory cache only in `mobile/server/discovery.mjs`; do not put a module-global production cache in `worker/src/api/discovery.mjs`.
 
 - [ ] **Step 4: Run discovery parity and concurrency tests**
 
-Run: `node --test api/discovery.test.mjs server/discovery.test.mjs`
+Run from `worker/`: `node --test src/api/discovery.test.mjs ../mobile/server/discovery.test.mjs`
 
 Expected: PASS; Node still coalesces concurrent requests and retries failures, while the shared core is cache-agnostic.
 
 - [ ] **Step 5: Commit shared discovery**
 
 ```bash
-git add mobile/api/discovery.mjs mobile/api/discovery.test.mjs mobile/server/discovery.mjs mobile/server/discovery.test.mjs
+git add worker/src/api/discovery.mjs worker/src/api/discovery.test.mjs mobile/server/discovery.mjs mobile/server/discovery.test.mjs
 git commit -m "refactor: share discovery API core"
 ```
 
 ### Task 6: Shared details core and complete Node contract parity
 
 **Files:**
-- Create: `mobile/api/details.mjs`
-- Create: `mobile/api/details.test.mjs`
+- Create: `worker/src/api/details.mjs`
+- Create: `worker/src/api/details.test.mjs`
 - Modify: `mobile/server/details.mjs`
 - Modify: `mobile/server/details.test.mjs`
 - Modify: `mobile/server/search.mjs`
@@ -473,7 +462,7 @@ Move representative fixtures for movie, TV, season, person, cast/crew/trailer, p
 
 - [ ] **Step 2: Run the shared details tests and verify failure**
 
-Run: `node --test api/details.test.mjs`
+Run from `worker/`: `node --test src/api/details.test.mjs`
 
 Expected: FAIL because the shared details handler is absent.
 
@@ -496,25 +485,26 @@ Parse its pathname through `parseApiRequest`, adapt the injected `fetchImpl` to 
 
 - [ ] **Step 5: Run all shared and Node API tests**
 
-Run: `node --test api/*.test.mjs server/*.test.mjs`
+Run from `worker/`: `node --test src/api/*.test.mjs ../mobile/server/*.test.mjs`
 
 Expected: PASS, including all pre-existing detail fixtures and optional-timeout behavior.
 
 - [ ] **Step 6: Commit shared details**
 
 ```bash
-git add mobile/api/details.mjs mobile/api/details.test.mjs mobile/server/details.mjs mobile/server/details.test.mjs mobile/server/search.mjs
+git add worker/src/api/details.mjs worker/src/api/details.test.mjs mobile/server/details.mjs mobile/server/details.test.mjs mobile/server/search.mjs
 git commit -m "refactor: share details API core"
 ```
 
 ### Task 7: Worker dispatch, CORS, request IDs, and privacy-safe logs
 
 **Files:**
-- Create: `mobile/worker/src/response.ts`
-- Create: `mobile/worker/src/cors.ts`
-- Create: `mobile/worker/src/logging.ts`
-- Modify: `mobile/worker/src/index.ts`
-- Create: `mobile/worker/test/security.spec.ts`
+- Create: `worker/src/response.ts`
+- Create: `worker/src/cors.ts`
+- Create: `worker/src/logging.ts`
+- Modify: `worker/src/index.ts`
+- Create: `worker/test/security.spec.ts`
+- Modify: `worker/wrangler.jsonc`
 
 **Interfaces:**
 - Consumes: shared `parseApiRequest`, `handleSearch`, `handleDiscovery`, `handleDetails`; `Env.ALLOWED_ORIGINS` as a comma-separated non-secret variable supplied in test/deploy environment
@@ -539,7 +529,7 @@ Add cases for allowed/denied preflight, unsupported methods, all security header
 
 - [ ] **Step 2: Run Worker security tests and verify failure**
 
-Run: `npm run worker:test -- --run worker/test/security.spec.ts`
+Run from `worker/`: `npm test -- --run test/security.spec.ts`
 
 Expected: FAIL because dispatch and security modules are absent.
 
@@ -579,28 +569,30 @@ type SafeEvent = {
 
 Use `console.log(JSON.stringify(event))`; never include the request URL, raw pathname, query, token, headers, IP, or upstream payload.
 
+Extend `worker/wrangler.jsonc` with `secrets.required: ["TMDB_READ_ACCESS_TOKEN"]`, `vars.ALLOWED_ORIGINS: ""`, and `limits.subrequests: 8`; regenerate `Env` so deployment now fails closed when the TMDB secret is missing.
+
 - [ ] **Step 5: Run Worker and Node regression tests**
 
-Run: `npm run worker:check`
+Run from `worker/`: `npm run check`
 
-Run: `npm test`
+Run from `mobile/`: `npm test`
 
 Expected: both PASS.
 
 - [ ] **Step 6: Commit the Worker security boundary**
 
 ```bash
-git add mobile/worker/src mobile/worker/test
+git add worker/src worker/test
 git commit -m "feat: add secure Worker request dispatch"
 ```
 
 ### Task 8: Layered abuse controls before upstream work
 
 **Files:**
-- Create: `mobile/worker/src/rate-limit.ts`
-- Modify: `mobile/worker/src/index.ts`
-- Create: `mobile/worker/test/rate-limit.spec.ts`
-- Modify: `mobile/wrangler.jsonc`
+- Create: `worker/src/rate-limit.ts`
+- Modify: `worker/src/index.ts`
+- Create: `worker/test/rate-limit.spec.ts`
+- Modify: `worker/wrangler.jsonc`
 
 **Interfaces:**
 - Consumes: parsed `ApiRoute`, `CF-Connecting-IP`, and the four generated `RateLimit` bindings
@@ -619,7 +611,7 @@ expect(fetchSpy).not.toHaveBeenCalled();
 
 - [ ] **Step 2: Run rate-limit tests and verify failure**
 
-Run: `npm run worker:test -- --run worker/test/rate-limit.spec.ts`
+Run from `worker/`: `npm test -- --run test/rate-limit.spec.ts`
 
 Expected: FAIL because `enforceRateLimits` is absent.
 
@@ -641,23 +633,23 @@ Document in code that IP-based, location-local, eventually consistent limits are
 
 - [ ] **Step 4: Verify rejection ordering and all suites**
 
-Run: `npm run worker:check`
+Run from `worker/`: `npm run check`
 
 Expected: PASS; tests prove validation and rate limiting precede any TMDB call.
 
 - [ ] **Step 5: Commit abuse controls**
 
 ```bash
-git add mobile/worker/src/rate-limit.ts mobile/worker/src/index.ts mobile/worker/test/rate-limit.spec.ts mobile/wrangler.jsonc
+git add worker/src/rate-limit.ts worker/src/index.ts worker/test/rate-limit.spec.ts worker/wrangler.jsonc
 git commit -m "feat: enforce Worker abuse limits"
 ```
 
 ### Task 9: Cloudflare edge cache without CORS contamination
 
 **Files:**
-- Create: `mobile/worker/src/cache.ts`
-- Modify: `mobile/worker/src/index.ts`
-- Create: `mobile/worker/test/cache.spec.ts`
+- Create: `worker/src/cache.ts`
+- Modify: `worker/src/index.ts`
+- Create: `worker/test/cache.spec.ts`
 
 **Interfaces:**
 - Consumes: canonical `route.cacheKey`, `Cache`, and a callback returning the uncached core result
@@ -677,7 +669,7 @@ expect(load).toHaveBeenCalledTimes(1);
 
 - [ ] **Step 2: Run cache tests and verify failure**
 
-Run: `npm run worker:test -- --run worker/test/cache.spec.ts`
+Run from `worker/`: `npm test -- --run test/cache.spec.ts`
 
 Expected: FAIL because `withApiCache` is absent.
 
@@ -706,24 +698,24 @@ export async function withApiCache(route, cache, load, ctx) {
 
 - [ ] **Step 4: Run cache, security, and complete Worker checks**
 
-Run: `npm run worker:check`
+Run from `worker/`: `npm run check`
 
 Expected: PASS; tests prove no error/search/CORS/request-ID caching.
 
 - [ ] **Step 5: Commit edge caching**
 
 ```bash
-git add mobile/worker/src/cache.ts mobile/worker/src/index.ts mobile/worker/test/cache.spec.ts
+git add worker/src/cache.ts worker/src/index.ts worker/test/cache.spec.ts
 git commit -m "feat: add safe Worker edge caching"
 ```
 
 ### Task 10: Credential scans, adversarial coverage, and local release gate
 
 **Files:**
-- Create: `mobile/scripts/scan-secrets.mjs`
-- Create: `mobile/scripts/scan-secrets.test.mjs`
-- Modify: `mobile/package.json`
-- Create: `mobile/worker/test/adversarial.spec.ts`
+- Create: `worker/scripts/scan-secrets.mjs`
+- Create: `worker/scripts/scan-secrets.test.mjs`
+- Modify: `worker/package.json`
+- Create: `worker/test/adversarial.spec.ts`
 - Modify: `mobile/README.md`
 
 **Interfaces:**
@@ -746,7 +738,7 @@ Use only temporary test files. The scanner must never print the matched secret v
 
 - [ ] **Step 2: Run scanner tests and verify failure**
 
-Run: `node --test scripts/scan-secrets.test.mjs`
+Run from `worker/`: `node --test scripts/scan-secrets.test.mjs`
 
 Expected: FAIL because `scanPaths` is absent.
 
@@ -762,15 +754,15 @@ Cover encoded separators, double encoding, dot segments, Unicode query boundarie
 
 ```json
 "worker:bundle": "wrangler deploy --dry-run --outdir worker-dist",
-"security:scan": "node scripts/scan-secrets.mjs --tracked . --generated dist worker-dist",
-"worker:release-check": "npm run lint && npx tsc --noEmit && npm test && npm run worker:check && npm run worker:bundle && npm audit --audit-level=high && npm run security:scan"
+"security:scan": "node scripts/scan-secrets.mjs --tracked .. --generated ../mobile/dist worker-dist",
+"worker:release-check": "npm --prefix ../mobile run lint && npx tsc --project ../mobile/tsconfig.json --noEmit && npm --prefix ../mobile test && npm run check && npm run worker:bundle && npm audit --audit-level=high && npm run security:scan"
 ```
 
-Document that `npx expo export --platform web` must run immediately before `security:scan` so generated browser output is included.
+Document that `npm --prefix ../mobile exec expo export -- --platform web` must run immediately before `security:scan` so generated browser output is included.
 
 - [ ] **Step 6: Run the full local release gate**
 
-Run: `npx expo export --platform web`
+Run from `worker/`: `npm --prefix ../mobile exec expo export -- --platform web`
 
 Run: `npm run worker:release-check`
 
@@ -781,7 +773,7 @@ Expected: PASS with no high/critical audit finding, no credential finding, an in
 - [ ] **Step 7: Commit local security gates**
 
 ```bash
-git add mobile/scripts mobile/package.json mobile/worker/test/adversarial.spec.ts mobile/README.md
+git add worker/scripts worker/package.json worker/test/adversarial.spec.ts mobile/README.md
 git commit -m "test: add Cloudflare release security gate"
 ```
 
@@ -789,9 +781,9 @@ git commit -m "test: add Cloudflare release security gate"
 
 **Files:**
 - Create: `docs/CLOUDFLARE-RUNBOOK.md`
-- Create: `mobile/scripts/smoke-worker.mjs`
-- Create: `mobile/scripts/smoke-worker.test.mjs`
-- Modify: `mobile/package.json`
+- Create: `worker/scripts/smoke-worker.mjs`
+- Create: `worker/scripts/smoke-worker.test.mjs`
+- Modify: `worker/package.json`
 - Modify: `docs/ROADMAP.md`
 - Modify: `docs/DEPLOYMENT-AND-DISTRIBUTION.md`
 
@@ -805,7 +797,7 @@ Assert the runner checks search, discovery, movie, TV, season, person, 400, 404,
 
 - [ ] **Step 2: Run smoke tests and verify failure**
 
-Run: `node --test scripts/smoke-worker.test.mjs`
+Run from `worker/`: `node --test scripts/smoke-worker.test.mjs`
 
 Expected: FAIL because the smoke runner is absent.
 
@@ -842,16 +834,16 @@ The runbook must say that the user replaces the hostname and version ID from Wra
 
 - [ ] **Step 5: Verify documentation and smoke tooling locally**
 
-Run: `node --test scripts/smoke-worker.test.mjs`
+Run from `worker/`: `node --test scripts/smoke-worker.test.mjs`
 
-Run: `rg -n "TMDB_READ_ACCESS_TOKEN|preview_urls|invocation_logs|rollback|sentinel|MFA|recovery" docs/CLOUDFLARE-RUNBOOK.md mobile/wrangler.jsonc`
+Run: `rg -n "TMDB_READ_ACCESS_TOKEN|preview_urls|invocation_logs|rollback|sentinel|MFA|recovery" docs/CLOUDFLARE-RUNBOOK.md worker/wrangler.jsonc`
 
 Expected: tests PASS and every required operational gate has a concrete runbook entry.
 
 - [ ] **Step 6: Commit operational readiness**
 
 ```bash
-git add docs/CLOUDFLARE-RUNBOOK.md docs/ROADMAP.md docs/DEPLOYMENT-AND-DISTRIBUTION.md mobile/scripts/smoke-worker.mjs mobile/scripts/smoke-worker.test.mjs mobile/package.json
+git add docs/CLOUDFLARE-RUNBOOK.md docs/ROADMAP.md docs/DEPLOYMENT-AND-DISTRIBUTION.md worker/scripts/smoke-worker.mjs worker/scripts/smoke-worker.test.mjs worker/package.json
 git commit -m "docs: add Cloudflare operations runbook"
 ```
 
@@ -921,4 +913,3 @@ Expected: both PASS against the approved live deployment.
 git add mobile/.env.example docs/CLOUDFLARE-RUNBOOK.md docs/ROADMAP.md docs/verification/2026-09-15-cloudflare-api.md
 git commit -m "docs: verify Cloudflare API deployment"
 ```
-
