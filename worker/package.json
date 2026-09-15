@@ -1,0 +1,18 @@
+{
+  "name": "showtime-api-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "types": "wrangler types src/worker-configuration.d.ts",
+    "test": "vitest --config vitest.config.ts",
+    "typecheck": "tsc --project tsconfig.json --noEmit",
+    "check": "npm run types && npm run typecheck && npm test -- --run",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-plugin": "1.1.10",
+    "typescript": "6.0.3",
+    "vitest": "4.1.0",
+    "wrangler": "4.132.0"
+  }
+}
