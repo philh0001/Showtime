@@ -4,9 +4,10 @@
   "type": "module",
   "scripts": {
     "types": "wrangler types src/worker-configuration.d.ts",
-    "test": "vitest --config vitest.config.ts",
+    "api:test": "node --test src/api/*.test.mjs",
+    "test": "vitest --config vitest.config.ts --exclude \"src/api/*.test.mjs\"",
     "typecheck": "tsc --project tsconfig.json --noEmit",
-    "check": "npm run types && npm run typecheck && npm test -- --run",
+    "check": "npm run api:test && npm run types && npm run typecheck && npm test -- --run",
     "deploy": "wrangler deploy"
   },
   "devDependencies": {
