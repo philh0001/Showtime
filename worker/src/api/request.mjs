@@ -84,8 +84,6 @@ export function parseApiRequest({ method, url }) {
   if (new TextEncoder().encode(url).byteLength > MAX_URL_BYTES) {
     return failure(414, 'Request URL is too long.');
   }
-  if (url.split(/[?#]/, 1)[0].includes('\\')) return failure(404, 'Not found.');
-
   let incoming;
   try {
     incoming = new URL(url);
@@ -96,6 +94,7 @@ export function parseApiRequest({ method, url }) {
   if (!['GET', 'OPTIONS'].includes(method)) {
     return { ...failure(405, 'Use GET.'), allow: 'GET, OPTIONS' };
   }
+  if (url.split(/[?#]/, 1)[0].includes('\\')) return failure(404, 'Not found.');
   if (hasNoncanonicalDotSegment(url)) return failure(404, 'Not found.');
 
   let route;

@@ -122,6 +122,18 @@ test('rejects unsupported methods with the complete Allow value', () => {
   }
 });
 
+test('rejects unsupported methods before validating backslash route syntax', () => {
+  assert.deepEqual(
+    parseApiRequest({ method: 'POST', url: 'https://api.test\\search?query=a' }),
+    {
+      ok: false,
+      status: 405,
+      body: { error: 'Use GET.' },
+      allow: 'GET, OPTIONS',
+    },
+  );
+});
+
 test('parses OPTIONS only as a zero-cost adapter route', () => {
   assert.deepEqual(
     parseApiRequest({ method: 'OPTIONS', url: 'https://api.test/details/movie/272' }),
