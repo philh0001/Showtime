@@ -100,6 +100,17 @@ test('returns 404 for paths outside the closed route set', () => {
   }
 });
 
+test('rejects raw backslashes before URL path normalization can widen the route set', () => {
+  for (const url of [
+    'https://api.test\\search?query=a',
+    'https:\\\\api.test\\search?query=a',
+  ]) {
+    assert.deepEqual(parseApiRequest({ method: 'GET', url }), {
+      ok: false, status: 404, body: { error: 'Not found.' },
+    }, url);
+  }
+});
+
 test('rejects unsupported methods with the complete Allow value', () => {
   for (const method of ['POST', 'PUT', 'DELETE', 'HEAD', 'get']) {
     assert.deepEqual(parseApiRequest({ method, url: 'https://api.test/search?query=a' }), {

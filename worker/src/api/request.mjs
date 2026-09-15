@@ -84,6 +84,7 @@ export function parseApiRequest({ method, url }) {
   if (new TextEncoder().encode(url).byteLength > MAX_URL_BYTES) {
     return failure(414, 'Request URL is too long.');
   }
+  if (url.split(/[?#]/, 1)[0].includes('\\')) return failure(404, 'Not found.');
 
   let incoming;
   try {
