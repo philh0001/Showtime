@@ -47,10 +47,16 @@ npx expo install --check
 npx expo export --platform ios --max-workers 1
 ```
 
-For the local Cloudflare release gate, run `npx expo export --platform web`
-immediately before `npm run security:scan` so generated browser output is
-included in the credential scan. Run `npm run worker:release-check` from this
-directory for the complete no-go gate.
+For the Cloudflare release gate, run `npm run web:export:production` so the
+generated browser bundle uses the production API URL, then run
+`npm run worker:release-check`. The complete no-go gate includes generated
+browser output in the credential scan.
+
+The deployed web app is
+`https://showtime-web.showtime-workers.workers.dev`; its API is
+`https://showtime-api.showtime-workers.workers.dev`. From `worker/`, deploy the
+web bundle with `npx wrangler deploy --config ../mobile/wrangler.jsonc` and the
+API with `npm run deploy`.
 
 Then reload in Expo Go and check Home, Search, Watchlist and Profile. Check the
 terminal for missing modules, missing assets, routing warnings and runtime errors.

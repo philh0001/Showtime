@@ -51,19 +51,19 @@ The TMDB API Read Access Token is stored only in the ignored
 placed in an `EXPO_PUBLIC_` variable, and must never be hard-coded, logged,
 committed, or bundled into the mobile app.
 
-## Planned production architecture
+## Production architecture
 
-The future production direction is Web/PWA first:
+The deployed browser architecture is:
 
 `Showtime Web/PWA (and a future native client only if required) -> Cloudflare Worker API -> TMDB`
 
-Cloudflare is not currently deployed. The plan is to replace the development-PC
-dependency with a Cloudflare Worker that keeps the TMDB credential server-side,
-then publish the Expo web output using an appropriate current Cloudflare hosting
-approach. The first public version remains account-free and uses persistent
-local browser/device storage for personal state. See
-`docs/DEPLOYMENT-AND-DISTRIBUTION.md` for the full distinction between current
-and planned architecture.
+The frontend is deployed at `https://showtime-web.showtime-workers.workers.dev`
+with Workers Static Assets. It calls the API at
+`https://showtime-api.showtime-workers.workers.dev`, whose exact CORS allowlist
+contains only the frontend origin. The TMDB credential remains a server-side
+Worker secret. The release remains account-free and uses local browser/device
+storage for personal state. See `docs/DEPLOYMENT-AND-DISTRIBUTION.md` for the
+deployment and remaining verification work.
 
 ## Current application
 

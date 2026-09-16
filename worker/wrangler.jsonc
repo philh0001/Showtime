@@ -5,9 +5,8 @@
   "compatibility_date": "2026-09-15",
   "workers_dev": true,
   "preview_urls": false,
-  // Set this to the exact HTTPS origin of the deployed Showtime web app before
-  // production deployment. Keep empty until that frontend hostname exists.
-  "vars": { "ALLOWED_ORIGINS": "" },
+  // Browser access is restricted to the deployed Showtime frontend.
+  "vars": { "ALLOWED_ORIGINS": "https://showtime-web.showtime-workers.workers.dev" },
   "ratelimits": [
     { "name": "SEARCH_LIMITER", "namespace_id": "1001", "simple": { "limit": 30, "period": 60 } },
     { "name": "DISCOVERY_LIMITER", "namespace_id": "1002", "simple": { "limit": 30, "period": 60 } },

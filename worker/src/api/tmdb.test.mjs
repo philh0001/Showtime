@@ -19,7 +19,7 @@ test('constructs only fixed-origin URLs and rejects redirects', async () => {
 
   assert.deepEqual(result, { id: 1 });
   assert.equal(calls[0][0], 'https://api.themoviedb.org/3/movie/1?language=en-GB');
-  assert.equal(calls[0][1].redirect, 'error');
+  assert.equal(calls[0][1].redirect, 'manual');
   assert.equal(calls[0][1].headers.Authorization, 'Bearer canary-secret');
   assert.equal(calls[0][1].headers.accept, 'application/json');
 
@@ -36,6 +36,38 @@ test('constructs only fixed-origin URLs and rejects redirects', async () => {
       endpoint,
     );
   }
+
+  await assert.rejects(
+    fetchTmdbJson({
+      endpoint: '/3/movie/1',
+      route: '/details/movie/:id',
+      token: 'x',
+      fetchImpl: async () => new Response(null, { status: 302 }),
+    }),
+    (error) => error?.kind === 'upstream' && error?.status === 302,
+  );
+});
+
+test('does not print diagnostics for transport failures', async () => {
+  const originalLog = console.log;
+  const output = [];
+  console.log = (...args) => output.push(args);
+
+  try {
+    await assert.rejects(
+      fetchTmdbJson({
+        endpoint: '/3/movie/1',
+        route: '/details/movie/:id',
+        token: 'x',
+        fetchImpl: async () => { throw new Error('private transport detail'); },
+      }),
+      (error) => error?.kind === 'upstream',
+    );
+  } finally {
+    console.log = originalLog;
+  }
+
+  assert.deepEqual(output, []);
 });
 
 test('rejects declared and streamed bodies above the configured limit', async () => {

@@ -352,7 +352,7 @@ pass; smaller margins alone do not resolve it.
 
 ## Phase 8 — Production Hosting & Public Web/PWA
 
-Status: Planned
+Status: In progress
 
 The application should finish its current physical-device verification and
 major product/UI polish before this phase. The detailed strategy is in
@@ -362,25 +362,25 @@ The current architecture is:
 
 `Expo Go / browser -> Showtime -> local Node server -> TMDB`
 
-The planned production architecture is:
+The deployed production architecture is:
 
 `Showtime Web/PWA (and a future native client if required) -> Cloudflare Worker API -> TMDB`
 
-The goal is to remove the dependency on the development PC and make Showtime
-easy to try from a normal URL. Cloudflare is planned, not deployed.
+The hosted web app and API remove the development-PC dependency for browser
+use. Physical-device, persistence and installability checks remain open.
 
 ### Production API
 
 - [x] Add a Cloudflare operations and incident-response runbook
 - [x] Enforce the documented mandatory no-go release conditions
-- [ ] Adapt the Showtime TMDB proxy for a Cloudflare Worker
-- [ ] Store the TMDB credential as a server-side Worker secret
-- [ ] Ensure the TMDB credential is never bundled into the mobile app
-- [ ] Configure production clients to use the hosted endpoint
-- [ ] Add production-safe server error handling
-- [ ] Add proportionate logging/monitoring without recording secrets
-- [ ] Add suitable request validation and public-traffic protections
-- [ ] Scan source and generated client output for credentials
+- [x] Adapt the Showtime TMDB proxy for a Cloudflare Worker
+- [x] Store the TMDB credential as a server-side Worker secret
+- [x] Ensure the TMDB credential is never bundled into the mobile app
+- [x] Configure the production web client to use the hosted endpoint
+- [x] Add production-safe server error handling
+- [x] Add proportionate logging/monitoring without recording secrets
+- [x] Add suitable request validation and public-traffic protections
+- [x] Scan source and generated client output for credentials
 
 ### Independent operation
 
@@ -391,9 +391,9 @@ easy to try from a normal URL. Cloudflare is planned, not deployed.
 
 ### Public Web/PWA
 
-- [ ] Export the Expo web build for production
-- [ ] Deploy it using the appropriate current Cloudflare hosting approach
-- [ ] Use a Cloudflare-provided hostname initially
+- [x] Export the Expo web build for production
+- [x] Deploy it with Cloudflare Workers Static Assets
+- [x] Use a Cloudflare-provided hostname initially
 - [ ] Verify navigation and major flows in iPhone Safari
 - [ ] Verify navigation and major flows in supported desktop browsers
 - [ ] Verify persistent local storage for Watchlist, progress, history and settings

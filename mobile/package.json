@@ -40,6 +40,7 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
+    "web:export:production": "node scripts/export-web.mjs",
     "lint": "expo lint",
     "search:tmdb": "node ./scripts/search-tmdb.mjs",
     "search:server": "node ./server/start.mjs",

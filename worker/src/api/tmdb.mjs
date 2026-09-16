@@ -138,34 +138,16 @@ export async function fetchTmdbJson({
         redirect: 'manual',
         signal,
       });
-} catch (error) {
-  console.log({
-    upstreamFetchError: {
-      route,
-      name: error instanceof Error ? error.name : typeof error,
-      message: error instanceof Error ? error.message : 'Unknown error',
-      aborted: signal.aborted,
-    },
-  });
+    } catch {
+      if (signal.aborted) throw new TmdbError('timeout');
+      throw new TmdbError('upstream');
+    }
 
-  if (signal.aborted) {
-    throw new TmdbError('timeout');
-  }
+    status = response.status;
+    if (status >= 300 && status < 400) throw new TmdbError('upstream', status);
+    if (!response.ok) throw new TmdbError(classifyStatus(status), status);
 
-  throw new TmdbError('upstream');
-}
-
-status = response.status;
-
-if (status >= 300 && status < 400) {
-  throw new TmdbError('upstream', status);
-}
-
-if (!response.ok) {
-  throw new TmdbError(classifyStatus(status), status);
-}
-
-const text = await readBoundedBody(response, maxBytes, signal);
+    const text = await readBoundedBody(response, maxBytes, signal);
     try {
       return JSON.parse(text);
     } catch {

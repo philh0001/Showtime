@@ -6,44 +6,45 @@ header, quota/CPU error, or failed rollback.
 
 ## Pre-deployment gate
 
-From `mobile/`, export the web output immediately before scanning:
+From `mobile/`, export the production web output immediately before scanning:
 
 ```powershell
-npx expo export --platform web
+npm run web:export:production
 npm run worker:release-check
 ```
 
 The release check must pass without waivers. It includes mobile lint/typecheck,
 tests, Worker checks, a dry-run bundle, dependency audit, and credential scans.
 
-## Account and first deployment
+## Account and deployment
 
 Before authenticating, verify the Cloudflare email, enable MFA, store recovery
 codes securely, and test a supported recovery path.
 
 ```powershell
+cd ../worker
 npx wrangler login
 npx wrangler whoami
 npx wrangler secret put TMDB_READ_ACCESS_TOKEN
-$env:SHOWTIME_WEB_ORIGIN='https://showtime.<account-subdomain>.workers.dev'
-npx wrangler deploy --var "ALLOWED_ORIGINS:$env:SHOWTIME_WEB_ORIGIN"
-$env:SHOWTIME_API_URL='https://showtime-api.<account-subdomain>.workers.dev'
-npm run worker:smoke
+npx wrangler deploy --config ../mobile/wrangler.jsonc
+npm run deploy
 npx wrangler deployments list
+cd ../mobile
+$env:SHOWTIME_API_URL='https://showtime-api.showtime-workers.workers.dev'
+npm run worker:smoke
 ```
 
-Replace both hostnames with the exact deployed URLs. `ALLOWED_ORIGINS` is the
-frontend origin, not the API origin; it must be an exact `https://` origin with
+`ALLOWED_ORIGINS` is checked in as the exact frontend origin, not the API
+origin; it must remain an exact `https://` origin with
 no path, wildcard, or trailing slash. Enter the TMDB token only at the
 interactive secret prompt; never put it in a command, file, log, or screenshot.
 Confirm `preview_urls: false` and disabled invocation logging in the Cloudflare
-dashboard. Do not deploy while the frontend origin is unknown; the checked-in
-empty default intentionally denies browser origins.
+dashboard.
 
 ## Privacy and monitoring checks
 
 Run a unique sentinel search through the hosted endpoint, then inspect Workers
-Logs, live logs, and traces. The sentinel, query text, full URL, token, caller
+Logs and live logs. The sentinel, query text, full URL, token, caller
 headers, and upstream bodies must be absent. Custom events may contain only the
 documented request ID, route, status, duration, and cache outcome.
 
@@ -52,13 +53,17 @@ rate-limit rejections. Stop and investigate any unexpected signal.
 
 ## Rollback and recovery
 
-Record the approved deployment version ID without recording secrets:
+From `mobile/`, record the approved API deployment version ID without recording
+secrets:
 
 ```powershell
+cd ../worker
 npx wrangler deployments list
 npx wrangler rollback <KNOWN_GOOD_VERSION_ID>
 npx wrangler deployments list
+cd ../mobile
 npm run worker:smoke
+cd ../worker
 npx wrangler deploy
 ```
 

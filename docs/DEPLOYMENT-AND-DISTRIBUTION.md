@@ -8,7 +8,8 @@ effectively free to operate while usage stays within the relevant free tiers.
 It should not require an account, a custom domain, TestFlight or an App Store
 installation.
 
-This document describes a future direction, not deployed infrastructure.
+The Cloudflare API and web frontend described below are deployed. Physical
+device, persistence, installability and broader public-release checks remain.
 
 ## Current Development Architecture
 
@@ -31,7 +32,7 @@ The Node server on the development PC keeps the TMDB credential out of the
 Expo client. TMDB-powered features depend on that server and are not yet
 independently available over the public internet.
 
-## Planned Production Architecture
+## Production Architecture
 
 The planned production architecture is separate from the local setup:
 
@@ -46,9 +47,8 @@ Cloudflare Worker API
 TMDB
 ```
 
-Cloudflare is the preferred production host. Azure remains useful as a general
-learning platform but is not required for Showtime and is not the selected
-hosting direction.
+Cloudflare is the production host. Azure remains useful as a general learning
+platform but is not required for Showtime.
 
 Deployment, smoke testing, rollback, secret rotation and incident response are
 defined in [`CLOUDFLARE-RUNBOOK.md`](CLOUDFLARE-RUNBOOK.md). The runbook is
@@ -56,12 +56,11 @@ mandatory before any hosted endpoint or client cutover is used.
 
 ## Cloudflare Hosting
 
-The planned API/proxy should run as a Cloudflare Worker. The Expo web output
-should use the most appropriate supported Cloudflare approach when Phase 8
-begins. As of September 2026, Cloudflare recommends Workers Static Assets for
-new static sites, single-page applications and full-stack projects; Pages still
-works, but it is not assumed or required here. Expo web routing, asset loading
-and API separation must be validated before choosing the final configuration.
+The API/proxy runs as a Cloudflare Worker and the Expo single-page web output is
+deployed with Workers Static Assets. The production endpoints are:
+
+- Web: `https://showtime-web.showtime-workers.workers.dev`
+- API: `https://showtime-api.showtime-workers.workers.dev`
 
 Relevant current guidance:
 
@@ -69,32 +68,30 @@ Relevant current guidance:
 - [Workers Static Assets](https://developers.cloudflare.com/workers/static-assets/)
 - [Single-page application routing](https://developers.cloudflare.com/workers/static-assets/routing/single-page-application/)
 
-No Cloudflare account, Worker, deployment configuration or resource has been
-created as part of documenting this direction.
+Both Workers use checked-in Wrangler configuration. The generated frontend
+bundle contains the public API URL but no TMDB credential.
 
 ## Production API
 
-The production API should preserve the local proxy's trust boundary while
-being designed for public traffic. Phase 8 should:
+The production API preserves the local proxy's trust boundary for public
+traffic. It:
 
-- adapt the required TMDB proxy routes to the Cloudflare Workers runtime;
-- store the TMDB token as a Worker secret, never as plaintext client or
+- adapts the required TMDB proxy routes to the Cloudflare Workers runtime;
+- stores the TMDB token as a Worker secret, never as plaintext client or
   committed configuration;
-- give the Web/PWA and any later native client an explicit production endpoint;
-- return production-safe errors without leaking credentials or internals;
-- apply suitable origin, request-validation and abuse controls;
-- add proportionate logging and monitoring without recording secrets;
-- scan source and generated client output for credentials; and
-- verify Search, Details and discovery over mobile data and with the
-  development PC switched off.
+- gives the Web/PWA and any later native client an explicit production endpoint;
+- returns production-safe errors without leaking credentials or internals;
+- applies suitable origin, request-validation and abuse controls;
+- adds proportionate logging and monitoring without recording secrets;
+- scans source and generated client output for credentials; and
+- still requires verification of Search, Details and discovery over mobile data
+  and with the development PC switched off.
 
 The current local server is for private development and must not be exposed or
 deployed as-is.
 
-The Worker `ALLOWED_ORIGINS` value must be the exact HTTPS origin of the
-deployed Showtime web frontend. It must not be the API origin, a wildcard, or a
-placeholder. Until the frontend hostname is known, the checked-in empty value
-is intentionally fail-closed for browser traffic.
+The Worker `ALLOWED_ORIGINS` value is the exact HTTPS origin of the deployed
+Showtime web frontend. It is not the API origin, a wildcard, or a placeholder.
 
 ## Web/PWA Distribution
 

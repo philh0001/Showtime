@@ -61,7 +61,7 @@ describe("Worker security boundary", () => {
   it("denies browser origins when the allowlist is empty", async () => {
     const response = await dispatch(new Request("https://showtime.test/discovery", { headers: { Origin: ORIGIN } }), {
       ALLOWED_ORIGINS: "", TMDB_READ_ACCESS_TOKEN: TOKEN,
-    } as Env);
+    } as unknown as Env);
     expect(response.status).toBe(403);
     expect(response.headers.has("Access-Control-Allow-Origin")).toBe(false);
     expect(outbound).not.toHaveBeenCalled();
@@ -133,7 +133,7 @@ describe("Worker security boundary", () => {
   });
 
   it("fails closed for an absent secret binding", async () => {
-    const response = await dispatch(new Request("https://showtime.test/discovery"), { ALLOWED_ORIGINS: "" } as Env);
+    const response = await dispatch(new Request("https://showtime.test/discovery"), { ALLOWED_ORIGINS: "" } as unknown as Env);
     expect(response.status).toBe(503);
     expect(outbound).not.toHaveBeenCalled();
   });
