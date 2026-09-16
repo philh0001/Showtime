@@ -1,13 +1,40 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createServer } from 'node:http';
+import { createServer, request as httpRequest } from 'node:http';
 import { createSearchHandler } from './search.mjs';
 
 async function request(t, fetchImpl, path = '/search?query=Batman', method = 'GET') {
-  const server = createServer(createSearchHandler({ token: 'private-test-token', fetchImpl }));
+  const server = createServer(createSearchHandler({
+    token: 'private-test-token',
+    fetchImpl,
+    logger: { info() {} },
+  }));
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   t.after(() => new Promise((resolve) => { server.close(resolve); server.closeAllConnections(); }));
   return fetch(`http://127.0.0.1:${server.address().port}${path}`, { method });
+}
+
+async function rawRequest(t, path) {
+  const server = createServer(createSearchHandler({
+    token: 'private-test-token',
+    fetchImpl: () => { throw new Error('Should not fetch'); },
+    logger: { info() {} },
+  }));
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  t.after(() => new Promise((resolve) => { server.close(resolve); server.closeAllConnections(); }));
+  return new Promise((resolve, reject) => {
+    const outgoing = httpRequest({
+      host: '127.0.0.1',
+      port: server.address().port,
+      method: 'GET',
+      path,
+    }, (response) => {
+      response.resume();
+      response.once('end', () => resolve(response.statusCode));
+    });
+    outgoing.once('error', reject);
+    outgoing.end();
+  });
 }
 
 test('returns movie/TV display fields, excludes people, and handles missing artwork/dates', async (t) => {
@@ -31,16 +58,26 @@ test('rejects blank searches without contacting TMDB', async (t) => {
 test('upstream errors cannot leak credentials or response bodies', async (t) => {
   const response = await request(t, async () => new Response('private-test-token', { status: 401 }));
   assert.equal(response.status, 502);
-  assert.equal((await response.text()).includes('private-test-token'), false);
+  assert.deepEqual(await response.json(), {
+    error: 'Search is temporarily unavailable. Please try again.',
+  });
 });
 
 test('network exceptions become a safe error', async (t) => {
   const response = await request(t, async () => { throw new Error('private-test-token'); });
   assert.equal(response.status, 502);
-  assert.equal((await response.text()).includes('private-test-token'), false);
+  assert.deepEqual(await response.json(), {
+    error: 'Could not reach the search service. Please try again.',
+  });
 });
 
 test('only the search route and GET method are accepted', async (t) => {
   assert.equal((await request(t, fetch, '/other')).status, 404);
   assert.equal((await request(t, fetch, '/search?query=Batman', 'POST')).status, 405);
+  assert.equal((await request(t, fetch, '/search?query=Batman&query=Robin')).status, 400);
+});
+
+test('rejects raw noncanonical search paths before URL normalization', async (t) => {
+  assert.equal(await rawRequest(t, '/other/../search?query=Batman'), 404);
+  assert.equal(await rawRequest(t, '/other\\..\\search?query=Batman'), 404);
 });
