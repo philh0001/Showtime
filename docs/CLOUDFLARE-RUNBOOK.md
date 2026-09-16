@@ -25,16 +25,20 @@ codes securely, and test a supported recovery path.
 npx wrangler login
 npx wrangler whoami
 npx wrangler secret put TMDB_READ_ACCESS_TOKEN
-npx wrangler deploy
+$env:SHOWTIME_WEB_ORIGIN='https://showtime.<account-subdomain>.workers.dev'
+npx wrangler deploy --var "ALLOWED_ORIGINS:$env:SHOWTIME_WEB_ORIGIN"
 $env:SHOWTIME_API_URL='https://showtime-api.<account-subdomain>.workers.dev'
 npm run worker:smoke
 npx wrangler deployments list
 ```
 
-Replace the hostname with the exact Wrangler output. Enter the TMDB token only
-at the interactive secret prompt; never put it in a command, file, log, or
-screenshot. Confirm `preview_urls: false` and disabled invocation logging in
-the Cloudflare dashboard.
+Replace both hostnames with the exact deployed URLs. `ALLOWED_ORIGINS` is the
+frontend origin, not the API origin; it must be an exact `https://` origin with
+no path, wildcard, or trailing slash. Enter the TMDB token only at the
+interactive secret prompt; never put it in a command, file, log, or screenshot.
+Confirm `preview_urls: false` and disabled invocation logging in the Cloudflare
+dashboard. Do not deploy while the frontend origin is unknown; the checked-in
+empty default intentionally denies browser origins.
 
 ## Privacy and monitoring checks
 

@@ -91,6 +91,11 @@ being designed for public traffic. Phase 8 should:
 The current local server is for private development and must not be exposed or
 deployed as-is.
 
+The Worker `ALLOWED_ORIGINS` value must be the exact HTTPS origin of the
+deployed Showtime web frontend. It must not be the API origin, a wildcard, or a
+placeholder. Until the frontend hostname is known, the checked-in empty value
+is intentionally fail-closed for browser traffic.
+
 ## Web/PWA Distribution
 
 The Web/PWA is the first planned public-distribution route:

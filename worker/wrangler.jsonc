@@ -6,6 +6,8 @@
   "workers_dev": true,
   "preview_urls": false,
   "secrets": { "required": ["TMDB_READ_ACCESS_TOKEN"] },
+  // Set this to the exact HTTPS origin of the deployed Showtime web app before
+  // production deployment. Keep empty until that frontend hostname exists.
   "vars": { "ALLOWED_ORIGINS": "" },
   "limits": { "subrequests": 8 },
   "ratelimits": [
