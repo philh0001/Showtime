@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createServer } from 'node:http';
 import { createSearchHandler } from './search.mjs';
+import { createMemoryCache } from './discovery.mjs';
 
 async function serverFor(t, fetchImpl) {
   const server = createServer(createSearchHandler({ token: 'secret-test-token', fetchImpl }));
@@ -49,4 +50,17 @@ test('failed discovery requests are safe and can be retried', async (t) => {
   fail = false;
   assert.equal((await fetch(url)).status, 200);
   assert.equal((await fetch(url, { method: 'POST' })).status, 405);
+});
+
+test('memory cache expires successful public results after thirty minutes', async () => {
+  let now = 1_000;
+  let loads = 0;
+  const cache = createMemoryCache({ now: () => now });
+  const load = async () => ({ status: 200, body: { value: ++loads } });
+
+  assert.deepEqual(await cache.getOrLoad(load), { status: 200, body: { value: 1 } });
+  now += 30 * 60 * 1000 - 1;
+  assert.deepEqual(await cache.getOrLoad(load), { status: 200, body: { value: 1 } });
+  now += 1;
+  assert.deepEqual(await cache.getOrLoad(load), { status: 200, body: { value: 2 } });
 });

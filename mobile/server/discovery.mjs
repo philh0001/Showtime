@@ -1,53 +1,40 @@
-// Server-only. Cache the public lists, never credentials or upstream errors.
-export function createDiscoveryHandler({ token, fetchImpl = fetch, now = Date.now }) {
+// Server-only. Cache public successful results, never credentials or upstream errors.
+import { handleDiscovery } from '../../worker/src/api/discovery.mjs';
+import { fetchTmdbJson } from '../../worker/src/api/tmdb.mjs';
+
+const CACHE_TTL_MS = 30 * 60 * 1000;
+const DISCOVERY_ROUTE = Object.freeze({ kind: 'discovery', cacheKey: '/discovery', cost: 2 });
+
+export function createMemoryCache({ now = Date.now } = {}) {
   let cached = null;
   let expiresAt = 0;
   let pending = null;
 
-  async function fetchList(type) {
-    const response = await fetchImpl(`https://api.themoviedb.org/3/trending/${type}/week?language=en-GB`, {
-      headers: { Authorization: `Bearer ${token}`, accept: 'application/json' },
-      signal: AbortSignal.timeout(10000),
-    });
-    if (!response.ok) throw new Error('Discovery unavailable');
-    const data = await response.json();
-    if (!Array.isArray(data?.results)) throw new Error('Invalid discovery');
-    const items = new Map();
-    for (const item of data.results) {
-      if (!item || !Number.isSafeInteger(item.id) || item.id <= 0 || item.adult === true || items.has(item.id)) continue;
-      const movie = type === 'movie';
-      const title = movie ? item.title : item.name;
-      if (typeof title !== 'string' || !title.trim()) continue;
-      const date = movie ? item.release_date : item.first_air_date;
-      items.set(item.id, {
-        id: item.id,
-        title: title.trim(),
-        mediaType: movie ? 'Movie' : 'TV',
-        year: typeof date === 'string' && /^\d{4}-/.test(date) ? date.slice(0, 4) : null,
-        posterUrl: typeof item.poster_path === 'string' && /^\/[\w.-]+$/.test(item.poster_path)
-          ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
-      });
-      if (items.size === 20) break;
-    }
-    return [...items.values()];
-  }
+  return {
+    async getOrLoad(load) {
+      if (cached && now() < expiresAt) return { status: 200, body: cached };
+      pending ??= load().then((result) => {
+        if (result.status === 200) {
+          cached = result.body;
+          expiresAt = now() + CACHE_TTL_MS;
+        }
+        return result;
+      }).finally(() => { pending = null; });
+      return pending;
+    },
+  };
+}
 
+export function createDiscoveryHandler({ token, fetchImpl = fetch, now = Date.now }) {
+  const cache = createMemoryCache({ now });
   return async ({ method, send }) => {
     if (method !== 'GET') return send(405, { error: 'Use GET.' });
     if (!token) return send(503, { error: 'Discovery is not configured yet.' });
-    try {
-      if (!cached || now() >= expiresAt) {
-        pending ??= Promise.all([fetchList('movie'), fetchList('tv')])
-          .then(([movies, tv]) => {
-            cached = { movies, tv };
-            expiresAt = now() + 30 * 60 * 1000;
-            return cached;
-          }).finally(() => { pending = null; });
-        await pending;
-      }
-      return send(200, cached);
-    } catch {
-      return send(502, { error: 'Discovery is temporarily unavailable. Please try again.' });
-    }
+
+    const result = await cache.getOrLoad(() => handleDiscovery(DISCOVERY_ROUTE, {
+      token,
+      fetchTmdbJson: (options) => fetchTmdbJson({ ...options, fetchImpl }),
+    }));
+    return send(result.status, result.body);
   };
 }
