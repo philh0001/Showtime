@@ -371,6 +371,8 @@ easy to try from a normal URL. Cloudflare is planned, not deployed.
 
 ### Production API
 
+- [x] Add a Cloudflare operations and incident-response runbook
+- [x] Enforce the documented mandatory no-go release conditions
 - [ ] Adapt the Showtime TMDB proxy for a Cloudflare Worker
 - [ ] Store the TMDB credential as a server-side Worker secret
 - [ ] Ensure the TMDB credential is never bundled into the mobile app

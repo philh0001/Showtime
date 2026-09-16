@@ -50,6 +50,7 @@
     "test:home": "node --no-warnings=ExperimentalWarning --experimental-strip-types --test tests/recently-viewed-rules.test.mjs tests/home-data.test.mjs tests/continue-watching.test.mjs",
     "test:movies": "node --no-warnings=ExperimentalWarning --experimental-strip-types --test tests/movie-progress-rules.test.mjs",
     "security:scan": "node scripts/scan-secrets.mjs --tracked . --generated dist ../worker/worker-dist",
+    "worker:smoke": "node scripts/smoke-worker.mjs",
     "worker:release-check": "npm run lint && npx tsc --noEmit && npm test && npm --prefix ../worker run check && npm --prefix ../worker run bundle && npm audit --audit-level=high && npm run security:scan"
   },
   "private": true

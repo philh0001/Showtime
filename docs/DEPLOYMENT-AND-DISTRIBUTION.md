@@ -50,6 +50,10 @@ Cloudflare is the preferred production host. Azure remains useful as a general
 learning platform but is not required for Showtime and is not the selected
 hosting direction.
 
+Deployment, smoke testing, rollback, secret rotation and incident response are
+defined in [`CLOUDFLARE-RUNBOOK.md`](CLOUDFLARE-RUNBOOK.md). The runbook is
+mandatory before any hosted endpoint or client cutover is used.
+
 ## Cloudflare Hosting
 
 The planned API/proxy should run as a Cloudflare Worker. The Expo web output
