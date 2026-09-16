@@ -154,7 +154,7 @@ describe("Worker security boundary", () => {
       const url = new URL(String(input));
       expect(url.origin).toBe("https://api.themoviedb.org");
       expect(url.search).not.toContain(TOKEN);
-      expect(init?.redirect).toBe("error");
+      expect(init?.redirect).toBe("manual");
       expect(new Headers(init?.headers).get("Authorization")).toBe(`Bearer ${TOKEN}`);
       expect(new Headers(init?.headers).has("Cookie")).toBe(false);
       expect(init?.signal).toBeInstanceOf(AbortSignal);
