@@ -47,6 +47,11 @@ npx expo install --check
 npx expo export --platform ios --max-workers 1
 ```
 
+For the local Cloudflare release gate, run `npx expo export --platform web`
+immediately before `npm run security:scan` so generated browser output is
+included in the credential scan. Run `npm run worker:release-check` from this
+directory for the complete no-go gate.
+
 Then reload in Expo Go and check Home, Search, Watchlist and Profile. Check the
 terminal for missing modules, missing assets, routing warnings and runtime errors.
 After startup changes, also close and reopen the project to check initial loading.
