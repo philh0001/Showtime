@@ -300,6 +300,27 @@ test('development logs identify failed TMDB endpoints without response bodies', 
   assert.equal(JSON.stringify(entries).includes('private-upstream-body'), false);
 });
 
+test('development logs preserve sanitized transport error names without raw details', async (t) => {
+  const entries = [];
+  const logger = { info: (message, context) => entries.push([message, context]) };
+  const response = await request(t, '/details/movie/1', async (url) => {
+    if (String(url) === 'https://api.themoviedb.org/3/movie/1') {
+      return Response.json({ id: 1, title: 'Example' });
+    }
+    if (String(url).endsWith('/credits')) {
+      throw new TypeError('private transport details');
+    }
+    return Response.json({});
+  }, 'GET', { logger });
+
+  assert.equal(response.status, 200);
+  const [, context] = entries.find(([, value]) => value.endpoint === '/3/movie/1/credits');
+  assert.equal(context.status, null);
+  assert.equal(context.error, 'TypeError');
+  assert.equal(Number.isInteger(context.durationMs), true);
+  assert.equal(JSON.stringify(entries).includes('private transport details'), false);
+});
+
 test('missing and malformed next episodes are returned as null', async (t) => {
   const invalidValues = [
     undefined,
@@ -335,20 +356,24 @@ test('rejects invalid IDs/types and POST before contacting TMDB', async (t) => {
   for (const path of ['/details/person/0', '/details/movie/0', '/details/tv/nope', '/details/movie/99999999999999999']) {
     assert.equal((await request(t, path, upstream)).status, 400);
   }
-  assert.equal((await request(t, '/details/movie/1/credits', upstream)).status, 404);
+  const invalidPath = await request(t, '/details/movie/1/credits', upstream);
+  assert.equal(invalidPath.status, 400);
+  assert.deepEqual(await invalidPath.json(), { error: 'Choose a valid movie or TV title.' });
   assert.equal((await request(t, '/details/movie/1', upstream, 'POST')).status, 405);
   assert.equal(calls, 0);
 });
 
-test('detail query parameters are rejected before contacting TMDB', async (t) => {
+test('detail query parameters remain ignored by the Node compatibility adapter', async (t) => {
   let calls = 0;
-  const response = await request(t, '/details/movie/1?extra=private', async () => {
+  const response = await request(t, '/details/movie/1?extra=private', async (url) => {
     calls++;
-    return Response.json({ id: 1, title: 'Movie' });
+    return String(url) === 'https://api.themoviedb.org/3/movie/1'
+      ? Response.json({ id: 1, title: 'Movie' })
+      : Response.json({});
   });
-  assert.equal(response.status, 400);
-  assert.deepEqual(await response.json(), { error: 'Query parameters are not allowed.' });
-  assert.equal(calls, 0);
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).details.title, 'Movie');
+  assert.equal(calls, 4);
 });
 
 test('person details return only normalized safe fields', async (t) => {
