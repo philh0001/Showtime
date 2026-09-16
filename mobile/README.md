@@ -75,7 +75,10 @@ controls and request limits. No database or account system is implemented.
 
 Search shows only movie/TV matches from TMDB's first results page. Selecting a
 result opens its detail screen with artwork, description, rating, genres and
-release information; TV titles also show seasons. Search by title, open one movie
+release information; TV titles also show seasons. Details include TMDB's UK
+(`GB`) watch-provider data for streaming, rent and buy options when available.
+Provider availability is optional and displays a clear unavailable/no-providers
+state without blocking the rest of the title. Search by title, open one movie
 and one TV result, and use Back to confirm the search and results are preserved.
 Also check missing artwork/date fallbacks, try a nonsense title, then stop the
 search server and submit again to check the error state.

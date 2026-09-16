@@ -8,7 +8,9 @@ effectively free to operate while usage stays within the relevant free tiers.
 It should not require an account, a custom domain, TestFlight or an App Store
 installation.
 
-This document describes a future direction, not deployed infrastructure.
+This document describes a future direction, not deployed infrastructure. The
+approved API architecture, threat model and release gates are defined in
+[`2026-09-14-cloudflare-api-design.md`](superpowers/specs/2026-09-14-cloudflare-api-design.md).
 
 ## Current Development Architecture
 
@@ -86,6 +88,43 @@ being designed for public traffic. Phase 8 should:
 
 The current local server is for private development and must not be exposed or
 deployed as-is.
+
+### Security gate
+
+Security is a prerequisite for deployment rather than a post-release task. The
+first Worker release must use an encrypted TMDB secret, strict route and input
+validation, fixed-origin upstream requests, explicit production CORS, safe
+response headers, bounded upstream work, abuse controls, sanitized logging and
+a tested rollback path. Source and generated-client credential scans must pass
+before the hosted endpoint is used by Showtime.
+
+Automatic Worker invocation logs must be disabled because search terms appear
+in request URLs. Only sanitized custom events without full URLs or queries may
+be retained. Worker production caching must use Cloudflare's caching layer;
+module-level Node memory is not a shared or durable Worker cache.
+
+The Worker must reject upstream redirects and oversized TMDB bodies, declare
+its required secret, disable public version-preview URLs, generate its own
+request IDs and attach origin-specific CORS only after cache retrieval. A real
+rollback and a sentinel search-log privacy check are required before cutover.
+
+Worker dependencies must be minimal, lockfile-pinned and reviewed for
+provenance, install scripts and known vulnerabilities. Deployment stops on any
+failed security check, secret or sentinel leakage, unsafe CORS/cache behaviour,
+missing abuse control, unexplained production error signal or failed rollback
+drill.
+
+Search remains a read-only `GET` route for the first migration so the current
+client contract stays stable. Invocation logging is disabled and search is not
+cached; the choice must be reconsidered before wider use if search terms become
+privacy-sensitive.
+
+The Cloudflare account must have verified recovery information and multi-factor
+authentication enabled before deployment credentials or production secrets are
+created. The account owner must store recovery codes securely and test a
+supported recovery path. Exact account setup, access revocation, deployment,
+smoke-test, rollback and token-rotation steps will live in an operational
+runbook added during implementation.
 
 ## Web/PWA Distribution
 

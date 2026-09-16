@@ -9,6 +9,12 @@ the TMDB credential off the device. The current build runs in Expo Go or a brows
 The planned public path is a Cloudflare-hosted API and Web/PWA first, with native
 iOS distribution considered later only if it adds enough value.
 
+Viewing data remains local-first. Profile includes a versioned JSON
+export/import boundary for guest users to move watchlists, progress, history
+and settings between devices; no remote account or server is implied. Upcoming
+episodes remain visible on Home, while reminder controls stay disabled until a
+notification provider is added and OS scheduling is genuinely available.
+
 - [Setup and verification](mobile/README.md)
 - [Roadmap](docs/ROADMAP.md)
 - [Deployment and distribution](docs/DEPLOYMENT-AND-DISTRIBUTION.md)

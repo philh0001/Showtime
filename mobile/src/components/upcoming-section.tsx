@@ -5,11 +5,11 @@ import { AppState, Platform, Pressable, StyleSheet, Text, View } from 'react-nat
 
 import { formatUkDate, getCountdownLabel, getDeviceLocalIsoDate } from '@/services/air-date-rules';
 import { formatLocalUkWatchedDate } from '@/services/movie-progress-rules';
-import { getUpcomingEpisodes, type ScheduleLoadResult } from '@/services/tv-schedule-rules';
+import { getRecentlyAiredEpisodes, getUpcomingEpisodes, type ScheduleLoadResult } from '@/services/tv-schedule-rules';
 import type { ProgressLoadResult } from '@/services/tv-progress-rules';
 import type { WatchlistItem } from '@/services/watchlist-rules';
 
-export function UpcomingSection({ watchlist, progress, cache, onRetry }: {
+export function NextToWatchSection({ watchlist, progress, cache, onRetry }: {
   watchlist: WatchlistItem[]; progress: ProgressLoadResult; cache: ScheduleLoadResult; onRetry: () => Promise<void>;
 }) {
   const [today, setToday] = useState(getDeviceLocalIsoDate);
@@ -25,7 +25,7 @@ export function UpcomingSection({ watchlist, progress, cache, onRetry }: {
   const hasShows = watchlist.some((item) => item.mediaType === 'TV') || (progress.status === 'available' && progress.records.length > 0);
   if (!hasShows && cache?.status !== 'unavailable') return null;
   return <View style={styles.section}>
-    <Text accessibilityRole="header" style={styles.heading}>Upcoming Episodes</Text>
+    <Text accessibilityRole="header" style={styles.heading}>Upcoming</Text>
     {items.slice(0, 10).map((item) => <Link key={item.id} href={{ pathname: '/tv/[id]', params: { id: String(item.id) } }} asChild>
       <Pressable accessibilityRole="link" accessibilityLabel={`Open ${item.title}, season ${item.episode.seasonNumber}, episode ${item.episode.episodeNumber}, ${getCountdownLabel(item.episode.airDate, today)}`}
         style={Platform.OS === 'web' ? styles.row : ({ pressed }) => [styles.row, pressed && styles.pressed]}>
@@ -37,15 +37,44 @@ export function UpcomingSection({ watchlist, progress, cache, onRetry }: {
           <Text style={styles.countdown}>{getCountdownLabel(item.episode.airDate, today)}</Text>
           <Text style={styles.meta}>S{item.episode.seasonNumber} E{item.episode.episodeNumber} · {formatUkDate(item.episode.airDate)}</Text>
           {item.episode.name && <Text style={styles.meta} numberOfLines={2}>{item.episode.name}</Text>}
-          <Text style={styles.checked}>Checked {formatLocalUkWatchedDate(item.checkedAt)}</Text>
+          {__DEV__ && <Text style={styles.checked}>Checked {formatLocalUkWatchedDate(item.checkedAt)}</Text>}
         </View>
       </Pressable>
     </Link>)}
-    {cache?.status === 'available' && items.length === 0 && <Text style={styles.meta}>No upcoming episodes in your saved schedules.</Text>}
     {cache?.status === 'unavailable' && <View>
       <Text accessibilityRole="alert" style={styles.meta}>Saved schedules could not be loaded.</Text>
       <Pressable accessibilityRole="button" onPress={() => void onRetry()} style={styles.retry}><Text style={styles.title}>Try again</Text></Pressable>
     </View>}
+  </View>;
+}
+
+export function RecentlyAiredSection({ watchlist, progress, cache }: {
+  watchlist: WatchlistItem[]; progress: ProgressLoadResult; cache: ScheduleLoadResult;
+}) {
+  const [today, setToday] = useState(getDeviceLocalIsoDate);
+  useFocusEffect(useCallback(() => {
+    setToday(getDeviceLocalIsoDate());
+    return undefined;
+  }, []));
+  const items = cache.status === 'available'
+    ? getRecentlyAiredEpisodes(cache.records, watchlist, progress, today) : [];
+  if (cache.status !== 'available' || items.length === 0) return null;
+  return <View style={styles.section}>
+    <Text accessibilityRole="header" style={styles.heading}>Recently Aired</Text>
+    <Text style={styles.meta}>Unwatched episodes from the last 14 days</Text>
+    {items.slice(0, 10).map((item) => <Link key={`${item.id}-${item.episode.id}`} href={{ pathname: '/tv/[id]', params: { id: String(item.id) } }} asChild>
+      <Pressable accessibilityRole="link" accessibilityLabel={`Open ${item.title}, season ${item.episode.seasonNumber}, episode ${item.episode.episodeNumber}, mark watched`}
+        style={Platform.OS === 'web' ? styles.row : ({ pressed }) => [styles.row, pressed && styles.pressed]}>
+        <View style={styles.poster}>
+          {item.posterUrl && <Image source={{ uri: item.posterUrl }} style={StyleSheet.absoluteFill} contentFit="cover" accessibilityLabel={`${item.title} poster`} />}
+        </View>
+        <View style={styles.details}>
+          <Text style={styles.title} numberOfLines={2}>{item.title}</Text>
+          <Text style={styles.countdown}>Aired {formatUkDate(item.episode.airDate)}</Text>
+          <Text style={styles.meta}>S{item.episode.seasonNumber} E{item.episode.episodeNumber}{item.episode.name ? ` · ${item.episode.name}` : ''}</Text>
+        </View>
+      </Pressable>
+    </Link>)}
   </View>;
 }
 

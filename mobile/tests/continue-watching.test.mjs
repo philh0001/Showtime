@@ -44,13 +44,13 @@ test('statistics count actual progress independently of Watchlist membership', (
   assert.deepEqual(getViewingStats({ status: 'available', items: [tv(1)] }, available([
     { movieId: 8 }, { movieId: 9 },
   ]), available([progress(1, [1], [episode]), progress(2), progress(3, [1, 2])])), {
-    watchlist: 1, moviesWatched: 2, seasonsWatched: 3, showsTracked: 2, episodesWatched: 1,
+    watchlist: 1, moviesWatched: 2, seasonsWatched: 3, showsTracked: 2, outstandingShows: 1, episodesWatched: 1,
   });
 });
 
 test('unavailable statistics stay unknown while independent totals remain visible', () => {
   assert.deepEqual(getViewingStats({ status: 'unavailable' }, available([]),
     { status: 'unavailable', reason: 'malformed' }), {
-    watchlist: null, moviesWatched: 0, seasonsWatched: null, showsTracked: null, episodesWatched: null,
+    watchlist: null, moviesWatched: 0, seasonsWatched: null, showsTracked: null, outstandingShows: null, episodesWatched: null,
   });
 });

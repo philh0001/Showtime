@@ -9,6 +9,12 @@ export type TvSchedule = RecentlyViewedSnapshot & {
 export type ScheduleLoadResult = { status: 'available'; records: TvSchedule[] }
   | { status: 'unavailable' };
 export type UpcomingItem = TvSchedule & { episode: NextEpisode };
+export type RecentlyAiredItem = TvSchedule & { episode: NextEpisode };
+
+function getCalendarDayIndex(value: string) {
+  const [year, month, day] = value.split('-').map(Number);
+  return Date.UTC(year, month - 1, day) / (24 * 60 * 60 * 1000);
+}
 
 function normalizeSchedule(value: unknown): TvSchedule | null {
   if (!value || typeof value !== 'object') return null;
@@ -53,6 +59,7 @@ export function getUpcomingEpisodes(
     if (calculateTvProgress(record).watched > 0 || record.episodeProgress.some((item) =>
       record.trackableSeasonNumbers.includes(item.seasonNumber) && calculateEpisodeProgress(item).watched > 0)) included.add(record.tvId);
   }
+
   return schedules.flatMap((schedule): UpcomingItem[] => {
     if (!included.has(schedule.id)) return [];
     const record = records.find((item) => item.tvId === schedule.id);
@@ -66,4 +73,28 @@ export function getUpcomingEpisodes(
       schedule.episodes.filter(unwatched), todayIso);
     return episode ? [{ ...schedule, episode }] : [];
   }).sort((a, b) => a.episode.airDate.localeCompare(b.episode.airDate) || a.title.localeCompare(b.title) || a.id - b.id);
+}
+
+export function getRecentlyAiredEpisodes(
+  schedules: TvSchedule[], watchlist: WatchlistItem[], progress: ProgressLoadResult,
+  todayIso: string, days = 14,
+): RecentlyAiredItem[] {
+  const included = new Set(watchlist.filter((item) => item.mediaType === 'TV').map((item) => item.id));
+  const records = progress.status === 'available' ? progress.records : [];
+  for (const record of records) included.add(record.tvId);
+  const today = getCalendarDayIndex(todayIso);
+  const earliest = today - Math.max(1, days) + 1;
+  return schedules.flatMap((schedule): RecentlyAiredItem[] => {
+    if (!included.has(schedule.id)) return [];
+    const record = records.find((item) => item.tvId === schedule.id);
+    return schedule.episodes.filter((episode) => {
+      const aired = getCalendarDayIndex(episode.airDate);
+      if (aired < earliest || aired > today) return false;
+      const detailed = record?.episodeProgress.find((item) => item.seasonNumber === episode.seasonNumber);
+      return detailed
+        ? !detailed.watchedEpisodeNumbers.includes(episode.episodeNumber)
+        : !record?.watchedSeasonNumbers.includes(episode.seasonNumber);
+    }).map((episode) => ({ ...schedule, episode }));
+  }).sort((a, b) => b.episode.airDate.localeCompare(a.episode.airDate)
+    || a.title.localeCompare(b.title) || a.id - b.id);
 }

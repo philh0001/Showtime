@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { loadViewingActivity } from '@/services/viewing-activity';
 import { describeViewingAction, filterViewingActivity, type ActivityFilter, type ActivityLoadResult, type ViewingActivity } from '@/services/viewing-activity-rules';
+import { getActivityStats } from '@/services/viewing-summary';
 import { formatLocalUkWatchedDate } from '@/services/movie-progress-rules';
 
 export default function HistoryScreen() {
@@ -24,6 +25,7 @@ export default function HistoryScreen() {
     return () => { request.current += 1; };
   }, [refresh]));
   const records = data?.status === 'available' ? filterViewingActivity(data.records, filter) : [];
+  const summary = data?.status === 'available' ? getActivityStats(data.records) : null;
   return <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
     <View style={styles.filters} accessibilityRole="tablist">
       {([['all', 'All'], ['Movie', 'Movies'], ['TV', 'TV']] as const).map(([value, label]) => (
@@ -39,8 +41,21 @@ export default function HistoryScreen() {
         <Pressable accessibilityRole="button" onPress={() => void refresh()} style={styles.retry}><Text style={styles.title}>Try again</Text></Pressable>
       </View> : <FlatList data={records} keyExtractor={(item) => String(item.sequence)}
         contentContainerStyle={styles.list} renderItem={({ item }) => <ActivityRow event={item} />}
+        ListHeaderComponent={summary ? <View style={styles.summary} accessibilityLabel={`${summary.watchedEntries} watched diary entries`}>
+          <Text style={styles.summaryTitle}>Your diary</Text>
+          <View style={styles.summaryMetrics}>
+            <Metric value={summary.watchedEntries} label="watched" />
+            <Metric value={summary.movies} label="movies" />
+            <Metric value={summary.tv} label="TV updates" />
+          </View>
+          <Text style={styles.secondary}>A local timeline of your movie and TV progress.</Text>
+        </View> : null}
         ListEmptyComponent={<Text style={styles.secondary}>No viewing activity{filter === 'all' ? ' yet' : ` for ${filter === 'Movie' ? 'movies' : 'TV'}`}.</Text>} />}
   </SafeAreaView>;
+}
+
+function Metric({ value, label }: { value: number; label: string }) {
+  return <View style={styles.metric}><Text style={styles.metricValue}>{value}</Text><Text style={styles.metricLabel}>{label}</Text></View>;
 }
 
 function ActivityRow({ event }: { event: ViewingActivity }) {
@@ -72,6 +87,12 @@ const styles = StyleSheet.create({
   filterLabel: { color: '#A7A7B0', fontSize: 15, fontWeight: '600' },
   selectedLabel: { color: '#0B0B0F' },
   list: { paddingHorizontal: 24, paddingBottom: 32 },
+  summary: { paddingTop: 4, paddingBottom: 18, gap: 10 },
+  summaryTitle: { color: '#FFFFFF', fontSize: 22, fontWeight: '800' },
+  summaryMetrics: { flexDirection: 'row', gap: 28, paddingVertical: 4 },
+  metric: { gap: 2 },
+  metricValue: { color: '#63D7BA', fontSize: 24, fontWeight: '800' },
+  metricLabel: { color: '#A7A7B0', fontSize: 13 },
   row: { flexDirection: 'row', gap: 14, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#29292F', width: '100%', maxWidth: 800, alignSelf: 'center' },
   poster: { width: 64, height: 96, backgroundColor: '#212225', borderRadius: 8, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
   fallback: { color: '#A7A7B0', fontSize: 12 },

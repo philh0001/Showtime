@@ -3,6 +3,7 @@ import type { MovieProgressLoadResult } from './movie-progress-rules.ts';
 import type { RecentlyViewedItem, RecentlyViewedSnapshot } from './recently-viewed-rules.ts';
 import { calculateEpisodeProgress, calculateTvProgress, type ProgressLoadResult, type TvProgress } from './tv-progress-rules.ts';
 import type { WatchlistItem } from './watchlist-rules.ts';
+import type { ViewingActivity } from './viewing-activity-rules.ts';
 
 export type ViewingProgress = { watched: number; total: number; fraction: number };
 export type ContinueWatchingItem = RecentlyViewedSnapshot & { progress: ViewingProgress };
@@ -55,13 +56,35 @@ export function getViewingStats(
   watchlist: HomeCollection<WatchlistItem>,
   movies: MovieProgressLoadResult,
   tv: ProgressLoadResult,
+  recentlyViewed?: { status: 'available'; items: unknown[] } | { status: 'unavailable' },
+  activity?: { status: 'available'; records: ViewingActivity[] } | { status: 'unavailable' },
 ) {
   const summaries = tv.status === 'available' ? tv.records.map(summarizeTv) : null;
-  return {
+  const stats = {
     watchlist: watchlist.status === 'available' ? watchlist.items.length : null,
     moviesWatched: movies.status === 'available' ? movies.records.length : null,
     seasonsWatched: summaries?.reduce((sum, item) => sum + item.watched, 0) ?? null,
     showsTracked: summaries?.filter((item) => item.started).length ?? null,
+    outstandingShows: summaries?.filter((item) => item.started && item.watched < item.total).length ?? null,
     episodesWatched: summaries?.reduce((sum, item) => sum + item.episodesWatched, 0) ?? null,
+  };
+  return {
+    ...stats,
+    ...(recentlyViewed ? { recentlyViewed: recentlyViewed.status === 'available' ? recentlyViewed.items.length : null } : {}),
+    ...(activity ? { activityEntries: activity.status === 'available' ? activity.records.length : null } : {}),
+  };
+}
+
+export function getActivityStats(records: ViewingActivity[]) {
+  const watched = records.filter((event) => event.action.watched);
+  const watchedMovies = new Set(watched
+    .filter((event) => event.title.mediaType === 'Movie')
+    .map((event) => event.title.id));
+  return {
+    entries: records.length,
+    watchedEntries: watched.length,
+    movies: watchedMovies.size,
+    tv: watched.filter((event) => event.title.mediaType === 'TV').length,
+    latest: records[0]?.happenedAt ?? null,
   };
 }

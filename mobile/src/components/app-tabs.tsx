@@ -27,6 +27,14 @@ export default function AppTabs() {
         />
       </NativeTabs.Trigger>
 
+      <NativeTabs.Trigger name="discover" contentStyle={{ backgroundColor: colors.background }}>
+        <NativeTabs.Trigger.Label>Discover</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon
+          sf={{ default: 'sparkles', selected: 'sparkles' }}
+          md="explore"
+        />
+      </NativeTabs.Trigger>
+
       <NativeTabs.Trigger name="watchlist" contentStyle={{ backgroundColor: colors.background }}>
         <NativeTabs.Trigger.Label>Watchlist</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon

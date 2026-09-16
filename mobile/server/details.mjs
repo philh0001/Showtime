@@ -10,6 +10,20 @@ const dateOrNull = (value) => {
     && date.getUTCDate() === day ? value : null;
 };
 
+function mapPerson(data, id) {
+  if (!data || data.id !== id || !textOrNull(data.name)) return null;
+  const knownFor = Array.isArray(data.known_for)
+    ? data.known_for.map((item) => textOrNull(item?.title ?? item?.name)).filter(Boolean).slice(0, 5)
+    : [];
+  return {
+    id,
+    name: textOrNull(data.name),
+    biography: textOrNull(data.biography),
+    birthday: dateOrNull(data.birthday),
+    knownFor,
+  };
+}
+
 function nextEpisodeOrNull(value) {
   if (!value || !Number.isSafeInteger(value.id) || value.id <= 0
     || !Number.isInteger(value.season_number) || value.season_number < 0
@@ -44,6 +58,7 @@ function mapExtras(data) {
     cast.set(person.id, { id: person.id, name: textOrNull(person.name), character: textOrNull(person.character), profileUrl: imageUrl(person.profile_path, 'w185') });
     if (cast.size === 12) break;
   }
+
   const crew = new Map();
   for (const person of Array.isArray(data.credits?.crew) ? data.credits.crew : []) {
     if (!person || !Number.isSafeInteger(person.id) || person.id <= 0 || !textOrNull(person.name)
@@ -58,6 +73,54 @@ function mapExtras(data) {
     cast: [...cast.values()], crew: [...crew.values()],
     trailer: video ? { name: textOrNull(video.name) ?? 'Official trailer', url: `https://www.youtube.com/watch?v=${video.key}` } : null,
   };
+}
+
+const providerGroups = ['flatrate', 'free', 'ads', 'rent', 'buy'];
+function normalizeProviderName(value) {
+  const name = value.trim();
+  const lower = name.toLowerCase();
+  if (lower.includes('amazon prime') || lower === 'prime video' || lower.includes('amazon video')) {
+    return 'Amazon Prime Video';
+  }
+  if (lower.includes('paramount')) return 'Paramount+';
+  if (lower.includes('netflix')) return 'Netflix';
+  if (lower.includes('disney')) return 'Disney+';
+  if (lower.includes('apple tv')) return 'Apple TV';
+  if (lower.includes('max')) return 'Max';
+  return name;
+}
+
+function mapWatchProviders(data) {
+  const region = data?.results?.GB;
+  if (!region || typeof region !== 'object') {
+    return { status: 'unavailable', region: 'GB', link: null, providers: [] };
+  }
+  const providers = [];
+  const seen = new Set();
+  const seenProviderIds = new Set();
+  for (const group of providerGroups) {
+    for (const provider of Array.isArray(region[group]) ? region[group] : []) {
+      if (!provider || !Number.isSafeInteger(provider.provider_id) || provider.provider_id <= 0
+        || !textOrNull(provider.provider_name) || seenProviderIds.has(provider.provider_id)) continue;
+      const offers = group === 'flatrate' || group === 'free' || group === 'ads' ? 'stream' : group;
+      const name = normalizeProviderName(provider.provider_name);
+      const key = name.toLowerCase();
+      if (seen.has(key)) continue;
+      providers.push({
+        id: provider.provider_id,
+        name,
+        logoUrl: imageUrl(provider.logo_path, 'w92'),
+        offers,
+      });
+      seen.add(key);
+      seenProviderIds.add(provider.provider_id);
+      if (providers.length === 20) break;
+    }
+    if (providers.length === 20) break;
+  }
+  const link = typeof region.link === 'string' && /^https:\/\/www\.themoviedb\.org\/.+/.test(region.link)
+    ? region.link : null;
+  return { status: providers.length ? 'available' : 'none', region: 'GB', link, providers };
 }
 
 function logTmdbResult(logger, message, { endpoint, status = null, error = null, startedAt }) {
@@ -105,6 +168,17 @@ async function loadExtras({ mediaType, id, token, fetchImpl, logger, timeoutMs }
   return mapExtras({ credits, videos });
 }
 
+async function loadWatchProviders({ mediaType, id, token, fetchImpl, logger, timeoutMs }) {
+  const data = await loadOptionalJson({
+    endpoint: `/3/${mediaType}/${id}/watch/providers?watch_region=GB`,
+    token,
+    fetchImpl,
+    logger,
+    timeoutMs,
+  });
+  return mapWatchProviders(data);
+}
+
 async function loadLatestSeason({ tvId, season, token, fetchImpl, logger, timeoutMs }) {
   if (!season) return null;
   const data = await loadOptionalJson({
@@ -127,6 +201,36 @@ async function loadLatestSeason({ tvId, season, token, fetchImpl, logger, timeou
   };
 }
 
+async function loadSeason({ tvId, seasonNumber, token, fetchImpl, logger, timeoutMs }) {
+  const data = await fetchTmdb({
+    endpoint: `/3/tv/${tvId}/season/${seasonNumber}`,
+    token,
+    fetchImpl,
+    logger,
+    timeoutMs,
+  });
+  if (!data.ok) {
+    if (data.status === 404) return { status: 404 };
+    if (data.status === 429) return { status: 429 };
+    return { status: 502 };
+  }
+  const value = await data.json();
+  if (!Number.isSafeInteger(value.id) || value.id <= 0
+    || value.season_number !== seasonNumber
+    || !Array.isArray(value.episodes)) return { status: 502 };
+  return {
+    status: 200,
+    season: {
+      seasonNumber,
+      name: textOrNull(value.name) ?? `Season ${seasonNumber}`,
+      episodes: value.episodes
+        .map((episode) => episodeOrNull(episode, seasonNumber))
+        .filter(Boolean)
+        .sort((a, b) => a.episodeNumber - b.episodeNumber || a.id - b.id),
+    },
+  };
+}
+
 export async function handleDetails({
   pathname,
   method,
@@ -137,6 +241,54 @@ export async function handleDetails({
   optionalTimeoutMs = 3000,
 }) {
   if (method !== 'GET') return send(405, { error: 'Use GET.' });
+  const personMatch = /^\/details\/person\/([1-9]\d*)$/.exec(pathname);
+  if (personMatch) {
+    if (!Number.isSafeInteger(Number(personMatch[1]))) return send(400, { error: 'Choose a valid person.' });
+    if (!token) return send(503, { error: 'Details are not configured yet.' });
+    const id = Number(personMatch[1]);
+    try {
+      const upstream = await fetchTmdb({
+        endpoint: `/3/person/${id}`,
+        token,
+        fetchImpl,
+        logger,
+        timeoutMs: 10000,
+      });
+      if (upstream.status === 404) return send(404, { error: 'This person could not be found.' });
+      if (upstream.status === 429) return send(429, { error: 'Please wait a moment and try again.' });
+      if (!upstream.ok) return send(502, { error: 'Person details are temporarily unavailable.' });
+      const person = mapPerson(await upstream.json(), id);
+      if (!person) throw new Error('Invalid person response');
+      return send(200, { person });
+    } catch {
+      return send(502, { error: 'Could not load person details. Please try again.' });
+    }
+  }
+  const seasonMatch = /^\/details\/tv\/([1-9]\d*)\/season\/([1-9]\d*)$/.exec(pathname);
+  if (seasonMatch && Number.isSafeInteger(Number(seasonMatch[1]))
+    && Number.isSafeInteger(Number(seasonMatch[2]))) {
+    if (!token) return send(503, { error: 'Details are not configured yet.' });
+    try {
+      const result = await loadSeason({
+        tvId: Number(seasonMatch[1]),
+        seasonNumber: Number(seasonMatch[2]),
+        token,
+        fetchImpl,
+        logger,
+        timeoutMs: 10000,
+      });
+      if (result.status !== 200) {
+        return send(result.status, {
+          error: result.status === 404 ? 'This season could not be found.'
+            : result.status === 429 ? 'Please wait a moment and try again.'
+              : 'Season details are temporarily unavailable.',
+        });
+      }
+      return send(200, { season: result.season });
+    } catch {
+      return send(502, { error: 'Could not load season details. Please try again.' });
+    }
+  }
   const match = /^\/details\/(movie|tv)\/([1-9]\d*)$/.exec(pathname);
   if (!match || !Number.isSafeInteger(Number(match[2]))) {
     return send(400, { error: 'Choose a valid movie or TV title.' });
@@ -175,7 +327,7 @@ export async function handleDetails({
     const latestSeasonSummary = [...seasons].reverse().find(
       (season) => season.seasonNumber > 0 && season.episodeCount !== 0,
     ) ?? null;
-    const [extras, latestSeason] = await Promise.all([
+    const [extras, latestSeason, watchProviders] = await Promise.all([
       loadExtras({ mediaType, id, token, fetchImpl, logger, timeoutMs: optionalTimeoutMs }),
       movie ? null : loadLatestSeason({
         tvId: data.id,
@@ -185,9 +337,11 @@ export async function handleDetails({
         logger,
         timeoutMs: optionalTimeoutMs,
       }),
+      loadWatchProviders({ mediaType, id, token, fetchImpl, logger, timeoutMs: optionalTimeoutMs }),
     ]);
     send(200, { details: {
       ...extras,
+      watchProviders,
       id: data.id,
       mediaType: movie ? 'Movie' : 'TV',
       title: textOrNull(movie ? data.title : data.name) ?? 'Untitled',

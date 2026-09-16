@@ -1,20 +1,21 @@
 import { Image } from 'expo-image';
 import { Link, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MovieWatchedControl } from '@/components/movie-watched-control';
 import { DetailExtras } from '@/components/detail-extras';
 import { TvTrackingSection } from '@/components/tv-tracking-section';
 import { formatUkDate } from '@/services/air-date-rules';
-import { DetailsError, fetchDetails, type MediaDetails, type MediaType } from '@/services/details';
+import { DetailsError, fetchDetails, type MediaDetails, type MediaType, type WatchProvider } from '@/services/details';
 import { createWatchedMovieSnapshot } from '@/services/movie-progress-rules';
 import { createRecentlyViewedSnapshot } from '@/services/recently-viewed-rules';
 import { recordRecentlyViewed } from '@/services/recently-viewed';
 import { recordTvSchedule } from '@/services/tv-schedule';
 import { isInWatchlist, type WatchlistItem } from '@/services/watchlist-rules';
 import { addToWatchlist, loadWatchlist, removeFromWatchlist } from '@/services/watchlist';
+import { getProviderSearchUrl } from '@/services/provider-search-rules';
 
 type LoadState =
   | { status: 'loading' }
@@ -169,6 +170,7 @@ function DetailsContent({ details }: { details: MediaDetails }) {
         <Text style={styles.body}>{details.overview ?? 'No description is available yet.'}</Text>
         <Text accessibilityRole="header" style={styles.heading}>Genres</Text>
         <Text style={styles.body}>{details.genres.length ? details.genres.join(' · ') : 'Genres unavailable'}</Text>
+        <WhereToWatch title={details.title} providers={details.watchProviders} />
         {details.mediaType === 'TV' && <TvTrackingSection details={details} />}
         <DetailExtras cast={details.cast} crew={details.crew} trailer={details.trailer} mediaType={details.mediaType} />
         <View style={styles.credits}>
@@ -181,6 +183,60 @@ function DetailsContent({ details }: { details: MediaDetails }) {
       </View>
     </ScrollView>
   );
+}
+
+function WhereToWatch({ title, providers }: { title: string; providers: MediaDetails['watchProviders'] }) {
+  const streamers = providers.providers.filter((provider) => provider.offers === 'stream');
+  const rent = providers.providers.filter((provider) => provider.offers === 'rent');
+  const buy = providers.providers.filter((provider) => provider.offers === 'buy');
+  return (
+    <View>
+      <Text accessibilityRole="header" style={styles.heading}>Where to watch in the UK</Text>
+      {providers.status === 'unavailable'
+        ? <Text style={styles.secondary}>Availability is temporarily unavailable.</Text>
+        : providers.status === 'none'
+          ? <Text style={styles.secondary}>No UK providers found for this title.</Text>
+          : <>
+            {streamers.length > 0 && <ProviderGroup title={title} offer="Stream" providers={streamers} />}
+            {rent.length > 0 && <ProviderGroup title={title} offer="Rent" providers={rent} />}
+            {buy.length > 0 && <ProviderGroup title={title} offer="Buy" providers={buy} />}
+          </>}
+    </View>
+  );
+}
+
+function ProviderGroup({
+  title,
+  offer,
+  providers,
+}: {
+  title: string;
+  offer: string;
+  providers: WatchProvider[];
+}) {
+  return <View style={styles.providerGroup}>
+    <Text style={styles.secondary}>{offer}</Text>
+    <View style={styles.providers}>
+      {providers.map((provider) => {
+        const link = getProviderSearchUrl(provider.name, title);
+        const content = <>
+          {provider.logoUrl
+            ? <Image source={{ uri: provider.logoUrl }} style={styles.providerLogo} contentFit="contain" accessibilityLabel={`${provider.name} logo`} />
+            : <View style={styles.providerLogoFallback}><Text style={styles.providerInitial}>{provider.name.slice(0, 1)}</Text></View>}
+          <Text style={styles.providerName}>{provider.name}</Text>
+        </>;
+        return link
+          ? <Pressable
+            key={`${title}-${provider.id}`}
+            accessibilityRole="link"
+            accessibilityLabel={`Search for ${title} on ${provider.name}`}
+            onPress={() => void Linking.openURL(link)}
+            style={({ pressed }) => [styles.provider, pressed && styles.dimmed]}
+          >{content}</Pressable>
+          : <View key={`${title}-${provider.id}`} style={styles.provider}>{content}</View>;
+      })}
+    </View>
+  </View>;
 }
 
 function Artwork({ url, label, wide = false }: { url: string | null; label: string; wide?: boolean }) {
@@ -221,5 +277,12 @@ const styles = StyleSheet.create({
   error: { color: '#FF8A8A', fontSize: 14, marginTop: 10 },
   link: { color: '#FFFFFF', fontSize: 16, paddingVertical: 12, textDecorationLine: 'underline' },
   credits: { marginTop: 32, gap: 12 },
+  providerGroup: { gap: 8, marginBottom: 12 },
+  providers: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  provider: { width: 82, alignItems: 'center', gap: 5 },
+  providerLogo: { width: 48, height: 48, borderRadius: 10 },
+  providerLogoFallback: { width: 48, height: 48, borderRadius: 10, backgroundColor: '#32343A', alignItems: 'center', justifyContent: 'center' },
+  providerInitial: { color: '#FFFFFF', fontWeight: '700', fontSize: 20 },
+  providerName: { color: '#FFFFFF', fontSize: 12, textAlign: 'center' },
   tmdbLogo: { width: 100, height: 24 },
 });

@@ -5,15 +5,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { HomePosterCard, type HomePosterItem } from '@/components/home-poster-card';
 import { DiscoverySection } from '@/components/discovery-section';
-import { UpcomingSection } from '@/components/upcoming-section';
+import { NextToWatchSection, RecentlyAiredSection } from '@/components/upcoming-section';
+import { ShowtimeLogo } from '@/components/showtime-logo';
 import { loadHomeData, type HomeData } from '@/services/home-data';
-import { findWatchedMovie, type WatchedMovie } from '@/services/movie-progress-rules';
+import { type WatchedMovie } from '@/services/movie-progress-rules';
 import { loadMovieProgress } from '@/services/movie-progress';
 import { loadRecentlyViewed } from '@/services/recently-viewed';
 import { loadWatchlist } from '@/services/watchlist';
 import { loadTvProgress } from '@/services/tv-progress';
 import { loadTvSchedules } from '@/services/tv-schedule';
-import { getContinueWatching, type ViewingProgress } from '@/services/viewing-summary';
+import { type ViewingProgress } from '@/services/viewing-summary';
 
 export default function HomeScreen() {
   const [data, setData] = useState<HomeData | null>(null);
@@ -40,8 +41,6 @@ export default function HomeScreen() {
     ? data.watchlist.items : [];
   const watchedMovies = data?.movieProgress.status === 'available'
     ? data.movieProgress.records : [];
-  const continueWatching = data ? getContinueWatching(watchlistItems, recentItems, data.tvProgress,
-    data.tvSchedules.status === 'available' ? data.tvSchedules.records : []) : [];
   const hasError = data?.recentlyViewed.status === 'unavailable'
     || data?.watchlist.status === 'unavailable'
     || data?.movieProgress.status === 'unavailable'
@@ -58,7 +57,7 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.logo}>SHOWTIME</Text>
+        <ShowtimeLogo />
         <Link href="/search" asChild>
           <Pressable
             accessibilityRole="link"
@@ -74,31 +73,21 @@ export default function HomeScreen() {
           <Text style={styles.secondary}>Loading your Home screen…</Text>
         </View>}
 
-        {!loading && continueWatching.length > 0
-          && <PosterRail title="Continue Watching" items={continueWatching.slice(0, 20)}
-            getProgress={(item) => continueWatching.find((show) => show.id === item.id)?.progress} />}
+        {!loading && data && <NextToWatchSection watchlist={watchlistItems} progress={data.tvProgress}
+          cache={data.tvSchedules} onRetry={refresh} />}
+
+        {!loading && data && <RecentlyAiredSection watchlist={watchlistItems} progress={data.tvProgress}
+          cache={data.tvSchedules} />}
 
         {!loading && recentItems.length > 0
           && <PosterRail title="Recently Viewed" items={recentItems} />}
 
-        {!loading && data && <UpcomingSection watchlist={watchlistItems} progress={data.tvProgress}
-          cache={data.tvSchedules} onRetry={refresh} />}
-
         {!loading && watchedMovies.length > 0
           && <PosterRail
-            title="Watched Movies"
+            title="Completed Movies"
             items={watchedMovies.slice(0, 20).map(watchedMovieToPosterItem)}
             statusLabel="Watched"
             action={<Link href="/history" style={styles.seeAll}>History</Link>}
-          />}
-
-        {!loading && watchlistItems.length > 0
-          && <PosterRail
-            title="Watchlist"
-            items={watchlistItems.slice(0, 10)}
-            getStatusLabel={(item) => item.mediaType === 'Movie'
-              && findWatchedMovie(watchedMovies, item.id) ? 'Watched' : undefined}
-            action={<Link href="/watchlist" style={styles.seeAll}>See all</Link>}
           />}
 
         {!loading && showFirstUse && <View style={styles.firstUse}>
@@ -179,16 +168,18 @@ function watchedMovieToPosterItem(movie: WatchedMovie): HomePosterItem {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0B0B0F' },
   content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 24 },
-  logo: { color: '#FFFFFF', fontSize: 28, fontWeight: '800', letterSpacing: 0 },
   searchButton: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#FFFFFF',
+    width: '100%',
+    backgroundColor: '#212225',
+    borderColor: '#393940',
+    borderWidth: 1,
     borderRadius: 12,
     marginTop: 12,
-    paddingHorizontal: 20,
-    paddingVertical: 13,
+    minHeight: 50,
+    justifyContent: 'center',
+    paddingHorizontal: 16,
   },
-  searchButtonText: { color: '#0B0B0F', fontSize: 15, fontWeight: '700' },
+  searchButtonText: { color: '#A7A7B0', fontSize: 16 },
   message: { minHeight: 180, gap: 14, alignItems: 'center', justifyContent: 'center' },
   secondary: { color: '#A7A7B0', fontSize: 15, lineHeight: 22 },
   section: { marginTop: 20, gap: 10 },

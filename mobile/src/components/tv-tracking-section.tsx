@@ -5,9 +5,8 @@ import {
   formatUkDate,
   getCountdownLabel,
   getDeviceLocalIsoDate,
-  getSeasonAirDateLabel,
 } from '@/services/air-date-rules';
-import type { MediaDetails } from '@/services/details';
+import { fetchSeasonEpisodes, type EpisodeSummary, type MediaDetails } from '@/services/details';
 import {
   calculateEpisodeProgress,
   calculateTvProgress,
@@ -40,6 +39,14 @@ export function TvTrackingSection({ details }: { details: MediaDetails }) {
   const [tracking, setTracking] = useState<TrackingState>({ status: 'loading' });
   const [savingKey, setSavingKey] = useState<string | null>(null);
   const [trackingError, setTrackingError] = useState<string | null>(null);
+  const [expandedSeason, setExpandedSeason] = useState<number | null>(
+    details.latestSeason?.seasonNumber ?? null,
+  );
+  const [loadedSeasons, setLoadedSeasons] = useState<Record<number, EpisodeSummary[]>>(
+    details.latestSeason ? { [details.latestSeason.seasonNumber]: details.latestSeason.episodes } : {},
+  );
+  const [loadingSeason, setLoadingSeason] = useState<number | null>(null);
+  const [seasonLoadError, setSeasonLoadError] = useState<number | null>(null);
   const busy = useRef(false);
   const todayIso = getDeviceLocalIsoDate();
   const trackableSeasons = useMemo(
@@ -56,6 +63,9 @@ export function TvTrackingSection({ details }: { details: MediaDetails }) {
       : null,
     [details.latestSeason, todayIso],
   );
+  const loadedEpisodeMetadata = expandedSeason && loadedSeasons[expandedSeason]
+    ? deriveEpisodeMetadata(expandedSeason, loadedSeasons[expandedSeason], todayIso)
+    : null;
 
   useEffect(() => {
     let active = true;
@@ -71,13 +81,46 @@ export function TvTrackingSection({ details }: { details: MediaDetails }) {
     };
   }, [details.id, latestEpisodeMetadata, trackableSeasons]);
 
+  async function toggleSeasonExpanded(seasonNumber: number) {
+    if (expandedSeason === seasonNumber) {
+      setExpandedSeason(null);
+      return;
+    }
+    setExpandedSeason(seasonNumber);
+    setSeasonLoadError(null);
+    if (loadedSeasons[seasonNumber]) return;
+    setLoadingSeason(seasonNumber);
+    try {
+      const controller = new AbortController();
+      const season = await fetchSeasonEpisodes(details.id, seasonNumber, controller.signal);
+      setLoadedSeasons((current) => ({ ...current, [seasonNumber]: season.episodes }));
+      const records = await synchronizeTvTracking(details.id, trackableSeasons, deriveEpisodeMetadata(
+        seasonNumber,
+        season.episodes,
+        todayIso,
+      ));
+      setTracking({ status: 'ready', records });
+    } catch {
+      setSeasonLoadError(seasonNumber);
+    } finally {
+      setLoadingSeason(null);
+    }
+  }
+
   const progress = tracking.status === 'ready'
     ? findTvProgress(tracking.records, details.id)
     : null;
   const total = progress ? calculateTvProgress(progress) : null;
-  const latestEpisodeProgress = details.latestSeason && progress
-    ? findEpisodeProgress(progress, details.latestSeason.seasonNumber)
-    : null;
+  const latestEpisodes = details.latestSeason?.episodes ?? [];
+  const calendarIndex = (value: string) => {
+    const [year, month, day] = value.split('-').map(Number);
+    return Date.UTC(year, month - 1, day) / (24 * 60 * 60 * 1000);
+  };
+  const todayIndex = calendarIndex(todayIso);
+  const recentlyAiredEpisodes = latestEpisodes.filter((episode) => {
+    if (!episode.airDate || episode.airDate > todayIso) return false;
+    return calendarIndex(episode.airDate) >= todayIndex - 13;
+  });
 
   async function saveChange(
     key: string,
@@ -147,35 +190,42 @@ export function TvTrackingSection({ details }: { details: MediaDetails }) {
 
   return (
     <View>
-      <Text accessibilityRole="header" style={styles.heading}>Next episode</Text>
-      <View style={styles.nextEpisode}>
-        {details.nextEpisode ? <>
-          <Text style={styles.seasonTitle}>
-            S{details.nextEpisode.seasonNumber} E{details.nextEpisode.episodeNumber}
-            {details.nextEpisode.name ? ` · ${details.nextEpisode.name}` : ''}
-          </Text>
-          <Text style={styles.secondary}>
-            {formatUkDate(details.nextEpisode.airDate)} · {getCountdownLabel(details.nextEpisode.airDate, todayIso)}
-          </Text>
-        </> : <Text style={styles.body}>No upcoming episode announced</Text>}
-      </View>
-
-      <Text accessibilityRole="header" style={styles.heading}>Seasons</Text>
+      <Text accessibilityRole="header" style={styles.heading}>Recently aired</Text>
       {tracking.status === 'loading' && <Text style={styles.secondary}>Loading progress…</Text>}
       {tracking.status === 'unavailable' && <Text accessibilityRole="alert" style={styles.error}>
         TV tracking is temporarily unavailable.
       </Text>}
       {total && <Text style={styles.progressText}>{total.watched} of {total.total} seasons watched</Text>}
       {trackingError && <Text accessibilityRole="alert" style={styles.error}>{trackingError}</Text>}
+      {recentlyAiredEpisodes.length === 0
+        ? <Text style={styles.secondary}>No episodes aired in the last 14 days.</Text>
+        : <View style={styles.recentEpisodes}>
+          {recentlyAiredEpisodes.map((episode) => {
+            return <View key={`recent-${episode.id}`} style={styles.episodeRow}>
+              <View style={styles.episodeText}>
+                <Text style={styles.episodeTitle}>S{episode.seasonNumber}:E{episode.episodeNumber}{episode.name ? ` · ${episode.name}` : ''}</Text>
+                <Text style={styles.secondary}>Aired {formatUkDate(episode.airDate)}</Text>
+              </View>
+            </View>;
+          })}
+        </View>}
 
+      <Text accessibilityRole="header" style={styles.subheading}>Season progress</Text>
       {seasonsNewestFirst.length ? seasonsNewestFirst.map((season) => {
         const isLatest = details.latestSeason?.seasonNumber === season.seasonNumber;
-        const hasEpisodeDetails = isLatest && details.latestSeason!.episodes.length > 0;
+        const seasonEpisodes = isLatest
+          ? details.latestSeason?.episodes ?? []
+          : loadedSeasons[season.seasonNumber] ?? [];
+        const hasEpisodeDetails = seasonEpisodes.length > 0;
+        const isExpanded = expandedSeason === season.seasonNumber;
         const trackable = trackableSeasons.includes(season.seasonNumber);
         const watched = progress?.watchedSeasonNumbers.includes(season.seasonNumber) ?? false;
         const seasonSaving = savingKey === `season-${season.seasonNumber}`;
-        const episodeTotal = hasEpisodeDetails && latestEpisodeProgress
-          ? calculateEpisodeProgress(latestEpisodeProgress)
+        const seasonEpisodeProgress = progress
+          ? findEpisodeProgress(progress, season.seasonNumber)
+          : null;
+        const episodeTotal = hasEpisodeDetails && seasonEpisodeProgress
+          ? calculateEpisodeProgress(seasonEpisodeProgress)
           : null;
         const allAiredWatched = episodeTotal !== null
           && episodeTotal.total > 0
@@ -185,18 +235,20 @@ export function TvTrackingSection({ details }: { details: MediaDetails }) {
           <View key={season.id} style={styles.season}>
             <View style={styles.seasonHeader}>
               <View style={styles.seasonText}>
-                <View style={styles.titleRow}>
-                  <Text style={styles.seasonTitle}>{season.name}</Text>
-                  {isLatest && <Text style={styles.latestBadge}>Latest season</Text>}
-                </View>
-                <Text style={styles.secondary}>
-                  {season.episodeCount === null
-                    ? 'Episode count unknown'
-                    : `${season.episodeCount} episode${season.episodeCount === 1 ? '' : 's'}`}
-                  {' · '}{getSeasonAirDateLabel(season.airDate, todayIso)}
-                </Text>
-                {episodeTotal && <Text style={styles.episodeProgress}>
-                  {episodeTotal.watched} of {episodeTotal.total} aired episodes watched
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`${isExpanded ? 'Collapse' : 'Expand'} ${season.name}`}
+                  onPress={() => void toggleSeasonExpanded(season.seasonNumber)}
+                  disabled={loadingSeason !== null}
+                >
+                  <View style={styles.titleRow}>
+                    <Text style={styles.seasonTitle}>{season.name}</Text>
+                    <Text style={styles.expandHint}>{isExpanded ? '▾' : '▸'}</Text>
+                    {isLatest && <Text style={styles.latestBadge}>Latest season</Text>}
+                  </View>
+                </Pressable>
+                {episodeTotal && episodeTotal.total > 0 && <Text style={styles.episodeProgress}>
+                  {episodeTotal.watched}/{episodeTotal.total} watched
                 </Text>}
               </View>
               {season.seasonNumber === 0
@@ -204,16 +256,16 @@ export function TvTrackingSection({ details }: { details: MediaDetails }) {
                 : hasEpisodeDetails
                   ? episodeTotal && episodeTotal.total > 0
                     ? <ProgressButton
-                      label={allAiredWatched ? 'Clear aired' : 'Mark aired watched'}
+                      label={allAiredWatched ? 'Mark as unwatched' : 'Mark as watched'}
                       selected={allAiredWatched}
                       saving={savingKey === `season-episodes-${season.seasonNumber}`}
                       disabled={savingKey !== null || tracking.status !== 'ready'}
                       onPress={() => toggleAiredEpisodes(season.seasonNumber, !allAiredWatched)}
                     />
-                    : <Text style={styles.untracked}>No episodes aired</Text>
+                    : null
                   : trackable
                     ? <ProgressButton
-                      label={watched ? 'Watched' : 'Mark watched'}
+                      label={watched ? 'Mark as unwatched' : 'Mark as watched'}
                       selected={watched}
                       saving={seasonSaving}
                       disabled={savingKey !== null || tracking.status !== 'ready'}
@@ -222,11 +274,19 @@ export function TvTrackingSection({ details }: { details: MediaDetails }) {
                     : <Text style={styles.untracked}>Upcoming</Text>}
             </View>
 
-            {hasEpisodeDetails && <View style={styles.episodeList}>
-              {details.latestSeason!.episodes.map((episode) => {
-                const episodeTrackable = latestEpisodeMetadata?.trackableEpisodeNumbers
+            {loadingSeason === season.seasonNumber && <Text style={styles.secondary}>Loading episodes…</Text>}
+            {seasonLoadError === season.seasonNumber && <Text accessibilityRole="alert" style={styles.error}>
+              Episodes could not be loaded. Try expanding this season again.
+            </Text>}
+            {isExpanded && hasEpisodeDetails && <View style={styles.episodeList}>
+              {seasonEpisodes.map((episode) => {
+                const metadata = isLatest ? latestEpisodeMetadata : loadedEpisodeMetadata;
+                const episodeProgress = progress
+                  ? findEpisodeProgress(progress, season.seasonNumber)
+                  : null;
+                const episodeTrackable = metadata?.trackableEpisodeNumbers
                   .includes(episode.episodeNumber) ?? false;
-                const episodeWatched = latestEpisodeProgress?.watchedEpisodeNumbers
+                const episodeWatched = episodeProgress?.watchedEpisodeNumbers
                   .includes(episode.episodeNumber) ?? false;
                 const episodeSaving = savingKey
                   === `episode-${episode.seasonNumber}-${episode.episodeNumber}`;
@@ -237,7 +297,10 @@ export function TvTrackingSection({ details }: { details: MediaDetails }) {
                     ? episode.airDate === todayIso
                       ? `${formattedDate} · Airs today`
                       : `Aired ${formattedDate}`
-                    : `${formattedDate} · ${getCountdownLabel(episode.airDate, todayIso)}`;
+                    : formattedDate;
+                const availabilityLabel = !episodeTrackable
+                  ? getCountdownLabel(episode.airDate, todayIso)
+                  : null;
                 return (
                   <View key={episode.id} style={styles.episodeRow}>
                     <View style={styles.episodeText}>
@@ -248,7 +311,7 @@ export function TvTrackingSection({ details }: { details: MediaDetails }) {
                     </View>
                     {episodeTrackable
                       ? <ProgressButton
-                        label={episodeWatched ? 'Watched' : 'Mark watched'}
+                        label={episodeWatched ? 'Mark as unwatched' : 'Mark as watched'}
                         selected={episodeWatched}
                         saving={episodeSaving}
                         disabled={savingKey !== null || tracking.status !== 'ready'}
@@ -258,12 +321,12 @@ export function TvTrackingSection({ details }: { details: MediaDetails }) {
                           !episodeWatched,
                         )}
                       />
-                      : <Text style={styles.untracked}>Not available yet</Text>}
+                      : <Text style={styles.untracked}>{availabilityLabel}</Text>}
                   </View>
                 );
               })}
             </View>}
-            {isLatest && details.latestSeason?.episodes.length === 0
+            {isExpanded && isLatest && details.latestSeason?.episodes.length === 0
               && <Text style={styles.secondary}>No episodes have been announced yet.</Text>}
           </View>
         );
@@ -307,17 +370,19 @@ function ProgressButton({
 
 const styles = StyleSheet.create({
   heading: { color: '#FFFFFF', fontSize: 21, fontWeight: '700', marginTop: 24, marginBottom: 12 },
+  subheading: { color: '#FFFFFF', fontSize: 18, fontWeight: '700', marginTop: 14, marginBottom: 4 },
   body: { color: '#FFFFFF', fontSize: 16, lineHeight: 25 },
   secondary: { color: '#A7A7B0', fontSize: 14, lineHeight: 22 },
-  nextEpisode: { backgroundColor: '#16161B', borderRadius: 12, padding: 16, gap: 6 },
   progressText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600', marginBottom: 8 },
-  season: { gap: 12, paddingVertical: 16, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#393940' },
+  season: { gap: 12, padding: 14, marginTop: 8, backgroundColor: '#16161B', borderRadius: 12 },
   seasonHeader: { flexDirection: 'row', gap: 12, alignItems: 'center' },
   seasonText: { flex: 1, gap: 4 },
   titleRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 },
   seasonTitle: { color: '#FFFFFF', fontSize: 17, fontWeight: '600' },
+  expandHint: { color: '#D5D5DC', fontSize: 20, fontWeight: '700' },
   latestBadge: { color: '#0B0B0F', backgroundColor: '#FFFFFF', borderRadius: 10, overflow: 'hidden', paddingHorizontal: 8, paddingVertical: 3, fontSize: 11, fontWeight: '800' },
   episodeProgress: { color: '#FFFFFF', fontSize: 13, fontWeight: '600' },
+  recentEpisodes: { gap: 8, marginBottom: 8 },
   episodeList: { marginTop: 4, paddingLeft: 12, borderLeftWidth: 2, borderLeftColor: '#393940' },
   episodeRow: { flexDirection: 'row', gap: 12, alignItems: 'center', paddingVertical: 12, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#292930' },
   episodeText: { flex: 1, gap: 3 },
@@ -326,7 +391,7 @@ const styles = StyleSheet.create({
   progressButtonSelected: { backgroundColor: '#FFFFFF' },
   progressButtonText: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
   progressButtonTextSelected: { color: '#0B0B0F' },
-  untracked: { color: '#777780', fontSize: 13, maxWidth: 100, textAlign: 'right' },
+  untracked: { color: '#A7A7B0', fontSize: 13, maxWidth: 110, textAlign: 'right' },
   dimmed: { opacity: 0.65 },
   error: { color: '#FF8A8A', fontSize: 14, marginTop: 10 },
 });

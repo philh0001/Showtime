@@ -1,5 +1,6 @@
 import { getServerUrl } from './server-url';
 import { normalizeDetailExtras, type DetailExtras } from './detail-extras-rules';
+import { normalizePersonDetails, type PersonDetails } from './person-details-rules';
 import {
   getDeviceLocalIsoDate,
   parseIsoCalendarDate,
@@ -20,6 +21,7 @@ export type MediaDetails = DetailExtras & {
   backdropUrl: string | null;
   nextEpisode: NextEpisode | null;
   latestSeason: LatestSeason | null;
+  watchProviders: WatchProviders;
   seasons: {
     id: number;
     name: string;
@@ -27,6 +29,19 @@ export type MediaDetails = DetailExtras & {
     episodeCount: number | null;
     airDate: string | null;
   }[];
+};
+
+export type WatchProvider = {
+  id: number;
+  name: string;
+  logoUrl: string | null;
+  offers: 'stream' | 'rent' | 'buy';
+};
+export type WatchProviders = {
+  status: 'available' | 'none' | 'unavailable';
+  region: 'GB';
+  link: string | null;
+  providers: WatchProvider[];
 };
 
 export type EpisodeSummary = Omit<NextEpisode, 'airDate'> & { airDate: string | null };
@@ -37,6 +52,34 @@ export type LatestSeason = {
 };
 
 export class DetailsError extends Error {}
+
+export async function fetchPersonDetails(id: number, signal: AbortSignal): Promise<PersonDetails> {
+  const endpoint = `${getServerUrl()}/details/person/${encodeURIComponent(id)}`;
+  let response: Response;
+  try {
+    response = await fetch(endpoint, { signal });
+  } catch (error) {
+    logDetailsFailure(endpoint, null, error);
+    throw error;
+  }
+  if (!response.ok) {
+    logDetailsFailure(endpoint, response.status);
+    throw new DetailsError(response.status === 404
+      ? 'This person could not be found.'
+      : response.status === 429
+        ? 'Please wait a moment and try again.'
+        : 'Person details are temporarily unavailable. Please try again.');
+  }
+  try {
+    const { person } = await response.json();
+    const normalized = normalizePersonDetails(person, id);
+    if (!normalized) throw new Error('Invalid person');
+    return normalized;
+  } catch (error) {
+    logDetailsFailure(endpoint, response.status, error);
+    throw new DetailsError('Could not read this person. Please try again.');
+  }
+}
 
 function logDetailsFailure(endpoint: string, status: number | null, error?: unknown) {
   if (!__DEV__) return;
@@ -79,6 +122,69 @@ function normalizeLatestSeason(value: unknown): LatestSeason | null {
   };
 }
 
+function normalizeSeason(value: unknown): LatestSeason | null {
+  return normalizeLatestSeason(value);
+}
+
+function normalizeWatchProviders(value: unknown): WatchProviders {
+  if (!value || typeof value !== 'object') return { status: 'unavailable', region: 'GB', link: null, providers: [] };
+  const source = value as Record<string, unknown>;
+  const providers = Array.isArray(source.providers) ? source.providers.flatMap((item): WatchProvider[] => {
+    if (!item || typeof item !== 'object') return [];
+    const provider = item as Record<string, unknown>;
+    if (!Number.isSafeInteger(provider.id) || Number(provider.id) <= 0
+      || typeof provider.name !== 'string' || !provider.name.trim()
+      || !['stream', 'rent', 'buy'].includes(String(provider.offers))) return [];
+    return [{
+      id: Number(provider.id),
+      name: provider.name.trim(),
+      logoUrl: typeof provider.logoUrl === 'string' && /^https:\/\/image\.tmdb\.org\/t\/p\/[\w./-]+$/.test(provider.logoUrl)
+        ? provider.logoUrl : null,
+      offers: provider.offers as WatchProvider['offers'],
+    }];
+  }) : [];
+  const status = source.status === 'available' || source.status === 'none' || source.status === 'unavailable'
+    ? source.status : providers.length ? 'available' : 'unavailable';
+  return {
+    status,
+    region: 'GB',
+    link: typeof source.link === 'string' && /^https:\/\/www\.themoviedb\.org\/.+/.test(source.link) ? source.link : null,
+    providers,
+  };
+}
+
+export async function fetchSeasonEpisodes(
+  tvId: number,
+  seasonNumber: number,
+  signal: AbortSignal,
+): Promise<LatestSeason> {
+  const endpoint = `${getServerUrl()}/details/tv/${encodeURIComponent(tvId)}/season/${encodeURIComponent(seasonNumber)}`;
+  let response: Response;
+  try {
+    response = await fetch(endpoint, { signal });
+  } catch (error) {
+    logDetailsFailure(endpoint, null, error);
+    throw error;
+  }
+  if (!response.ok) {
+    logDetailsFailure(endpoint, response.status);
+    throw new DetailsError(response.status === 404
+      ? 'This season could not be found.'
+      : response.status === 429
+        ? 'Please wait a moment and try again.'
+        : 'Season details are temporarily unavailable. Please try again.');
+  }
+  try {
+    const { season } = await response.json();
+    const normalized = normalizeSeason(season);
+    if (!normalized || normalized.seasonNumber !== seasonNumber) throw new Error('Invalid season');
+    return normalized;
+  } catch (error) {
+    logDetailsFailure(endpoint, response.status, error);
+    throw new DetailsError('Could not read this season. Please try again.');
+  }
+}
+
 export async function fetchDetails(mediaType: MediaType, id: string, signal: AbortSignal): Promise<MediaDetails> {
   const endpoint = `${getServerUrl()}/details/${mediaType}/${encodeURIComponent(id)}`;
   let response: Response;
@@ -112,6 +218,7 @@ export async function fetchDetails(mediaType: MediaType, id: string, signal: Abo
   return {
     ...details,
     ...normalizeDetailExtras(details),
+    watchProviders: normalizeWatchProviders(details.watchProviders),
     latestSeason,
     nextEpisode: selectNextEpisode(details.nextEpisode, latestSeason?.episodes ?? [], todayIso),
   };

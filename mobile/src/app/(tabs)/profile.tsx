@@ -5,6 +5,8 @@ import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ProfileSettings } from '@/components/profile-settings';
+import { NotificationSettings } from '@/components/notification-settings';
+import { DataBackupSettings } from '@/components/data-backup-settings';
 
 import { loadHomeData, type HomeData } from '@/services/home-data';
 import { loadMovieProgress } from '@/services/movie-progress';
@@ -30,7 +32,7 @@ export default function ProfileScreen() {
     void refresh();
     return () => { request.current += 1; };
   }, [refresh]));
-  const stats = data ? getViewingStats(data.watchlist, data.movieProgress, data.tvProgress) : null;
+  const stats = data ? getViewingStats(data.watchlist, data.movieProgress, data.tvProgress, data.recentlyViewed) : null;
   const hasError = stats && Object.values(stats).some((value) => value === null);
   return (
     <SafeAreaView style={styles.container}>
@@ -39,11 +41,10 @@ export default function ProfileScreen() {
         <Text style={styles.subtitle}>Your viewing activity</Text>
         {loading ? <ActivityIndicator style={styles.loading} color="#FFFFFF" accessibilityLabel="Loading viewing statistics" />
           : stats && <View style={styles.stats}>
-            <Stat label="Titles in Watchlist" value={stats.watchlist} />
-            <Stat label="Movies watched" value={stats.moviesWatched} />
+            <Stat label="Total films watched" value={stats.moviesWatched} />
             <Stat label="TV seasons watched" value={stats.seasonsWatched} />
-            <Stat label="Shows with viewing progress" value={stats.showsTracked} />
-            <Stat label="Individually tracked episodes watched" value={stats.episodesWatched} />
+            <Stat href="/watchlist" label="Shows with outstanding viewing progress" value={stats.outstandingShows} />
+            <Stat label="Total episodes watched" value={stats.episodesWatched} />
           </View>}
         {!loading && hasError && <View style={styles.errorGroup}>
           <Text accessibilityRole="alert" style={styles.error}>Some viewing statistics could not be loaded.</Text>
@@ -51,9 +52,10 @@ export default function ProfileScreen() {
             <Text style={styles.link}>Try again</Text>
           </Pressable>
         </View>}
-        <Link href="/watchlist" style={styles.navigation}>Watchlist</Link>
         <Link href="/history" style={styles.navigation}>Viewing history</Link>
         <ProfileSettings />
+        <NotificationSettings />
+        <DataBackupSettings />
         <View style={styles.about}>
           <Text accessibilityRole="header" style={styles.heading}>About Showtime</Text>
           <Text style={styles.subtitle}>Version {Constants.expoConfig?.version ?? '1.0.0'}</Text>
@@ -68,11 +70,20 @@ export default function ProfileScreen() {
   );
 }
 
-function Stat({ label, value }: { label: string; value: number | null }) {
-  return <View style={styles.stat} accessible accessibilityLabel={`${label}: ${value ?? 'Unavailable'}`}>
+function Stat({ label, value, href }: { label: string; value: number | null; href?: '/watchlist' }) {
+  const content = <View style={styles.stat} accessible accessibilityLabel={`${label}: ${value ?? 'Unavailable'}`}>
     <Text style={styles.statLabel}>{label}</Text>
     <Text style={styles.statValue}>{value ?? '?'}</Text>
   </View>;
+  return href
+    ? <Link
+      href={href}
+      accessibilityLabel={`${label}: ${value ?? 'Unavailable'}`}
+      style={styles.statLink}
+    >
+      {content}
+    </Link>
+    : content;
 }
 
 const styles = StyleSheet.create({
@@ -98,9 +109,11 @@ const styles = StyleSheet.create({
   },
   loading: { marginVertical: 40 },
   stats: { marginTop: 12 },
-  stat: { flexDirection: 'row', alignItems: 'center', gap: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#29292F' },
+  statLink: { width: '100%', textDecorationLine: 'none' },
+  stat: { width: '100%', flexDirection: 'row', alignItems: 'center', gap: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#29292F' },
   statLabel: { flex: 1, color: '#DDDEE3', fontSize: 16, lineHeight: 23 },
   statValue: { color: '#63D7BA', fontSize: 24, fontWeight: '700', minWidth: 44, textAlign: 'right' },
+  lastActivity: { color: '#A7A7B0', fontSize: 14, marginTop: 10 },
   navigation: { color: '#FFFFFF', fontSize: 16, fontWeight: '700', paddingVertical: 12 },
   about: { marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#29292F', gap: 10 },
   heading: { color: '#FFFFFF', fontSize: 22, fontWeight: '700' },

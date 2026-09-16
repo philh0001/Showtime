@@ -356,7 +356,9 @@ Status: Planned
 
 The application should finish its current physical-device verification and
 major product/UI polish before this phase. The detailed strategy is in
-[`DEPLOYMENT-AND-DISTRIBUTION.md`](DEPLOYMENT-AND-DISTRIBUTION.md).
+[`DEPLOYMENT-AND-DISTRIBUTION.md`](DEPLOYMENT-AND-DISTRIBUTION.md), and the
+approved API architecture and security model are in
+[`2026-09-14-cloudflare-api-design.md`](superpowers/specs/2026-09-14-cloudflare-api-design.md).
 
 The current architecture is:
 
@@ -371,13 +373,29 @@ easy to try from a normal URL. Cloudflare is planned, not deployed.
 
 ### Production API
 
+- [x] Approve the Cloudflare API architecture and threat model
+- [ ] Create the Cloudflare account, verify its email and enable MFA
+- [ ] Secure recovery codes and test an account-recovery path
+- [ ] Add a Cloudflare operations and incident-response runbook
 - [ ] Adapt the Showtime TMDB proxy for a Cloudflare Worker
 - [ ] Store the TMDB credential as a server-side Worker secret
+- [ ] Declare the TMDB token as a required secret and ignore `.dev.vars*`
 - [ ] Ensure the TMDB credential is never bundled into the mobile app
 - [ ] Configure production clients to use the hosted endpoint
 - [ ] Add production-safe server error handling
 - [ ] Add proportionate logging/monitoring without recording secrets
+- [ ] Disable URL-bearing invocation logs and verify sanitized custom events
+- [ ] Disable public Worker version-preview URLs
 - [ ] Add suitable request validation and public-traffic protections
+- [ ] Reject upstream redirects and enforce bounded TMDB response bodies
+- [ ] Replace process-memory production caching with tested Worker caching
+- [ ] Add explicit production CORS, security headers and route-level abuse controls
+- [ ] Add adversarial tests for invalid input, hostile origins and secret leakage
+- [ ] Pin and audit the minimal Worker dependency and bundled-code surface
+- [ ] Enforce the documented mandatory no-go release conditions
+- [ ] Document and test Worker deployment rollback and TMDB token rotation
+- [ ] Run a sentinel search and prove its text is absent from all retained logs
+- [ ] Monitor Worker quota/CPU/5xx, TMDB 429s and cache effectiveness
 - [ ] Scan source and generated client output for credentials
 
 ### Independent operation
@@ -432,6 +450,12 @@ chosen prematurely.
 
 The possible model is guest/local mode plus an optional account for cloud backup
 and synchronisation. No provider is selected yet.
+
+### Safe local foundation
+
+- [x] Define a versioned, validated local backup format
+- [x] Add explicit guest-mode export/import UI for moving data between devices
+- [ ] Add remote authentication and cloud persistence only after a provider is chosen
 
 ---
 
