@@ -6,10 +6,15 @@ import { fetchTmdbJson } from "./api/tmdb.mjs";
 import { isAllowedOrigin, parseAllowedOrigins, preflightHeaders } from "./cors";
 import { logEvent, type SafeRoute } from "./logging";
 import { corsHeaders, jsonResponse } from "./response";
+import { enforceRateLimits } from "./rate-limit";
 
 type WorkerEnv = Env & {
   ALLOWED_ORIGINS?: string;
   TMDB_READ_ACCESS_TOKEN?: string;
+  SEARCH_LIMITER?: { limit(options: { key: string }): Promise<{ success: boolean }> };
+  DISCOVERY_LIMITER?: { limit(options: { key: string }): Promise<{ success: boolean }> };
+  DETAILS_LIMITER?: { limit(options: { key: string }): Promise<{ success: boolean }> };
+  WORK_LIMITER?: { limit(options: { key: string }): Promise<{ success: boolean }> };
 };
 
 type ApiRoute = {
@@ -79,6 +84,10 @@ export default {
     route = routeName(parsed.route.kind);
     if (!env.TMDB_READ_ACCESS_TOKEN?.trim()) {
       return finish(jsonResponse(503, { error: "The API is not configured yet." }, requestId, securityHeaders));
+    }
+    const clientKey = request.headers.get("CF-Connecting-IP")?.trim() || "anonymous";
+    if (!(await enforceRateLimits(parsed.route, env, clientKey))) {
+      return finish(jsonResponse(429, { error: "Please wait a moment and try again." }, requestId, securityHeaders));
     }
 
     let result;
