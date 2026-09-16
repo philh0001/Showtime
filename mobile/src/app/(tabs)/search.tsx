@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { Link } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, Keyboard, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, FlatList, Keyboard, Platform, Pressable, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { searchTitles, type SearchResult } from '@/services/search';
@@ -11,8 +11,15 @@ import {
   recordRecentSearch,
 } from '@/services/search-history';
 import { filterRecentSearches } from '@/services/search-history-rules';
+import { Layout } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
+import { getSearchFormDirection } from '@/services/collection-layout-rules';
 
 export default function SearchScreen() {
+  const colors = useTheme();
+  const styles = createStyles(colors);
+  const { width } = useWindowDimensions();
+  const stackForm = getSearchFormDirection(width) === 'column';
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
@@ -87,12 +94,12 @@ export default function SearchScreen() {
       <View style={styles.content}>
         <Text style={styles.title}>Search</Text>
         <Text style={styles.subtitle}>Find movies and TV shows.</Text>
-        <View style={styles.form}>
+        <View style={[styles.form, stackForm && styles.formStacked]}>
           <TextInput
             accessibilityLabel="Movie or TV title"
             style={styles.input}
             placeholder="Enter a title"
-            placeholderTextColor="#A7A7B0"
+            placeholderTextColor={colors.textSecondary}
             value={query}
             onChangeText={changeQuery}
             onSubmitEditing={() => void submit()}
@@ -130,7 +137,7 @@ export default function SearchScreen() {
             ))}
           </View>
         )}
-        {status === 'loading' && <ActivityIndicator accessibilityLabel="Searching" color="#FFFFFF" style={styles.message} />}
+        {status === 'loading' && <ActivityIndicator accessibilityLabel="Searching" color={colors.accent} style={styles.message} />}
         {status === 'error' && <Text accessibilityRole="alert" style={styles.message}>Could not load results. Check your connection and try again.</Text>}
         <FlatList
           data={results}
@@ -158,6 +165,7 @@ export default function SearchScreen() {
 }
 
 function ResultRow({ item }: { item: SearchResult }) {
+  const styles = createStyles(useTheme());
   const [failed, setFailed] = useState(false);
   const id = item.id.replace(/^(movie|tv)-/, '');
   return (
@@ -175,30 +183,33 @@ function ResultRow({ item }: { item: SearchResult }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0B0B0F' },
-  content: { flex: 1, paddingHorizontal: 24, paddingTop: Platform.OS === 'web' ? 96 : 24 },
-  title: { color: '#FFFFFF', fontSize: 32, fontWeight: '800', marginBottom: 8 },
-  subtitle: { color: '#A7A7B0', fontSize: 16, lineHeight: 24 },
+function createStyles(colors: ReturnType<typeof useTheme>) {
+  return StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
+  content: { flex: 1, width: '90%', alignSelf: 'center', maxWidth: Layout.readingMaxWidth, paddingTop: Platform.OS === 'web' ? 48 : 24 },
+  title: { color: colors.text, fontSize: 32, fontWeight: '800', marginBottom: 8 },
+  subtitle: { color: colors.textSecondary, fontSize: 16, lineHeight: 24 },
   form: { flexDirection: 'row', gap: 12, marginVertical: 24 },
-  suggestions: { backgroundColor: '#16161B', borderRadius: 12, marginBottom: 20, overflow: 'hidden' },
+  formStacked: { flexDirection: 'column' },
+  suggestions: { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: StyleSheet.hairlineWidth, borderRadius: 12, marginBottom: 20, overflow: 'hidden' },
   suggestionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 14 },
-  suggestionHeading: { color: '#A7A7B0', fontSize: 13, fontWeight: '700', textTransform: 'uppercase' },
-  clearText: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
-  suggestion: { minHeight: 48, justifyContent: 'center', paddingHorizontal: 14, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#393940' },
-  suggestionText: { color: '#FFFFFF', fontSize: 16 },
-  input: { flex: 1, minWidth: 0, color: '#FFFFFF', backgroundColor: '#212225', borderRadius: 12, padding: 14, fontSize: 16 },
-  button: { backgroundColor: '#FFFFFF', borderRadius: 12, paddingHorizontal: 16, justifyContent: 'center', minHeight: 48 },
-  buttonText: { color: '#0B0B0F', fontWeight: '700', fontSize: 16 },
+  suggestionHeading: { color: colors.textSecondary, fontSize: 13, fontWeight: '700', textTransform: 'uppercase' },
+  clearText: { color: colors.accent, fontSize: 14, fontWeight: '600' },
+  suggestion: { minHeight: 48, justifyContent: 'center', paddingHorizontal: 14, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
+  suggestionText: { color: colors.text, fontSize: 16 },
+  input: { flex: 1, minWidth: 0, color: colors.text, backgroundColor: colors.surfaceMuted, borderColor: colors.border, borderWidth: StyleSheet.hairlineWidth, borderRadius: 12, padding: 14, fontSize: 16 },
+  button: { backgroundColor: colors.accent, borderRadius: 12, paddingHorizontal: 16, justifyContent: 'center', minHeight: 48 },
+  buttonText: { color: colors.onAccent, fontWeight: '700', fontSize: 16 },
   dimmed: { opacity: 0.5 },
   list: { paddingBottom: 120 },
   row: { flexDirection: 'row', gap: 16, marginBottom: 20, alignItems: 'center' },
-  poster: { width: 80, height: 120, borderRadius: 8, backgroundColor: '#212225' },
+  poster: { width: 80, height: 120, borderRadius: 8, backgroundColor: colors.surfaceMuted },
   placeholder: { alignItems: 'center', justifyContent: 'center' },
-  placeholderText: { color: '#A7A7B0', fontSize: 12 },
+  placeholderText: { color: colors.textSecondary, fontSize: 12 },
   details: { flex: 1, gap: 8 },
-  resultTitle: { color: '#FFFFFF', fontSize: 18, fontWeight: '700' },
-  message: { color: '#A7A7B0', fontSize: 16, lineHeight: 24, marginBottom: 20 },
-  footer: { color: '#A7A7B0', fontSize: 13, lineHeight: 20 },
+  resultTitle: { color: colors.text, fontSize: 18, fontWeight: '700' },
+  message: { color: colors.textSecondary, fontSize: 16, lineHeight: 24, marginBottom: 20 },
+  footer: { color: colors.textSecondary, fontSize: 13, lineHeight: 20 },
   credits: { gap: 12, paddingTop: 16 },
 });
+}

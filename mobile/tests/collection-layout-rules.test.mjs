@@ -3,12 +3,19 @@ import test from 'node:test';
 
 import {
   getProfileColumns,
+  getSearchFormDirection,
   getWatchlistColumns,
 } from '../src/services/collection-layout-rules.ts';
 
 test('collection layouts remain single-column on narrow screens', () => {
   assert.equal(getWatchlistColumns(599), 1);
   assert.equal(getProfileColumns(599), 1);
+});
+
+test('phone Search stacks its action so the button cannot be clipped', () => {
+  assert.equal(getSearchFormDirection(390), 'column');
+  assert.equal(getSearchFormDirection(599), 'column');
+  assert.equal(getSearchFormDirection(600), 'row');
 });
 
 test('Watchlist scales to a bounded grid while Profile stays readable', () => {

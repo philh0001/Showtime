@@ -80,7 +80,7 @@ export default function HomeScreen() {
         </Link>
 
         {loading && <View style={styles.message}>
-          <ActivityIndicator color="#FFFFFF" accessibilityLabel="Loading Home" />
+          <ActivityIndicator color={colors.accent} accessibilityLabel="Loading Home" />
           <Text style={styles.secondary}>Loading your Home screen…</Text>
         </View>}
 

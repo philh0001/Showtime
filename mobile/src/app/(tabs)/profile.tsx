@@ -18,7 +18,8 @@ import { Layout } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export default function ProfileScreen() {
-  const styles = createStyles(useTheme());
+  const colors = useTheme();
+  const styles = createStyles(colors);
   const { width } = useWindowDimensions();
   const wideStats = getProfileColumns(width) === 2;
   const [data, setData] = useState<HomeData | null>(null);
@@ -43,7 +44,7 @@ export default function ProfileScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.title}>Profile</Text>
         <Text style={styles.subtitle}>Your viewing activity</Text>
-        {loading ? <ActivityIndicator style={styles.loading} color="#FFFFFF" accessibilityLabel="Loading viewing statistics" />
+        {loading ? <ActivityIndicator style={styles.loading} color={colors.accent} accessibilityLabel="Loading viewing statistics" />
           : stats && <View style={[styles.stats, wideStats && styles.statsWide]}>
             <Stat label="Titles in Watchlist" value={stats.watchlist} wide={wideStats} />
             <Stat label="Movies watched" value={stats.moviesWatched} wide={wideStats} />

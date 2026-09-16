@@ -7,8 +7,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { loadViewingActivity } from '@/services/viewing-activity';
 import { describeViewingAction, filterViewingActivity, type ActivityFilter, type ActivityLoadResult, type ViewingActivity } from '@/services/viewing-activity-rules';
 import { formatLocalUkWatchedDate } from '@/services/movie-progress-rules';
+import { Layout } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 
 export default function HistoryScreen() {
+  const colors = useTheme();
+  const styles = createStyles(colors);
   const [data, setData] = useState<ActivityLoadResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<ActivityFilter>('all');
@@ -33,7 +37,7 @@ export default function HistoryScreen() {
         </Pressable>
       ))}
     </View>
-    {loading ? <ActivityIndicator color="#FFFFFF" style={styles.message} accessibilityLabel="Loading viewing history" />
+    {loading ? <ActivityIndicator color={colors.accent} style={styles.message} accessibilityLabel="Loading viewing history" />
       : data?.status === 'unavailable' ? <View style={styles.message}>
         <Text accessibilityRole="alert" style={styles.secondary}>Viewing history could not be loaded.</Text>
         <Pressable accessibilityRole="button" onPress={() => void refresh()} style={styles.retry}><Text style={styles.title}>Try again</Text></Pressable>
@@ -44,6 +48,7 @@ export default function HistoryScreen() {
 }
 
 function ActivityRow({ event }: { event: ViewingActivity }) {
+  const styles = createStyles(useTheme());
   const [imageFailed, setImageFailed] = useState(false);
   const action = describeViewingAction(event.action);
   const time = new Date(event.happenedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
@@ -64,22 +69,24 @@ function ActivityRow({ event }: { event: ViewingActivity }) {
   </Link>;
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0B0B0F' },
-  filters: { flexDirection: 'row', marginHorizontal: 24, marginVertical: 20, borderRadius: 8, backgroundColor: '#212225', padding: 4, gap: 4 },
+function createStyles(colors: ReturnType<typeof useTheme>) {
+  return StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
+  filters: { flexDirection: 'row', width: '90%', maxWidth: Layout.readingMaxWidth, alignSelf: 'center', marginVertical: 20, borderRadius: 8, backgroundColor: colors.surfaceMuted, padding: 4, gap: 4 },
   filter: { flex: 1, minHeight: 44, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8, borderRadius: 6 },
-  selected: { backgroundColor: '#FFFFFF' },
-  filterLabel: { color: '#A7A7B0', fontSize: 15, fontWeight: '600' },
-  selectedLabel: { color: '#0B0B0F' },
+  selected: { backgroundColor: colors.accent },
+  filterLabel: { color: colors.textSecondary, fontSize: 15, fontWeight: '600' },
+  selectedLabel: { color: colors.onAccent },
   list: { paddingHorizontal: 24, paddingBottom: 32 },
-  row: { flexDirection: 'row', gap: 14, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#29292F', width: '100%', maxWidth: 800, alignSelf: 'center' },
-  poster: { width: 64, height: 96, backgroundColor: '#212225', borderRadius: 8, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
-  fallback: { color: '#A7A7B0', fontSize: 12 },
+  row: { flexDirection: 'row', gap: 14, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: colors.border, width: '100%', maxWidth: Layout.readingMaxWidth, alignSelf: 'center' },
+  poster: { width: 64, height: 96, backgroundColor: colors.surfaceMuted, borderRadius: 8, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
+  fallback: { color: colors.textSecondary, fontSize: 12 },
   details: { flex: 1, gap: 6, justifyContent: 'center' },
-  title: { color: '#FFFFFF', fontSize: 16, fontWeight: '700', lineHeight: 22 },
-  action: { color: '#63D7BA', fontSize: 14, lineHeight: 21 },
-  secondary: { color: '#A7A7B0', fontSize: 14, lineHeight: 21 },
+  title: { color: colors.text, fontSize: 16, fontWeight: '700', lineHeight: 22 },
+  action: { color: colors.accent, fontSize: 14, lineHeight: 21 },
+  secondary: { color: colors.textSecondary, fontSize: 14, lineHeight: 21 },
   message: { padding: 24, gap: 16, alignItems: 'center' },
   retry: { padding: 14 },
   pressed: { opacity: 0.65 },
 });
+}

@@ -42,7 +42,8 @@ export default function MediaDetailsScreen({ mediaType }: { mediaType: MediaType
 }
 
 function DetailsLoader({ mediaType, id }: { mediaType: MediaType; id: string }) {
-  const styles = createStyles(useTheme());
+  const colors = useTheme();
+  const styles = createStyles(colors);
   const [state, setState] = useState<LoadState>({ status: 'loading' });
   const [attempt, setAttempt] = useState(0);
 
@@ -74,7 +75,7 @@ function DetailsLoader({ mediaType, id }: { mediaType: MediaType; id: string }) 
   return (
     <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
       {state.status === 'loading' && <View style={styles.messageContainer}>
-        <ActivityIndicator color="#FFFFFF" accessibilityLabel="Loading title details" />
+        <ActivityIndicator color={colors.accent} accessibilityLabel="Loading title details" />
         <Text style={styles.body}>Loading details…</Text>
       </View>}
       {state.status === 'error' && <View style={styles.messageContainer}>

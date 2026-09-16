@@ -23,7 +23,8 @@ import { Layout } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export default function WatchlistScreen() {
-  const styles = createStyles(useTheme());
+  const colors = useTheme();
+  const styles = createStyles(colors);
   const { width } = useWindowDimensions();
   const columns = getWatchlistColumns(width);
   const [items, setItems] = useState<WatchlistItem[]>([]);
@@ -95,7 +96,7 @@ export default function WatchlistScreen() {
         </View>}
         ListEmptyComponent={loading
           ? <View style={styles.message}>
-            <ActivityIndicator color="#FFFFFF" accessibilityLabel="Loading watchlist" />
+            <ActivityIndicator color={colors.accent} accessibilityLabel="Loading watchlist" />
             <Text style={styles.subtitle}>Loading your watchlist…</Text>
           </View>
           : items.length === 0

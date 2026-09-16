@@ -52,7 +52,7 @@ export function DiscoverySection() {
         </ScrollView> : <Text style={styles.secondary}>No trending titles available.</Text>}
       </View>
     ))}
-    {loading && !data && <ActivityIndicator color="#FFFFFF" accessibilityLabel="Loading trending titles" />}
+    {loading && !data && <ActivityIndicator color={colors.accent} accessibilityLabel="Loading trending titles" />}
     {!loading && (error || data?.stale) && <View style={styles.errorGroup}>
       <Text style={styles.secondary} accessibilityRole="alert">
         {data ? 'Trending titles could not be refreshed.' : 'Trending titles are unavailable.'}
