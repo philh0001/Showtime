@@ -35,6 +35,7 @@ test('movie details use the movie endpoint and return only display fields', asyn
     nextEpisode: null,
     latestSeason: null,
     cast: [], crew: [], trailer: null,
+    watchProviders: { status: 'unavailable', region: 'GB', link: null, providers: [] },
   } });
 });
 
@@ -60,6 +61,49 @@ test('details include validated cast, key crew and only official YouTube trailer
   assert.deepEqual(details.cast, [{ id: 10, name: 'Actor', character: 'Hero', profileUrl: 'https://image.tmdb.org/t/p/w185/actor.jpg' }]);
   assert.deepEqual(details.crew, [{ id: 20, name: 'Director', job: 'Director' }]);
   assert.deepEqual(details.trailer, { name: 'Official trailer', url: 'https://www.youtube.com/watch?v=A1b2C3d4E5f' });
+});
+
+test('details map validated UK watch providers without exposing upstream fields', async (t) => {
+  const response = await request(t, '/details/movie/1', async (url) => {
+    if (String(url).endsWith('/watch/providers?watch_region=GB')) return Response.json({
+      results: { GB: {
+        link: 'https://www.themoviedb.org/movie/1/watch',
+        flatrate: [{ provider_id: 8, provider_name: ' Netflix ', logo_path: '/netflix.jpg', private: 'x' }],
+        rent: [{ provider_id: 9, provider_name: 'RentCo', logo_path: '/rent.jpg' }],
+        buy: [{ provider_id: 9, provider_name: 'Duplicate' }, { provider_id: 10, provider_name: 'BuyCo', logo_path: null }],
+        ads: [{ provider_id: 0, provider_name: 'Invalid' }],
+      } },
+    });
+    return Response.json({ id: 1, title: 'Movie' });
+  });
+  const { details } = await response.json();
+  assert.deepEqual(details.watchProviders, {
+    status: 'available', region: 'GB', link: 'https://www.themoviedb.org/movie/1/watch',
+    providers: [
+      { id: 8, name: 'Netflix', logoUrl: 'https://image.tmdb.org/t/p/w92/netflix.jpg', offers: 'stream' },
+      { id: 9, name: 'RentCo', logoUrl: 'https://image.tmdb.org/t/p/w92/rent.jpg', offers: 'rent' },
+      { id: 10, name: 'BuyCo', logoUrl: null, offers: 'buy' },
+    ],
+  });
+});
+
+test('details collapse provider tiers and channels into one service brand', async (t) => {
+  const response = await request(t, '/details/movie/1', async (url) => {
+    if (String(url).endsWith('/watch/providers?watch_region=GB')) return Response.json({
+      results: { GB: { flatrate: [
+        { provider_id: 1, provider_name: 'Amazon Prime Video', logo_path: '/prime.jpg' },
+        { provider_id: 2, provider_name: 'Paramount+', logo_path: '/paramount.jpg' },
+        { provider_id: 3, provider_name: 'Paramount+ Apple TV channel', logo_path: '/paramount-channel.jpg' },
+        { provider_id: 4, provider_name: 'Amazon Prime Video with Ads', logo_path: '/prime-ads.jpg' },
+      ] } },
+    });
+    return Response.json({ id: 1, title: 'Movie' });
+  });
+  const { details } = await response.json();
+  assert.deepEqual(details.watchProviders.providers.map(({ name, offers }) => ({ name, offers })), [
+    { name: 'Amazon Prime Video', offers: 'stream' },
+    { name: 'Paramount+', offers: 'stream' },
+  ]);
 });
 
 test('malformed optional extras cannot break otherwise valid details', async (t) => {
@@ -129,7 +173,35 @@ test('TV details use TV names/dates and retain specials and season summaries', a
     'https://api.themoviedb.org/3/tv/1396/credits',
     'https://api.themoviedb.org/3/tv/1396/videos',
     'https://api.themoviedb.org/3/tv/1396/season/2',
+    'https://api.themoviedb.org/3/tv/1396/watch/providers?watch_region=GB',
   ].sort());
+});
+
+test('season details load on demand and return only validated episode fields', async (t) => {
+  const urls = [];
+  const response = await request(t, '/details/tv/1396/season/1', async (url) => {
+    urls.push(String(url));
+    return Response.json({
+      id: 2,
+      name: ' Season 1 ',
+      season_number: 1,
+      episodes: [
+        { id: 102, name: ' Second ', season_number: 1, episode_number: 2, air_date: null, overview: 'private' },
+        { id: 101, name: '', season_number: 1, episode_number: 1, air_date: '2008-01-20' },
+        { id: 0, name: 'Invalid', season_number: 1, episode_number: 3, air_date: '2008-02-01' },
+      ],
+    });
+  });
+  assert.equal(response.status, 200);
+  assert.deepEqual(urls, ['https://api.themoviedb.org/3/tv/1396/season/1']);
+  assert.deepEqual(await response.json(), { season: {
+    seasonNumber: 1,
+    name: 'Season 1',
+    episodes: [
+      { id: 101, name: null, seasonNumber: 1, episodeNumber: 1, airDate: '2008-01-20' },
+      { id: 102, name: 'Second', seasonNumber: 1, episodeNumber: 2, airDate: null },
+    ],
+  } });
 });
 
 test('missing metadata stays empty and unrated is not presented as zero', async (t) => {
@@ -144,6 +216,7 @@ test('missing metadata stays empty and unrated is not presented as zero', async 
     nextEpisode: null,
     latestSeason: null,
     cast: [], crew: [], trailer: null,
+    watchProviders: { status: 'unavailable', region: 'GB', link: null, providers: [] },
   } });
 });
 
@@ -189,6 +262,7 @@ test('credits, videos and newest-season failures preserve the main TV details', 
     'https://api.themoviedb.org/3/tv/1/credits',
     'https://api.themoviedb.org/3/tv/1/season/1',
     'https://api.themoviedb.org/3/tv/1/videos',
+    'https://api.themoviedb.org/3/tv/1/watch/providers?watch_region=GB',
   ].sort());
 });
 
@@ -258,11 +332,43 @@ test('server preserves a structurally valid past-dated next episode', async (t) 
 test('rejects invalid IDs/types and POST before contacting TMDB', async (t) => {
   let calls = 0;
   const upstream = async () => { calls++; return Response.json({ id: 1 }); };
-  for (const path of ['/details/person/1', '/details/movie/0', '/details/tv/nope', '/details/movie/99999999999999999', '/details/movie/1/credits']) {
+  for (const path of ['/details/person/0', '/details/movie/0', '/details/tv/nope', '/details/movie/99999999999999999']) {
     assert.equal((await request(t, path, upstream)).status, 400);
   }
+  assert.equal((await request(t, '/details/movie/1/credits', upstream)).status, 404);
   assert.equal((await request(t, '/details/movie/1', upstream, 'POST')).status, 405);
   assert.equal(calls, 0);
+});
+
+test('detail query parameters are rejected before contacting TMDB', async (t) => {
+  let calls = 0;
+  const response = await request(t, '/details/movie/1?extra=private', async () => {
+    calls++;
+    return Response.json({ id: 1, title: 'Movie' });
+  });
+  assert.equal(response.status, 400);
+  assert.deepEqual(await response.json(), { error: 'Query parameters are not allowed.' });
+  assert.equal(calls, 0);
+});
+
+test('person details return only normalized safe fields', async (t) => {
+  const response = await request(t, '/details/person/287', async (url) => {
+    assert.equal(String(url), 'https://api.themoviedb.org/3/person/287');
+    return Response.json({
+      id: 287, name: '  Brad Pitt ', biography: '  Actor biography. ',
+      birthday: '1963-12-18', known_for: [
+        { title: 'Fight Club', private: 'omit' }, { name: 'Se7en' }, { title: '' },
+        null, { title: 'AA' }, { title: 'Too many' },
+      ], private_field: 'must-not-return',
+    });
+  });
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  assert.deepEqual(body, { person: {
+    id: 287, name: 'Brad Pitt', biography: 'Actor biography.',
+    birthday: '1963-12-18', knownFor: ['Fight Club', 'Se7en', 'AA', 'Too many'],
+  } });
+  assert.equal(JSON.stringify(body).includes('private'), false);
 });
 
 test('not-found, rate-limit and authorization failures return safe detail errors', async (t) => {

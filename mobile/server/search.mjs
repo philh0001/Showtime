@@ -30,7 +30,7 @@ export function createSearchHandler({
       if (incoming.pathname === '/discovery') return await handleDiscovery({ method: request.method, send });
       if (incoming.pathname.startsWith('/details/')) {
         return await handleDetails({
-          pathname: incoming.pathname,
+          pathname: rawUrl,
           method: request.method,
           token,
           fetchImpl,
