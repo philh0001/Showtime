@@ -7,6 +7,7 @@ import { isAllowedOrigin, parseAllowedOrigins, preflightHeaders } from "./cors";
 import { logEvent, type SafeRoute } from "./logging";
 import { corsHeaders, jsonResponse } from "./response";
 import { enforceRateLimits } from "./rate-limit";
+import { withApiCache } from "./cache";
 
 type WorkerEnv = Env & {
   ALLOWED_ORIGINS?: string;
@@ -43,13 +44,14 @@ function routeName(kind: string | undefined): SafeRoute {
 }
 
 export default {
-  async fetch(request: Request, env: WorkerEnv): Promise<Response> {
+  async fetch(request: Request, env: WorkerEnv, executionContext?: ExecutionContext): Promise<Response> {
     const requestId = crypto.randomUUID();
     const startedAt = performance.now();
     const origin = request.headers.get("Origin");
     const allowedOrigins = parseAllowedOrigins(env.ALLOWED_ORIGINS);
     let route: SafeRoute = "unmatched";
     let status = 500;
+    let cacheOutcome: "hit" | "miss" | "bypass" = "bypass";
 
     const finish = (response: Response): Response => {
       status = response.status;
@@ -58,7 +60,7 @@ export default {
         route,
         status,
         durationMs: Math.max(0, Math.round(performance.now() - startedAt)),
-        cache: "bypass",
+        cache: cacheOutcome,
       });
       return response;
     };
@@ -90,19 +92,21 @@ export default {
       return finish(jsonResponse(429, { error: "Please wait a moment and try again." }, requestId, securityHeaders));
     }
 
-    let result;
     const deps = {
       token: env.TMDB_READ_ACCESS_TOKEN,
       fetchTmdbJson,
       optionalTimeoutMs: 3000,
     };
-    if (parsed.route.kind === "search") {
-      result = await handleSearch(parsed.route, deps);
-    } else if (parsed.route.kind === "discovery") {
-      result = await handleDiscovery(parsed.route, deps);
-    } else {
-      result = await handleDetails(parsed.route, deps);
-    }
+    const load = () => {
+      if (parsed.route.kind === "search") return handleSearch(parsed.route, deps);
+      if (parsed.route.kind === "discovery") return handleDiscovery(parsed.route, deps);
+      return handleDetails(parsed.route, deps);
+    };
+    const cached = executionContext
+      ? await withApiCache(parsed.route, caches.default, load, executionContext)
+      : { result: await load(), outcome: "bypass" as const };
+    cacheOutcome = cached.outcome;
+    const { result } = cached;
     return finish(jsonResponse(result.status, result.body, requestId, securityHeaders));
   },
 } satisfies ExportedHandler<WorkerEnv>;
