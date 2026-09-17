@@ -1,14 +1,16 @@
 import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
 
+import { BrandColors } from '@/constants/design';
+
 export const unstable_settings = { initialRouteName: '(tabs)' };
 
 export default function RootLayout() {
   return (
     <ThemeProvider value={DarkTheme}>
       <Stack screenOptions={{
-        headerStyle: { backgroundColor: '#0B0B0F' },
-        headerTintColor: '#FFFFFF',
-        contentStyle: { backgroundColor: '#0B0B0F' },
+        headerStyle: { backgroundColor: BrandColors.background },
+        headerTintColor: BrandColors.text,
+        contentStyle: { backgroundColor: BrandColors.background },
         headerBackTitle: 'Back',
       }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />

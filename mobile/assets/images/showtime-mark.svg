@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="Showtime">
+  <title>Showtime</title>
+  <defs>
+    <linearGradient id="gold" gradientUnits="userSpaceOnUse" x1="110" y1="24" x2="170" y2="84">
+      <stop offset="0" stop-color="#F0CC7A" />
+      <stop offset="1" stop-color="#B77924" />
+    </linearGradient>
+  </defs>
+  <g fill="url(#gold)" transform="translate(-108 -22)">
+    <path fill-rule="evenodd" d="M140 24C156.569 24 170 37.431 170 54C170 70.569 156.569 84 140 84C123.431 84 110 70.569 110 54C110 37.431 123.431 24 140 24ZM140 34C128.954 34 120 42.954 120 54C120 65.046 128.954 74 140 74C151.046 74 160 65.046 160 54C160 42.954 151.046 34 140 34ZM116 39H120V43H116ZM113 52H117V56H113ZM116 65H120V69H116Z" />
+    <path d="M134 42L152 54L134 66Z" />
+  </g>
+</svg>

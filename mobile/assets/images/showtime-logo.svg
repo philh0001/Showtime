@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="440" height="108" viewBox="0 0 440 108" role="img" aria-label="Showtime logo">
+  <title>Showtime logo</title>
+  <defs>
+    <linearGradient id="gold" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="440" y2="108">
+      <stop offset="0" stop-color="#F0CC7A" />
+      <stop offset="1" stop-color="#B77924" />
+    </linearGradient>
+  </defs>
+  <g fill="url(#gold)">
+    <path d="M47 28V38C40 34 34 32 27 32C20 32 16 35 16 40C16 45 20 47 29 50C43 54 49 59 49 68C49 79 40 86 27 86C18 86 11 84 5 80V69C12 74 19 77 27 77C34 77 39 74 39 69C39 64 34 62 25 59C12 55 6 50 6 41C6 30 14 23 27 23C35 23 42 25 47 28Z" />
+    <path d="M59 24H69V49H91V24H101V84H91V59H69V84H59Z" />
+    <!-- The O is a film reel: three cut-out perforations and a play triangle. -->
+    <path fill-rule="evenodd" d="M140 24C156.569 24 170 37.431 170 54C170 70.569 156.569 84 140 84C123.431 84 110 70.569 110 54C110 37.431 123.431 24 140 24ZM140 34C128.954 34 120 42.954 120 54C120 65.046 128.954 74 140 74C151.046 74 160 65.046 160 54C160 42.954 151.046 34 140 34ZM116 39H120V43H116ZM113 52H117V56H113ZM116 65H120V69H116Z" />
+    <path d="M134 42L152 54L134 66Z" />
+    <path d="M177 24H187L195 65L204 32H213L222 65L230 24H240L227 84H218L208.5 50L199 84H190Z" />
+    <path d="M246 24H290V34H273V84H263V34H246Z" />
+    <path d="M300 24H310V84H300Z" />
+    <path d="M323 84V24H333L349 54L365 24H375V84H365V44L349 73L333 44V84Z" />
+    <path d="M388 24H434V34H398V49H427V59H398V74H434V84H388Z" />
+  </g>
+</svg>
