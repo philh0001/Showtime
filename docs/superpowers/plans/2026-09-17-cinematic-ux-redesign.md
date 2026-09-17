@@ -16,6 +16,8 @@
 - Home search submits and renders results in place; it must not navigate to `/search` merely to enter or submit a query.
 - Home content order is logo, inline search, Upcoming Episodes, Recently Aired Episodes, Continue Watching, Watchlist, Recently Viewed, then discovery.
 - Recently Aired covers 14 days before today inclusive through yesterday, newest first, at most ten episodes.
+- Returning from details preserves Home scroll position plus the active query and result panel.
+- Watchlist removal offers one accessible Undo action, and episode rows use human relative timing before exact dates.
 - Use the existing schedule cache; Home must not add per-show network requests.
 - Keep account creation and cross-device sync out of this increment.
 - Preserve existing local storage keys, parsing rules, API contracts, TMDB attribution and production Worker URL.
@@ -50,7 +52,9 @@
 - `mobile/src/app/(tabs)/index.tsx` — new Home hierarchy and inline search.
 - `mobile/src/app/(tabs)/search.tsx` — reuse the shared search experience.
 - `mobile/src/services/tv-schedule-rules.ts` — recently aired selection and reusable tracking helpers.
+- `mobile/src/services/air-date-rules.ts` — human upcoming/recent episode timing labels.
 - `mobile/tests/tv-schedule.test.mjs` — recently aired boundary/order/watched coverage.
+- `mobile/tests/air-date-rules.test.mjs` — today, tomorrow and recently-aired label coverage.
 - `mobile/src/components/upcoming-section.tsx` — replaced by the shared episode section or reduced to a compatibility wrapper.
 - `mobile/src/components/home-poster-card.tsx` — unified cinematic card and progress treatment.
 - `mobile/src/components/discovery-section.tsx` — semantic tokens and responsive layout.
@@ -325,9 +329,11 @@ export type TitleSearchController = SearchState & {
 - [ ] **Step 5: Build the shared search UI and replace Search screen duplication**
 
 `TitleSearch` renders the exact placeholder, search icon/text affordance, clear
-button, recent suggestions in full mode, compact result rows, loading, error,
-retry and empty states. In Home mode it never renders a `/search` Link. In full
-mode it includes heading copy and credits supplied by the Search screen.
+button, tappable recent-search chips, compact result rows, loading, error, retry
+and empty states. Full mode shows all five recent searches plus clear-history;
+Home mode shows at most three when the empty field is focused and never renders
+a `/search` Link. Full mode also includes heading copy and credits supplied by
+the Search screen.
 
 ```tsx
 <TextInput
@@ -368,14 +374,18 @@ git commit -m "feat: share the Showtime search experience"
 
 **Files:**
 - Modify: `mobile/src/services/tv-schedule-rules.ts`
+- Modify: `mobile/src/services/air-date-rules.ts`
 - Modify: `mobile/tests/tv-schedule.test.mjs`
+- Modify: `mobile/tests/air-date-rules.test.mjs`
 
 **Interfaces:**
 - Produces: `RecentlyAiredItem = UpcomingItem & { watched: boolean }`.
 - Produces: `getRecentlyAiredEpisodes(schedules, watchlist, progress, todayIso): RecentlyAiredItem[]`.
+- Produces: `getRecentlyAiredLabel(airDate, todayIso)` with `Aired yesterday`,
+  `Aired N days ago`, and safe unavailable-date behavior.
 - Preserves: `getUpcomingEpisodes` signature and behaviour.
 
-- [ ] **Step 1: Add failing boundary, filtering, deduplication and watched tests**
+- [ ] **Step 1: Add failing boundary, filtering, deduplication, watched and timing-label tests**
 
 ```js
 import { getRecentlyAiredEpisodes } from '../src/services/tv-schedule-rules.ts';
@@ -408,9 +418,10 @@ test('recently aired returns the prior fourteen days newest first with watched s
 
 - [ ] **Step 2: Run the focused test and verify missing export failure**
 
-Run: `node --no-warnings=ExperimentalWarning --experimental-strip-types --test tests/tv-schedule.test.mjs`
+Run: `node --no-warnings=ExperimentalWarning --experimental-strip-types --test tests/tv-schedule.test.mjs tests/air-date-rules.test.mjs`
 
-Expected: FAIL because `getRecentlyAiredEpisodes` is not exported.
+Expected: FAIL because `getRecentlyAiredEpisodes` and
+`getRecentlyAiredLabel` are not exported.
 
 - [ ] **Step 3: Refactor shared inclusion/watched helpers and implement the rule**
 
@@ -479,12 +490,16 @@ export function getRecentlyAiredEpisodes(
 }
 ```
 
+Add focused date-label tests before implementation. Preserve the existing
+`Airs today` and `Airs tomorrow` Upcoming copy, and calculate past labels from
+validated calendar-day indexes rather than elapsed milliseconds.
+
 - [ ] **Step 4: Run schedule and full mobile tests**
 
 Run:
 
 ```powershell
-node --no-warnings=ExperimentalWarning --experimental-strip-types --test tests/tv-schedule.test.mjs
+node --no-warnings=ExperimentalWarning --experimental-strip-types --test tests/tv-schedule.test.mjs tests/air-date-rules.test.mjs
 npm test
 ```
 
@@ -493,7 +508,7 @@ Expected: all tests pass and existing Upcoming behaviour is unchanged.
 - [ ] **Step 5: Commit Task 3**
 
 ```powershell
-git add mobile/src/services/tv-schedule-rules.ts mobile/tests/tv-schedule.test.mjs
+git add mobile/src/services/tv-schedule-rules.ts mobile/src/services/air-date-rules.ts mobile/tests/tv-schedule.test.mjs mobile/tests/air-date-rules.test.mjs
 git commit -m "feat: derive recently aired episodes"
 ```
 
@@ -552,8 +567,9 @@ Expected: FAIL because Home still has a Search Link and old ordering.
 
 Move `PosterRail` unchanged first, then apply tokens and responsive widths.
 `EpisodeSection` uses one row component with `kind` to show countdown for
-upcoming or `Aired {date}` for recent items, and displays the explicit `Watched`
-label when `watched === true`.
+upcoming or `getRecentlyAiredLabel(...)` for recent items, keeps the exact UK
+date secondary, and displays the explicit `Watched` label when
+`watched === true`.
 
 ```ts
 type EpisodeSectionProps = {
@@ -571,14 +587,20 @@ type EpisodeSectionProps = {
 
 Render `ShowtimeLogo`, `<TitleSearch variant="home" />`, then the two episode
 sections before any poster collection. Keep successful Home data visible during
-refresh, remove the Watched Movies rail, and retain History from Profile.
+refresh, remove the Watched Movies rail, and retain History from Profile. Keep
+Home and its search controller mounted beneath detail routes so browser/native
+Back restores the previous scroll offset, query and results; do not reset them
+on focus. Confirm this in Task 8 browser QA.
 
 - [ ] **Step 5: Apply the cinematic card and discovery treatment**
 
 Use raised charcoal cards, unified poster radii, gold progress, warm-white
 titles, muted metadata and 44-point actions. On web, use available width rather
 than `Platform.OS` to decide rail/grid sizing; keep phone rails horizontally
-scrollable.
+scrollable. Use branded text fallbacks for missing posters and fixed-dimension
+skeleton cards/episode rows during first load. Empty collections provide the
+nearest useful action, such as `Search for a show`. Keep optional press/hover
+motion brief and disable it when reduced motion is requested.
 
 - [ ] **Step 6: Run Home, schedule and full static verification**
 
@@ -755,7 +777,12 @@ Expected: baseline PASS.
 Keep the three filters as a labelled segmented control. Use compact rows below
 600 pixels and a two-to-four-column poster grid above it. Every item keeps title,
 year/type, progress/status and a separate labelled Remove action. Do not nest
-Remove inside the detail Link.
+Remove inside the detail Link. After a successful removal, show one compact
+`Removed from Watchlist` notice with a 44-point `Undo` action. Undo calls the
+existing `addToWatchlist(removedItem)`, refreshes the visible collection and
+clears the notice; a newer removal replaces the older pending notice. A failed
+remove or restore uses the existing recoverable error treatment and must not
+claim success.
 
 - [ ] **Step 3: Rebuild Profile and Settings grouping**
 
@@ -849,11 +876,13 @@ returns no matches; Wrangler reads the complete asset set and exits dry-run 0.
 
 Serve `mobile/dist` locally and inspect at 390x844, 768x1024 and 1440x1000.
 Verify keyboard-only traversal, visible focus, Home inline search without URL
-change, result-to-details navigation, direct `/movie/550` reload, section order,
-episode empty/error/populated states, long titles, Watchlist filters/removal,
-tracking controls, Profile groups and no horizontal page overflow. Capture final
-Home and details screenshots in `docs/screenshots/` and inspect them at original
-resolution.
+change, recent-search chips, result-to-details navigation and Back restoring the
+same query/results/scroll position. Also verify direct `/movie/550` reload,
+section order, Today/Tomorrow/yesterday episode copy, stable skeleton layout,
+missing-poster fallbacks, reduced motion, useful empty actions, compact offline
+notices, Watchlist removal/Undo, long titles, tracking controls, Profile groups
+and no horizontal page overflow. Capture final Home and details screenshots in
+`docs/screenshots/` and inspect them at original resolution.
 
 - [ ] **Step 5: Write verification notes and update roadmap**
 

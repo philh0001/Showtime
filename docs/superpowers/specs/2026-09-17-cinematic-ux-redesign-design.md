@@ -95,6 +95,8 @@ Submitting a query keeps the user on Home. Results appear immediately beneath
 the field in a compact result panel with poster, title, year and media type.
 Selecting a result opens the existing movie or TV detail route. Clearing the
 query closes the panel and restores the dashboard without losing Home data.
+Returning from a selected detail route must restore the prior Home scroll
+position, query and result panel rather than resetting the user's place.
 
 Search behaviour, request cancellation, timeout, errors, empty results and
 recent-search recording must reuse one shared search controller rather than
@@ -102,6 +104,11 @@ duplicating the existing Search screen logic. The Search tab remains available
 as the focused, full-page discovery experience, but Home never navigates there
 merely to enter a query. Search happens on submit rather than every keystroke to
 avoid unnecessary API traffic and rate-limit pressure.
+
+When the empty search field receives focus, show recent queries as tappable
+chips. The dedicated Search screen keeps the full history and clear-history
+action; Home shows at most three chips so search does not push episode content
+too far down.
 
 ## Upcoming and Recently Aired Episodes
 
@@ -117,6 +124,10 @@ air date is between 14 days before today (inclusive) and yesterday. Results are
 newest first, deduplicated by show/season/episode and limited to ten. Watched
 episodes may remain visible but carry an explicit `Watched` label; this section
 answers what aired recently, while Continue Watching answers what to resume.
+
+Use human timing labels before exact dates: preserve `Airs today` and `Airs
+tomorrow` for Upcoming, and use `Aired yesterday` or `Aired N days ago` for
+Recently Aired. The exact UK date remains visible as secondary information.
 
 If there are no upcoming or recently aired episodes, each section uses compact,
 specific empty copy only when the user has relevant tracked shows. Unavailable
@@ -147,6 +158,10 @@ addition to colour. Sparse collections become useful full-width cards rather
 than isolated tiny posters. Larger collections use rails on phones and grids
 where width permits.
 
+Missing artwork uses a branded dark fallback with title or media-type text,
+not a broken-image box. Loading collections use fixed-size skeleton cards or
+rows so surrounding content does not jump when data arrives.
+
 ### Details
 
 Treat backdrop artwork as a cinematic hero with a dark readability overlay.
@@ -162,6 +177,10 @@ control. Use compact rows on narrow phones and a poster grid on wider screens.
 Keep progress on the item and move removal behind a secondary labelled action
 that cannot be triggered by opening the title.
 
+After removal, show a compact `Removed from Watchlist` notice with an `Undo`
+action. Undo restores that title; only one removal notice needs to be active at
+a time.
+
 ### Profile and Settings
 
 Present viewing statistics as scannable cards, then separate History, Settings
@@ -175,6 +194,11 @@ task-specific language: say what failed, whether saved data remains available
 and what the user can do. Do not clear existing successful content during a
 background refresh. Buttons use direct verbs such as `Search`, `Try again`,
 `Add to Watchlist` and `Mark watched`.
+
+Empty states include a useful next action where one exists, such as `Search for
+a show`. Offline and refresh notices remain compact and leave saved content
+usable. Hover and press feedback may use brief visual motion, but all optional
+motion must respect the platform reduced-motion preference.
 
 Pressed, hover, focus, busy, selected, expanded and disabled states must be
 visually distinct and exposed to assistive technology. Layouts must tolerate
@@ -205,8 +229,11 @@ coverage includes:
 - recently aired 14-day boundary, ordering, deduplication, tracked-show
   inclusion and watched labels;
 - inline search submission, cancellation, success, empty, error, clear and no
-  navigation-to-Search behaviour;
+  navigation-to-Search behaviour, plus restoration after returning from a
+  detail route;
 - Home section order and conditional empty/error states;
+- human episode timing labels, stable skeleton dimensions, missing-artwork
+  fallbacks and Watchlist removal undo;
 - shared component accessibility states; and
 - unchanged local-storage parsing and API contracts.
 
