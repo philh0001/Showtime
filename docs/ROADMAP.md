@@ -413,15 +413,71 @@ use. Physical-device, persistence and installability checks remain open.
 
 ## Phase 9 — Accounts & Cloud Sync
 
-Status: Future
+Status: Implemented with a known sync gap
 
-Only introduce accounts and a database after the Web/PWA has real users and
-cross-device persistence or cloud backup demonstrates real value. Accounts are
-not required for public release; guest/local mode remains available.
+Authentication is working: users can create accounts and log in. The account
+sync implementation currently has a known hydration and merge problem, tracked
+below. Guest/local use remains available while this is resolved.
 
-- [ ] Decide whether authentication is required
-- [ ] Choose authentication/database platform
-- [ ] Add user accounts
+### Known issue — Account login does not hydrate or merge synced media state
+
+#### Current behaviour
+
+After a user logs in to an existing account, authentication succeeds but the
+app does not reliably hydrate the account's previously saved TV shows, films,
+Watchlist, or viewing progress into the local UI. The Profile **Sync** action
+also appears to have no effect.
+
+Guest-to-account behavior is incorrect. For example:
+
+- Guest/local state: **TV Show A**
+- Existing account/cloud state: **TV Show B** and **Movie C**
+- Current result after login or Sync: only **TV Show A** remains visible;
+  **TV Show B** and **Movie C** do not appear.
+
+A clean browser logging in to a populated account also does not reliably
+download and display that account's saved data.
+
+#### Expected behaviour
+
+After login, Showtime must merge the guest/local and remote account datasets
+without losing either side. In the example above, the local UI and the account
+should contain **TV Show A**, **TV Show B**, and **Movie C**. The merged data
+must be persisted remotely and restored when the account is used on another
+browser or device.
+
+#### Future investigation scope
+
+- Login hydration and the remote pull that follows authentication
+- Guest-to-account migration
+- Local/remote collection merge behavior
+- D1 persistence and retrieval
+- The Profile manual Sync pull/push/merge behavior
+- Frontend store and UI-state refresh after synced data changes
+- Multi-device restore on a clean browser or device
+
+#### Future acceptance criteria
+
+- [ ] **Clean client + populated account:** logging in restores the account's
+  saved Watchlist, films, TV shows, and viewing progress into the UI.
+- [ ] **Guest local data + populated account:** login merges both datasets
+  without losing either side.
+- [ ] **Merge example:** Guest = **Show A**; Remote = **Show B** +
+  **Movie C**; after login = **Show A**, **Show B**, and **Movie C**.
+- [ ] The merged result is persisted to the account remotely.
+- [ ] A second clean browser or device logging into that account receives the
+  merged state.
+- [ ] Manual Sync genuinely pulls, pushes, and merges data rather than only
+  refreshing authentication state.
+- [ ] Sync failures do not destroy guest/local data.
+- [ ] Repeated sync does not create duplicate records.
+
+Accounts use optional email/password authentication and Cloudflare D1-backed
+storage. They are not required for public release; guest/local mode remains
+available while the known sync gap is resolved.
+
+- [x] Add optional email/password accounts
+- [x] Use Cloudflare D1 for account storage
 - [ ] Cloud-sync Watchlist
 - [ ] Cloud-sync movie watched history
 - [ ] Cloud-sync TV progress
@@ -429,11 +485,9 @@ not required for public release; guest/local mode remains available.
 - [ ] Add multi-device support
 - [ ] Define migration from local-only data
 
-Possible platforms can be evaluated when this phase begins rather than being
-chosen prematurely.
-
-The possible model is guest/local mode plus an optional account for cloud backup
-and synchronisation. No provider is selected yet.
+The model is guest/local mode plus an optional account for cloud backup and
+synchronisation. Completion of the unchecked sync work depends on resolving the
+known hydration and merge issue above.
 
 ---
 
