@@ -5,6 +5,9 @@
   "compatibility_date": "2026-09-15",
   "workers_dev": true,
   "preview_urls": false,
+  "routes": [
+    { "pattern": "api.showtimetracker.show", "custom_domain": true }
+  ],
   // Browser access is restricted to the deployed Showtime frontend.
   "vars": {
     "ALLOWED_ORIGINS": "https://showtimetracker.show",
