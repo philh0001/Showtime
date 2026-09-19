@@ -6,8 +6,8 @@ Search displays movie and TV titles, posters, years and media types using TMDB.
 The device-local Watchlist, movie watched status and TV tracking are implemented.
 Home includes Continue Watching, Recently Viewed, Watched Movies, Watchlist,
 cached Upcoming Episodes and Trending Movies/TV. Profile includes local viewing
-statistics, a Trending preference, and credits. Optional accounts remain future
-work and are not required for the planned public Web/PWA.
+statistics, a Trending preference, and credits. Optional email/password accounts
+keep the tracked collections in sync across devices.
 
 ## Run locally
 
@@ -52,11 +52,35 @@ generated browser bundle uses the production API URL, then run
 `npm run worker:release-check`. The complete no-go gate includes generated
 browser output in the credential scan.
 
-The deployed web app is
-`https://showtime-web.showtime-workers.workers.dev`; its API is
+## Local vs production
+
+Keep the project in a simple two-environment setup for now:
+
+- Local: your development machine and Expo app. This is for feature work,
+  debugging and quick checks. It may point at localhost or a local TMDB proxy and
+  is not treated as a production validation path.
+- Production: the public Cloudflare deployment. This is the only shipped
+  environment. It has separate frontend and API Workers and must be verified with
+  live public URLs.
+
+Do not add a separate UAT environment until the project needs formal QA signoff
+or multiple parallel release streams. For now, keep the rollout simple and
+explicit.
+
+The deployed web app is `https://showtimetracker.show`; its API is
 `https://showtime-api.showtime-workers.workers.dev`. From `worker/`, deploy the
 web bundle with `npx wrangler deploy --config ../mobile/wrangler.jsonc` and the
 API with `npm run deploy`.
+
+Production release checklist:
+
+1. Rebuild the web bundle for production with `npm run web:export:production`.
+2. Deploy the frontend Worker with `npx wrangler deploy --config wrangler.jsonc`.
+3. Verify the public site serves the new bundle and not a stale static build.
+4. Deploy the API Worker with `npm run deploy`.
+5. Check that `ALLOWED_ORIGINS` matches the exact production frontend origin.
+6. Smoke test the live frontend and live API in the browser.
+7. Only then consider the production release complete.
 
 Then reload in Expo Go and check Home, Search, Watchlist and Profile. Check the
 terminal for missing modules, missing assets, routing warnings and runtime errors.
@@ -82,7 +106,7 @@ Node on your private network for this local test.
 The server uses port 3001 and holds the token; only search data reaches the app.
 It is a local development tool with no authentication and permissive web CORS.
 Do not expose or deploy it publicly as-is. A hosted version needs HTTPS, access
-controls and request limits. No database or account system is implemented.
+controls and request limits. Do not expose or deploy it publicly as-is.
 
 Search shows only movie/TV matches from TMDB's first results page. Selecting a
 result opens its detail screen with artwork, description, rating, genres and
@@ -155,7 +179,8 @@ totals, while other totals remain visible.
 
 The Trending preference is stored under `showtime.settings.v1`; unreadable settings
 disable discovery requests until the storage can be read again. The About area
-includes the Expo app version and TMDB attribution. No sign-in is needed.
+includes the Expo app version and TMDB attribution. An account is optional; after
+email verification, Profile can manually sync saved tracking data across devices.
 
 ## Viewing history
 
