@@ -25,6 +25,8 @@ type WorkerEnv = Env & {
   RESEND_API_KEY?: string;
   EMAIL_FROM?: string;
   APP_NAME?: string;
+  RESEND_VERIFICATION_TEMPLATE_ID?: string;
+  APP_URL?: string;
 };
 
 // Email sending is optional until a domain is verified with Resend: only
@@ -34,7 +36,25 @@ function emailConfig(env: WorkerEnv) {
   const apiKey = env.RESEND_API_KEY?.trim();
   const from = env.EMAIL_FROM?.trim();
   if (!apiKey || !from) return null;
-  return { apiKey, from, appName: env.APP_NAME?.trim() || "Showtime" };
+  return {
+    apiKey,
+    from,
+    appName: env.APP_NAME?.trim() || "Showtime",
+    verificationTemplateId: env.RESEND_VERIFICATION_TEMPLATE_ID?.trim() || undefined,
+  };
+}
+
+function verificationRedirect(appUrl: string | undefined, verified: boolean): Response {
+  const destination = new URL("/account", appUrl?.trim() || "https://showtimetracker.show");
+  destination.searchParams.set("verification", verified ? "success" : "invalid");
+  return new Response(null, {
+    status: 303,
+    headers: {
+      "Cache-Control": "no-store",
+      Location: destination.toString(),
+      "Referrer-Policy": "no-referrer",
+    },
+  });
 }
 
 type ApiRoute = {
@@ -110,6 +130,18 @@ export default {
       }
       if (!env.SHOWTIME_DB) {
         return finish(jsonResponse(503, { error: "Accounts are not configured yet." }, requestId, securityHeaders));
+      }
+      if (pathname === "/auth/verify-email" && request.method === "GET") {
+        const result = await handleAccountRequest(
+          new Request(request.url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token: new URL(request.url).searchParams.get("token") }),
+          }),
+          env.SHOWTIME_DB,
+          emailConfig(env),
+        );
+        return finish(verificationRedirect(env.APP_URL, result.status === 200));
       }
       const result = await handleAccountRequest(request, env.SHOWTIME_DB, emailConfig(env));
       return finish(jsonResponse(result.status, result.body, requestId, securityHeaders));

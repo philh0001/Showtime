@@ -4,7 +4,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, 
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/hooks/use-auth';
-import { requestPasswordReset, resetPassword, verifyEmail } from '@/services/auth';
+import { requestPasswordReset, resetPassword } from '@/services/auth';
 
 type Mode = 'sign-in' | 'sign-up' | 'forgot' | 'reset';
 
@@ -14,7 +14,6 @@ export default function AccountScreen() {
   const [mode, setMode] = useState<Mode>('sign-in');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [verificationToken, setVerificationToken] = useState('');
   const [resetToken, setResetToken] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -37,18 +36,7 @@ export default function AccountScreen() {
     setBusy(false);
     if (!result.ok) { setError(result.error); return; }
     setPassword('');
-    setNotice('Account created. Check the verification step below to enable sync.');
-    if (result.devVerificationToken) setVerificationToken(result.devVerificationToken);
-  }
-
-  async function submitVerify() {
-    setBusy(true); setError(null); setNotice(null);
-    const result = await verifyEmail(verificationToken.trim());
-    setBusy(false);
-    if (!result.ok) { setError(result.error ?? 'Verification failed.'); return; }
-    setVerificationToken('');
-    setNotice('Email verified. Syncing now.');
-    await refresh();
+    setNotice('Account created. Check your email and select the verification link to enable sync.');
   }
 
   async function submitForgot() {
@@ -79,17 +67,8 @@ export default function AccountScreen() {
           <Text style={styles.subtitle}>{user.email}</Text>
           {!user.emailVerified && (
             <View style={styles.banner}>
-              <Text style={styles.bannerText}>Verify your email to sync across devices. Enter the code sent to your inbox below.</Text>
-              <TextInput
-                value={verificationToken}
-                onChangeText={setVerificationToken}
-                placeholder="Verification token"
-                placeholderTextColor="#7A7A82"
-                autoCapitalize="none"
-                autoCorrect={false}
-                style={styles.input}
-              />
-              <PrimaryButton label="Verify email" onPress={submitVerify} disabled={busy || !verificationToken.trim()} />
+              <Text style={styles.bannerText}>Verify your email to sync across devices. Select the link in the email we sent, then refresh your account status.</Text>
+              <PrimaryButton label={busy ? 'Refreshing…' : 'Refresh account status'} onPress={() => void refresh()} disabled={busy} />
             </View>
           )}
           {user.emailVerified && (

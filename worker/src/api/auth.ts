@@ -5,7 +5,7 @@
 // returned directly in the response (dev* fields) so the app still works
 // end-to-end in development.
 import { hashPassword, newId, randomToken, sha256Hex, verifyPassword } from "../auth/crypto";
-import { passwordResetEmail, sendEmail, verificationEmail, type EmailConfig } from "../email";
+import { passwordResetEmail, sendEmail, sendVerificationEmail, type EmailConfig } from "../email";
 import {
   createIdentity,
   createResetToken,
@@ -31,7 +31,12 @@ const VERIFY_TTL_MS = 24 * 60 * 60 * 1000;
 const RESET_TTL_MS = 60 * 60 * 1000;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export type Deps = { db: D1Database; now: () => number; email: EmailConfig | null };
+export type Deps = {
+  db: D1Database;
+  now: () => number;
+  email: EmailConfig | null;
+  verificationUrl: (token: string) => string;
+};
 export type ApiResult = { status: number; body: unknown };
 
 // Best-effort: a delivery failure (bad API key, Resend outage, etc.) should
@@ -44,6 +49,17 @@ async function trySendEmail(email: EmailConfig | null, to: string, message: { su
     return true;
   } catch (error) {
     console.error("Failed to send email", error);
+    return false;
+  }
+}
+
+async function trySendVerificationEmail(email: EmailConfig | null, to: string, verificationUrl: string): Promise<boolean> {
+  if (!email) return false;
+  try {
+    await sendVerificationEmail(email, to, verificationUrl);
+    return true;
+  } catch (error) {
+    console.error("Failed to send verification email", error);
     return false;
   }
 }
@@ -75,7 +91,7 @@ async function issueSession(db: D1Database, userId: string, now: () => number, d
   return token;
 }
 
-export async function handleSignup(body: unknown, { db, now, email: emailConfig }: Deps): Promise<ApiResult> {
+export async function handleSignup(body: unknown, { db, now, email: emailConfig, verificationUrl }: Deps): Promise<ApiResult> {
   const record = body as { email?: unknown; password?: unknown };
   const email = normalizeEmail(record?.email);
   if (!email) return { status: 400, body: { error: "Enter a valid email address." } };
@@ -96,7 +112,7 @@ export async function handleSignup(body: unknown, { db, now, email: emailConfig 
     expiresAt: new Date(now() + VERIFY_TTL_MS).toISOString(),
   });
   const sessionToken = await issueSession(db, userId, now, null);
-  const emailed = await trySendEmail(emailConfig, email, verificationEmail(emailConfig?.appName ?? "Showtime", verificationToken));
+  const emailed = await trySendVerificationEmail(emailConfig, email, verificationUrl(verificationToken));
 
   return {
     status: 201,

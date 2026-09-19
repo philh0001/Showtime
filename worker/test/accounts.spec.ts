@@ -147,6 +147,18 @@ describe("Account signup and login", () => {
     expect((await session.json() as Record<string, any>).user.emailVerified).toBe(true);
   });
 
+  it("verifies an email link, then redirects without exposing the token", async () => {
+    const { body } = await signUp("verify-link@example.com");
+    const response = await request(`/auth/verify-email?token=${body.devVerificationToken}`);
+
+    expect(response.status).toBe(303);
+    expect(response.headers.get("Location")).toBe("https://showtimetracker.show/account?verification=success");
+    expect(response.headers.get("Referrer-Policy")).toBe("no-referrer");
+
+    const session = await request("/auth/session", { headers: { Authorization: `Bearer ${body.sessionToken}` } });
+    expect((await session.json() as Record<string, any>).user.emailVerified).toBe(true);
+  });
+
   it("rejects an unknown or reused verification token", async () => {
     const response = await request("/auth/verify-email", { method: "POST", ...json({ token: "bogus" }) });
     expect(response.status).toBe(400);
@@ -258,6 +270,31 @@ describe("Email delivery (when RESEND_API_KEY/EMAIL_FROM are configured)", () =>
     expect(fetchSpy).toHaveBeenCalledWith("https://api.resend.com/emails", expect.objectContaining({ method: "POST" }));
     const sentBody = JSON.parse((fetchSpy.mock.calls[0][1] as RequestInit).body as string);
     expect(sentBody.to).toBe("emailed@example.com");
+  });
+
+  it("provides the one-click link to the configured Resend template", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null, { status: 200 }));
+    const templateEnv = {
+      ...EMAIL_ENV,
+      RESEND_VERIFICATION_TEMPLATE_ID: "92d2a801-c7fb-4030-bba0-5e70c1d697ac",
+    };
+
+    const response = await request(
+      "/auth/signup",
+      { method: "POST", ...json({ email: "template@example.com", password: "correct-horse-1" }) },
+      templateEnv,
+    );
+    const body = await response.json() as Record<string, any>;
+    const sentBody = JSON.parse((fetchSpy.mock.calls[0][1] as RequestInit).body as string);
+
+    expect(response.status).toBe(201);
+    expect(body.devVerificationToken).toBeUndefined();
+    expect(sentBody.template).toEqual({
+      id: "92d2a801-c7fb-4030-bba0-5e70c1d697ac",
+      variables: {
+        verification_url: expect.stringMatching(/^https:\/\/showtime\.test\/auth\/verify-email\?token=/),
+      },
+    });
   });
 
   it("still creates the account and returns the dev token when the email provider fails", async () => {

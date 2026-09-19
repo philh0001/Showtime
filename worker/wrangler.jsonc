@@ -9,7 +9,9 @@
   "vars": {
     "ALLOWED_ORIGINS": "https://showtimetracker.show",
     "EMAIL_FROM": "Showtime <noreply@showtimetracker.show>",
-    "APP_NAME": "Showtime"
+    "APP_NAME": "Showtime",
+    "APP_URL": "https://showtimetracker.show",
+    "RESEND_VERIFICATION_TEMPLATE_ID": "92d2a801-c7fb-4030-bba0-5e70c1d697ac"
   },
   // `RESEND_API_KEY` is a Worker secret, uploaded with
   // `wrangler secret put RESEND_API_KEY`; do not put it in this file.

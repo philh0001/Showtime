@@ -44,9 +44,19 @@ async function readJsonBody(request: Request): Promise<{ ok: true; value: unknow
 }
 
 export async function handleAccountRequest(request: Request, db: D1Database, email: EmailConfig | null): Promise<ApiResult> {
-  const { pathname } = new URL(request.url);
+  const url = new URL(request.url);
+  const { pathname } = url;
   const { method } = request;
-  const deps: Deps = { db, now: Date.now, email };
+  const deps: Deps = {
+    db,
+    now: Date.now,
+    email,
+    verificationUrl: (token) => {
+      const verificationUrl = new URL("/auth/verify-email", url.origin);
+      verificationUrl.searchParams.set("token", token);
+      return verificationUrl.toString();
+    },
+  };
 
   if (pathname === "/auth/signup" && method === "POST") {
     const parsed = await readJsonBody(request);
