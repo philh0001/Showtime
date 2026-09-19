@@ -20,11 +20,13 @@ test('production web export is configured as a Cloudflare-hosted SPA', async () 
   assert.equal(app.expo.web.output, 'single');
   assert.equal(packageJson.scripts['web:export:production'], 'node scripts/export-web.mjs');
   assert.equal(wrangler.name, 'showtime-web');
+  assert.equal(wrangler.main, 'src/web-worker.ts');
   assert.equal(wrangler.compatibility_date, '2026-09-16');
   assert.equal(wrangler.workers_dev, true);
   assert.equal(wrangler.preview_urls, false);
   assert.deepEqual(wrangler.assets, {
     directory: './dist',
+    binding: 'ASSETS',
     not_found_handling: 'single-page-application',
   });
 });

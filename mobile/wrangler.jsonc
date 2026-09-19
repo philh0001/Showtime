@@ -1,11 +1,13 @@
 {
   "$schema": "../worker/node_modules/wrangler/config-schema.json",
   "name": "showtime-web",
+  "main": "src/web-worker.ts",
   "compatibility_date": "2026-09-16",
   "workers_dev": true,
   "preview_urls": false,
   "assets": {
     "directory": "./dist",
+    "binding": "ASSETS",
     "not_found_handling": "single-page-application"
   }
 }
