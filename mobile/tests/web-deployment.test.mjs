@@ -27,6 +27,7 @@ test('production web export is configured as a Cloudflare-hosted SPA', async () 
   assert.deepEqual(wrangler.assets, {
     directory: './dist',
     binding: 'ASSETS',
+    run_worker_first: true,
     not_found_handling: 'single-page-application',
   });
 });
