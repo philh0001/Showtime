@@ -3,20 +3,39 @@ import { handleDetails } from "./api/details.mjs";
 import { handleDiscovery } from "./api/discovery.mjs";
 import { handleSearch } from "./api/search.mjs";
 import { fetchTmdbJson } from "./api/tmdb.mjs";
-import { isAllowedOrigin, parseAllowedOrigins, preflightHeaders } from "./cors";
+import { accountPreflightHeaders, isAllowedOrigin, parseAllowedOrigins, preflightHeaders } from "./cors";
 import { logEvent, type SafeRoute } from "./logging";
 import { corsHeaders, jsonResponse } from "./response";
 import { enforceRateLimits } from "./rate-limit";
 import { withApiCache } from "./cache";
+import { handleAccountRequest, isAccountPath } from "./account-routes";
+
+type RateLimitBinding = { limit(options: { key: string }): Promise<{ success: boolean }> };
 
 type WorkerEnv = Env & {
   ALLOWED_ORIGINS?: string;
   TMDB_READ_ACCESS_TOKEN?: string;
-  SEARCH_LIMITER?: { limit(options: { key: string }): Promise<{ success: boolean }> };
-  DISCOVERY_LIMITER?: { limit(options: { key: string }): Promise<{ success: boolean }> };
-  DETAILS_LIMITER?: { limit(options: { key: string }): Promise<{ success: boolean }> };
-  WORK_LIMITER?: { limit(options: { key: string }): Promise<{ success: boolean }> };
+  SEARCH_LIMITER?: RateLimitBinding;
+  DISCOVERY_LIMITER?: RateLimitBinding;
+  DETAILS_LIMITER?: RateLimitBinding;
+  WORK_LIMITER?: RateLimitBinding;
+  AUTH_LIMITER?: RateLimitBinding;
+  SYNC_LIMITER?: RateLimitBinding;
+  SHOWTIME_DB?: D1Database;
+  RESEND_API_KEY?: string;
+  EMAIL_FROM?: string;
+  APP_NAME?: string;
 };
+
+// Email sending is optional until a domain is verified with Resend: only
+// build a config (and thus send real emails) once both a key and a verified
+// "from" address are set. Until then, handlers fall back to dev tokens.
+function emailConfig(env: WorkerEnv) {
+  const apiKey = env.RESEND_API_KEY?.trim();
+  const from = env.EMAIL_FROM?.trim();
+  if (!apiKey || !from) return null;
+  return { apiKey, from, appName: env.APP_NAME?.trim() || "Showtime" };
+}
 
 type ApiRoute = {
   kind: string;
@@ -70,6 +89,32 @@ export default {
       return finish(jsonResponse(403, { error: "Origin is not allowed." }, requestId, securityHeaders));
     }
 
+    let pathname = "";
+    try {
+      pathname = new URL(request.url).pathname;
+    } catch {
+      // Fall through: parseApiRequest below returns a proper 400 for an invalid URL.
+    }
+    const clientKey = request.headers.get("CF-Connecting-IP")?.trim() || "anonymous";
+
+    if (isAccountPath(pathname)) {
+      route = pathname.startsWith("/auth/") ? "auth" : "sync";
+      if (request.method === "OPTIONS") {
+        const headers = new Headers(securityHeaders);
+        for (const [key, value] of accountPreflightHeaders()) headers.set(key, value);
+        return finish(jsonResponse(204, null, requestId, headers));
+      }
+      const limiter = pathname.startsWith("/auth/") ? env.AUTH_LIMITER : env.SYNC_LIMITER;
+      if (limiter && !(await limiter.limit({ key: clientKey })).success) {
+        return finish(jsonResponse(429, { error: "Please wait a moment and try again." }, requestId, securityHeaders));
+      }
+      if (!env.SHOWTIME_DB) {
+        return finish(jsonResponse(503, { error: "Accounts are not configured yet." }, requestId, securityHeaders));
+      }
+      const result = await handleAccountRequest(request, env.SHOWTIME_DB, emailConfig(env));
+      return finish(jsonResponse(result.status, result.body, requestId, securityHeaders));
+    }
+
     const parsed = parseApiRequest({ method: request.method, url: request.url }) as ParsedApiRequest;
     if (!parsed.ok) {
       const headers = new Headers(securityHeaders);
@@ -87,7 +132,6 @@ export default {
     if (!env.TMDB_READ_ACCESS_TOKEN?.trim()) {
       return finish(jsonResponse(503, { error: "The API is not configured yet." }, requestId, securityHeaders));
     }
-    const clientKey = request.headers.get("CF-Connecting-IP")?.trim() || "anonymous";
     if (!(await enforceRateLimits(parsed.route, env, clientKey))) {
       return finish(jsonResponse(429, { error: "Please wait a moment and try again." }, requestId, securityHeaders));
     }

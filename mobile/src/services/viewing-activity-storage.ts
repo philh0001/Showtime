@@ -1,7 +1,7 @@
 import type { RecentlyViewedSnapshot } from './recently-viewed-rules.ts';
 import { normalizeViewingActivity, parseViewingActivity, type ActivityLoadResult, type ViewingAction } from './viewing-activity-rules.ts';
 
-const ACTIVITY_KEY = 'showtime.viewing-activity.v1';
+export const ACTIVITY_KEY = 'showtime.viewing-activity.v1';
 type Storage = { getItem: (key: string) => Promise<string | null>; setItem: (key: string, value: string) => Promise<void> };
 
 export function createViewingActivityStorage(storage: Storage, now = () => new Date().toISOString()) {

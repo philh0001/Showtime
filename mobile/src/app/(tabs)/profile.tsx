@@ -5,6 +5,7 @@ import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ProfileSettings } from '@/components/profile-settings';
+import { useAuth } from '@/hooks/use-auth';
 
 import { loadHomeData, type HomeData } from '@/services/home-data';
 import { loadMovieProgress } from '@/services/movie-progress';
@@ -17,6 +18,7 @@ import { loadWatchlist } from '@/services/watchlist';
 export default function ProfileScreen() {
   const [data, setData] = useState<HomeData | null>(null);
   const [loading, setLoading] = useState(true);
+  const { status, user, syncing } = useAuth();
   const request = useRef(0);
   const refresh = useCallback(async () => {
     const current = ++request.current;
@@ -53,11 +55,32 @@ export default function ProfileScreen() {
         </View>}
         <Link href="/watchlist" style={styles.navigation}>Watchlist</Link>
         <Link href="/history" style={styles.navigation}>Viewing history</Link>
+        <View style={styles.accountSection}>
+          <Text accessibilityRole="header" style={styles.heading}>Account</Text>
+          {status === 'signedIn' && user ? (
+            <>
+              <Text style={styles.subtitle}>Signed in as {user.email}</Text>
+              <Text style={styles.subtitle}>
+                {!user.emailVerified ? 'Verify your email to sync across devices.'
+                  : syncing ? 'Syncing…' : 'Synced across your devices.'}
+              </Text>
+              <Link href="/account" style={styles.navigation}>Manage account</Link>
+            </>
+          ) : (
+            <>
+              <Text style={styles.subtitle}>Sign in to keep your Watchlist and progress in sync across devices.</Text>
+              <Link href="/account" style={styles.navigation}>Sign in or create an account</Link>
+            </>
+          )}
+        </View>
         <ProfileSettings />
         <View style={styles.about}>
           <Text accessibilityRole="header" style={styles.heading}>About Showtime</Text>
           <Text style={styles.subtitle}>Version {Constants.expoConfig?.version ?? '1.0.0'}</Text>
-          <Text style={styles.subtitle}>Viewing data is saved on this device.</Text>
+          <Text style={styles.subtitle}>
+            {status === 'signedIn' ? 'Viewing data is saved on this device and, once verified, synced to your account.'
+              : 'Viewing data is saved on this device.'}
+          </Text>
           <Link href="https://www.themoviedb.org" accessibilityLabel="Visit TMDB">
             <Image source={require('@/assets/images/tmdb-logo.svg')} style={styles.tmdb} contentFit="contain" accessibilityLabel="TMDB" />
           </Link>
@@ -102,6 +125,7 @@ const styles = StyleSheet.create({
   statLabel: { flex: 1, color: '#DDDEE3', fontSize: 16, lineHeight: 23 },
   statValue: { color: '#63D7BA', fontSize: 24, fontWeight: '700', minWidth: 44, textAlign: 'right' },
   navigation: { color: '#FFFFFF', fontSize: 16, fontWeight: '700', paddingVertical: 12 },
+  accountSection: { marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#29292F', gap: 6 },
   about: { marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#29292F', gap: 10 },
   heading: { color: '#FFFFFF', fontSize: 22, fontWeight: '700' },
   tmdb: { width: 100, height: 24, marginTop: 4 },

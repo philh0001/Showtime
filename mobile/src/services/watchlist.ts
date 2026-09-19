@@ -7,7 +7,7 @@ import {
   type WatchlistItem,
 } from './watchlist-rules';
 
-const WATCHLIST_KEY = '@showtime/watchlist';
+export const WATCHLIST_KEY = '@showtime/watchlist';
 
 export async function loadWatchlist() {
   const stored = await AsyncStorage.getItem(WATCHLIST_KEY);

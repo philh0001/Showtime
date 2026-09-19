@@ -14,3 +14,11 @@ export function preflightHeaders(): Headers {
     "Access-Control-Max-Age": "600",
   });
 }
+
+export function accountPreflightHeaders(): Headers {
+  return new Headers({
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Max-Age": "600",
+  });
+}

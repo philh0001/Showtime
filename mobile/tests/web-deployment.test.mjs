@@ -38,7 +38,7 @@ test('API CORS is pinned to the deployed frontend origin', async () => {
 
   assert.equal(
     allowedOrigins,
-    'https://showtime-web.showtime-workers.workers.dev',
+    'https://showtimetracker.show',
   );
 });
 

@@ -1,6 +1,7 @@
 export type SettingsResult = { status: 'available'; showTrending: boolean } | { status: 'unavailable' };
 type Storage = { getItem: (key: string) => Promise<string | null>; setItem: (key: string, value: string) => Promise<void> };
 const SETTINGS_KEY = 'showtime.settings.v1';
+export { SETTINGS_KEY };
 
 export function createSettingsStorage(storage: Storage) {
   let pending: Promise<void> = Promise.resolve();

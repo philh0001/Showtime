@@ -5,6 +5,8 @@ export type SafeRoute =
   | "tv-details"
   | "season-details"
   | "person-details"
+  | "auth"
+  | "sync"
   | "unmatched";
 
 export type SafeEvent = {
