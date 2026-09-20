@@ -1,7 +1,7 @@
 // Server-only: never import this module into src/.
-import { parseApiRequest } from '../../worker/src/api/request.mjs';
-import { handleSearch } from '../../worker/src/api/search.mjs';
-import { fetchTmdbJson } from '../../worker/src/api/tmdb.mjs';
+import { parseApiRequest } from '../../shared/tmdb-api/request.mjs';
+import { handleSearch } from '../../shared/tmdb-api/search.mjs';
+import { fetchTmdbJson } from '../../shared/tmdb-api/tmdb.mjs';
 import { handleDetails } from './details.mjs';
 import { createDiscoveryHandler } from './discovery.mjs';
 

@@ -1,6 +1,6 @@
 // Server-only. Cache public successful results, never credentials or upstream errors.
-import { handleDiscovery } from '../../worker/src/api/discovery.mjs';
-import { fetchTmdbJson } from '../../worker/src/api/tmdb.mjs';
+import { handleDiscovery } from '../../shared/tmdb-api/discovery.mjs';
+import { fetchTmdbJson } from '../../shared/tmdb-api/tmdb.mjs';
 
 const CACHE_TTL_MS = 30 * 60 * 1000;
 const DISCOVERY_ROUTE = Object.freeze({ kind: 'discovery', cacheKey: '/discovery', cost: 2 });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseApiRequest } from "../src/api/request.mjs";
+import { parseApiRequest } from "../../shared/tmdb-api/request.mjs";
 
 describe("request adversarial boundaries", () => {
   it.each([

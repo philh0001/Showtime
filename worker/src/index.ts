@@ -1,8 +1,8 @@
-import { parseApiRequest } from "./api/request.mjs";
-import { handleDetails } from "./api/details.mjs";
-import { handleDiscovery } from "./api/discovery.mjs";
-import { handleSearch } from "./api/search.mjs";
-import { fetchTmdbJson } from "./api/tmdb.mjs";
+import { parseApiRequest } from "../../shared/tmdb-api/request.mjs";
+import { handleDetails } from "../../shared/tmdb-api/details.mjs";
+import { handleDiscovery } from "../../shared/tmdb-api/discovery.mjs";
+import { handleSearch } from "../../shared/tmdb-api/search.mjs";
+import { fetchTmdbJson } from "../../shared/tmdb-api/tmdb.mjs";
 import { accountPreflightHeaders, isAllowedOrigin, parseAllowedOrigins, preflightHeaders } from "./cors";
 import { logEvent, type SafeRoute } from "./logging";
 import { corsHeaders, jsonResponse } from "./response";

@@ -1,7 +1,7 @@
 // Server-only: never import this module into src/.
-import { handleDetails as handleSharedDetails } from '../../worker/src/api/details.mjs';
-import { parseApiRequest } from '../../worker/src/api/request.mjs';
-import { fetchTmdbJson } from '../../worker/src/api/tmdb.mjs';
+import { handleDetails as handleSharedDetails } from '../../shared/tmdb-api/details.mjs';
+import { parseApiRequest } from '../../shared/tmdb-api/request.mjs';
+import { fetchTmdbJson } from '../../shared/tmdb-api/tmdb.mjs';
 
 const detailKinds = new Set([
   'movie-details',
