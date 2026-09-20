@@ -2,11 +2,17 @@
 
 ## Intent
 
-Reorganise Showtime so that production deployment code and local/UAT tooling
-are unmistakably separated while the application and environment-neutral API
-logic remain single sources of truth. A developer, Codex, or GitHub Copilot
-should be able to identify the correct environment, command, and configuration
-without reconstructing deployment history.
+Reorganise Showtime as a web-first application so that production deployment
+code and local/UAT tooling are unmistakably separated while the application
+and environment-neutral API logic remain single sources of truth. A developer,
+Codex, or GitHub Copilot should be able to identify the correct environment,
+command, and configuration without reconstructing deployment history.
+
+The public website is the primary product and the browser is the primary local
+and UAT target. Existing Expo and React Native compatibility should remain
+available where it costs little to preserve, leaving open a small possibility
+of native apps later, but native distribution is not a current repository or
+release priority.
 
 The production website must continue to use the existing Cloudflare resources
 and public endpoints throughout the source-only migration. No deployment is
@@ -40,13 +46,15 @@ The deployed services are:
 ## Goals
 
 1. Make `production/` and `local-uat/` obvious root-level environment areas.
-2. Keep the Expo application and reusable TMDB logic shared rather than copied.
-3. Preserve production Worker names, routes, bindings, secrets, D1 database,
+2. Make the production website and local browser workflow the documented
+   primary paths.
+3. Keep the Expo application and reusable TMDB logic shared rather than copied.
+4. Preserve production Worker names, routes, bindings, secrets, D1 database,
    compatibility behaviour, asset routing, and public URLs.
-4. Give each environment documented build, test, and run/deploy commands.
-5. Make the structure an explicit rule for human contributors, Codex, and
+5. Give each environment documented build, test, and run/deploy commands.
+6. Make the structure an explicit rule for human contributors, Codex, and
    GitHub Copilot.
-6. Remove only generated or demonstrably superseded files; preserve uncertain
+7. Remove only generated or demonstrably superseded files; preserve uncertain
    artifacts and all unrelated user work.
 
 ## Non-goals
@@ -55,6 +63,9 @@ The deployed services are:
 - Deploying either production Worker during the reorganisation.
 - Changing application behaviour, visual design, authentication, sync, API
   responses, storage schemas, or public URLs.
+- Removing existing native compatibility solely to enforce web-first wording.
+- Preparing App Store, Play Store, TestFlight, EAS, or other native
+  distribution.
 - Upgrading Expo, Wrangler, Cloudflare libraries, or other dependencies.
 - Importing or deleting the external `D:/Dev/showtime-qa` directory.
 - Rewriting historical specifications and plans to use new paths. Historical
@@ -91,7 +102,7 @@ source, tests, dependencies, and fixes. The copies would drift and are rejected.
 
 ```text
 showtime/
-|-- app/                         # Shared Expo app for web, iOS and Android
+|-- app/                         # Shared web-first Expo client
 |   |-- assets/
 |   |-- src/
 |   |-- tests/                   # Environment-neutral app tests
@@ -135,9 +146,17 @@ application may enter the repository.
 
 ### Shared application
 
-`app/` owns Expo Router screens, components, hooks, local persistence, client
-services, assets, Expo configuration, and application tests. It must not own
-Cloudflare deployment configuration or the local Node server.
+`app/` owns the web-first Expo Router client: screens, components, hooks, local
+persistence, client services, assets, Expo configuration, and application
+tests. It must not own Cloudflare deployment configuration or the local Node
+server.
+
+Browser behaviour, responsive layouts, browser persistence, direct URL loads,
+and production web exports are the primary acceptance targets. Existing iOS
+and Android compatibility remains secondary and should not drive production
+folder structure or release commands. A future decision to ship native apps
+may build on the retained cross-platform code but requires its own design and
+distribution plan.
 
 The client chooses its API origin through the existing public environment
 variable and development fallback logic. Production builds set the production
@@ -201,6 +220,7 @@ The intended command families are:
 
 ```text
 npm run local
+npm run local:web
 npm run local:api
 npm run local:test
 npm run production:build
@@ -236,6 +256,8 @@ and commands:
 Add `.github/copilot-instructions.md` with concise mandatory rules:
 
 - identify whether a change is shared, production, or local/UAT before editing;
+- treat the website and browser workflow as the primary product path while
+  preserving inexpensive cross-platform compatibility;
 - keep deployable code under `production/` and local-only code under
   `local-uat/`;
 - place cross-environment code under `app/` or `shared/` rather than copying it;
@@ -299,7 +321,9 @@ The final verification must include:
 - shared TMDB API tests;
 - local Node proxy tests;
 - Expo application tests, lint, TypeScript, dependency validation, and web/iOS
-  exports as supported by the existing project checks;
+  exports as supported by the existing project checks, with the web export as
+  the required release artifact and the iOS export retained as a secondary
+  compatibility check;
 - production API tests, generated Worker types, TypeScript, Vitest, dependency
   audit, and Wrangler dry-run bundle;
 - production web deployment-contract tests, web export, secret scan, and
@@ -320,6 +344,8 @@ this work does not deploy.
 ## Acceptance Criteria
 
 - The repository visibly exposes `production/` and `local-uat/` at its root.
+- Current documentation consistently describes Showtime as web-first and
+  native apps as a possible later direction rather than a current release path.
 - Shared application and TMDB behaviour exist in one place each.
 - Local/UAT code has no imports from production code and production code has no
   imports from local/UAT code.
