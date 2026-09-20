@@ -1,0 +1,19 @@
+{
+  "name": "showtime-repository",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "local": "node scripts/run-local.mjs",
+    "local:web": "npm --prefix app run web",
+    "local:api": "node local-uat/api/start.mjs",
+    "local:tmdb": "node local-uat/api/search-tmdb.mjs",
+    "local:test": "node --test shared/tmdb-api/*.test.mjs local-uat/api/*.test.mjs",
+    "app:check": "npm --prefix app run check",
+    "production:build": "npm --prefix production/web run build",
+    "production:check": "npm run app:check && npm --prefix production/api run check && npm --prefix production/api run bundle && npm --prefix production/web run check",
+    "production:deploy:web": "npm --prefix production/web run deploy",
+    "production:deploy:api": "npm --prefix production/api run deploy",
+    "test:structure": "node --test tests/repository-structure.test.mjs scripts/run-local.test.mjs",
+    "check": "npm run test:structure && npm run local:test && npm run production:check"
+  }
+}
