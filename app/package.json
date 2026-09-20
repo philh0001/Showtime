@@ -1,5 +1,5 @@
 {
-  "name": "mobile",
+  "name": "showtime-app",
   "main": "expo-router/entry",
   "version": "1.0.0",
   "dependencies": {
@@ -35,24 +35,20 @@
     "typescript": "~6.0.3"
   },
   "scripts": {
-    "test": "node --no-warnings=ExperimentalWarning --experimental-strip-types --test tests/*.test.mjs server/*.test.mjs",
+    "test": "node --no-warnings=ExperimentalWarning --experimental-strip-types --test tests/*.test.mjs",
     "start": "expo start",
+    "web": "expo start --web",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web",
-    "web:export:production": "node scripts/export-web.mjs",
     "lint": "expo lint",
-    "search:tmdb": "node ./scripts/search-tmdb.mjs",
-    "search:server": "node ./server/start.mjs",
-    "test:search": "node --test server/search.test.mjs server/details.test.mjs",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run lint && npm run typecheck && npm test",
+    "dependencies:check": "expo install --check",
     "test:history": "node --no-warnings=ExperimentalWarning --experimental-strip-types --test tests/search-history-rules.test.mjs",
     "test:watchlist": "node --no-warnings=ExperimentalWarning --experimental-strip-types --test tests/watchlist-rules.test.mjs",
     "test:tracking": "node --no-warnings=ExperimentalWarning --experimental-strip-types --test tests/air-date-rules.test.mjs tests/tv-progress-rules.test.mjs tests/watchlist-progress.test.mjs",
     "test:home": "node --no-warnings=ExperimentalWarning --experimental-strip-types --test tests/recently-viewed-rules.test.mjs tests/home-data.test.mjs tests/continue-watching.test.mjs",
-    "test:movies": "node --no-warnings=ExperimentalWarning --experimental-strip-types --test tests/movie-progress-rules.test.mjs",
-    "security:scan": "node scripts/scan-secrets.mjs --tracked . --generated dist ../worker/worker-dist",
-    "worker:smoke": "node scripts/smoke-worker.mjs",
-    "worker:release-check": "npm run lint && npx tsc --noEmit && npm test && npm --prefix ../worker run check && npm --prefix ../worker run bundle && npm audit --audit-level=high && npm run security:scan"
+    "test:movies": "node --no-warnings=ExperimentalWarning --experimental-strip-types --test tests/movie-progress-rules.test.mjs"
   },
   "private": true
 }
