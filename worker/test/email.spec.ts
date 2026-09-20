@@ -55,6 +55,8 @@ describe("email templates", () => {
     const email = verificationEmail("Showtime", "https://showtime.test/auth/verify-email?token=abc123");
     expect(email.subject).toContain("Showtime");
     expect(email.html).toContain("abc123");
+    expect(email.html).toContain("SHOWTIME");
+    expect(email.html).toContain("TRACK • WATCH • DISCOVER");
     expect(email.text).toContain("abc123");
   });
 
@@ -62,6 +64,8 @@ describe("email templates", () => {
     const email = passwordResetEmail("Showtime", "reset456");
     expect(email.subject).toContain("Showtime");
     expect(email.html).toContain("reset456");
+    expect(email.html).toContain("SHOWTIME");
+    expect(email.html).toContain("TRACK • WATCH • DISCOVER");
     expect(email.text).toContain("reset456");
   });
 });

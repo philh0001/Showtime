@@ -61,11 +61,22 @@ export async function sendVerificationEmail(
   }
 }
 
-function wrapHtml(appName: string, heading: string, bodyHtml: string): string {
-  return `<!doctype html><html><body style="font-family:sans-serif;color:#1a1a1a;line-height:1.5">
-<h2>${heading}</h2>
+const BRAND_NAME = "SHOWTIME";
+const BRAND_TAGLINE = "TRACK • WATCH • DISCOVER";
+
+function wrapHtml(_appName: string, heading: string, bodyHtml: string): string {
+  return `<!doctype html><html><body style="margin:0;background:#0B0B0F;font-family:Arial,Helvetica,sans-serif;color:#DDDEE3;line-height:1.5">
+<main style="max-width:560px;margin:0 auto;padding:32px 24px">
+<header style="margin-bottom:32px">
+<p style="margin:0;color:#D6A832;font-size:28px;font-weight:700;letter-spacing:1px">${BRAND_NAME}</p>
+<p style="margin:6px 0 0;color:#D8D8D8;font-size:11px;letter-spacing:3px">${BRAND_TAGLINE}</p>
+</header>
+<section style="background:#111318;border-radius:12px;padding:24px">
+<h2 style="margin:0 0 16px;color:#FFFFFF">${heading}</h2>
 ${bodyHtml}
-<p style="color:#666;font-size:12px;margin-top:32px">${appName}</p>
+</section>
+<p style="color:#A7A7B0;font-size:12px;margin:24px 0 0">${BRAND_NAME}</p>
+</main>
 </body></html>`;
 }
 
