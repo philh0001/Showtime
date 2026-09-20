@@ -7,12 +7,12 @@ import { createSearchHandler } from './search.mjs';
 try {
   loadEnvFile(fileURLToPath(new URL('../.env.local', import.meta.url)));
 } catch {
-  console.error('Create mobile/.env.local first.');
+  console.error('Create local-uat/.env.local from local-uat/.env.example first.');
   process.exit(1);
 }
 const token = process.env.TMDB_READ_ACCESS_TOKEN?.trim();
 if (!token) {
-  console.error('Add TMDB_READ_ACCESS_TOKEN to mobile/.env.local.');
+  console.error('Add TMDB_READ_ACCESS_TOKEN to local-uat/.env.local.');
   process.exit(1);
 }
 

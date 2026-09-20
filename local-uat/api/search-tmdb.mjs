@@ -1,4 +1,4 @@
-// Run with Node on your computer; never import this script into the mobile app.
+// Run with Node on your computer; never import this script into the app.
 import { loadEnvFile } from 'node:process';
 import { fileURLToPath } from 'node:url';
 
@@ -6,21 +6,21 @@ async function main() {
   try {
     loadEnvFile(fileURLToPath(new URL('../.env.local', import.meta.url)));
   } catch {
-    console.error('Create mobile/.env.local using .env.example first.');
+    console.error('Create local-uat/.env.local from local-uat/.env.example first.');
     process.exitCode = 1;
     return;
   }
 
   const token = process.env.TMDB_READ_ACCESS_TOKEN?.trim();
   if (!token) {
-    console.error('Add your API Read Access Token to mobile/.env.local first.');
+    console.error('Add TMDB_READ_ACCESS_TOKEN to local-uat/.env.local.');
     process.exitCode = 1;
     return;
   }
 
   const query = process.argv.slice(2).join(' ').trim();
   if (!query) {
-    console.error('Supply a title: npm run search:tmdb -- "Batman"');
+    console.error('Supply a title: npm run local:tmdb -- "Batman"');
     process.exitCode = 1;
     return;
   }
