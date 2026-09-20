@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import worker from '../src/web-worker.ts';
+import worker from '../src/worker.ts';
 
 function request(url) {
   return worker.fetch(new Request(url), {

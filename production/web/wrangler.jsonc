@@ -1,7 +1,7 @@
 {
-  "$schema": "../worker/node_modules/wrangler/config-schema.json",
+  "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "showtime-web",
-  "main": "src/web-worker.ts",
+  "main": "src/worker.ts",
   "compatibility_date": "2026-09-16",
   "workers_dev": true,
   "preview_urls": false,

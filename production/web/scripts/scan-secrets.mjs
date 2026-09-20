@@ -5,7 +5,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 
 const execFileAsync = promisify(execFile);
-const ignoredDirectories = new Set(['.git', '.expo', 'node_modules', 'test', 'tests', 'fixtures']);
+const ignoredDirectories = new Set(['.git', '.expo', 'node_modules', 'test', 'tests', 'fixtures', 'superpowers']);
 const rules = [
   { name: 'tmdb-variable-assignment', pattern: /\bTMDB(?:_READ_ACCESS_TOKEN)?\s*[:=]\s*["'`][^"'`]{12,}/i },
   { name: 'bearer-token', pattern: /\bBearer\s+[A-Za-z0-9._~+/=-]{20,}/i },
@@ -45,6 +45,10 @@ export async function scanPaths(paths) {
     .filter((path) => !shouldIgnore(path));
   const findings = [];
   for (const file of files) {
+    const trackedDevVarsRule = rules.find((rule) => rule.name === 'tracked-dev-vars');
+    if (trackedDevVarsRule.pattern.test(file)) {
+      findings.push({ file, rule: trackedDevVarsRule.name, line: 1 });
+    }
     let text;
     try {
       text = await readFile(file, 'utf8');
@@ -53,7 +57,7 @@ export async function scanPaths(paths) {
     }
     for (const [index, line] of text.split(/\r?\n/).entries()) {
       for (const rule of rules) {
-        if (rule.pattern.test(line) || (rule.name === 'tracked-dev-vars' && rule.pattern.test(file))) {
+        if (rule.name !== 'tracked-dev-vars' && rule.pattern.test(line)) {
           findings.push({ file, rule: rule.name, line: index + 1 });
         }
       }
@@ -62,9 +66,13 @@ export async function scanPaths(paths) {
   return findings;
 }
 
-async function trackedFiles(root) {
+export async function trackedFiles(start) {
+  const { stdout: repositoryRoot } = await execFileAsync(
+    'git', ['-C', start, 'rev-parse', '--show-toplevel'],
+  );
+  const root = repositoryRoot.trim();
   const { stdout } = await execFileAsync('git', ['-C', root, 'ls-files']);
-  return stdout.split(/\r?\n/).filter(Boolean).map((path) => join(root, path));
+  return stdout.split(/\r?\n/).filter(Boolean).map((file) => join(root, file));
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
