@@ -49,6 +49,8 @@ The local adapter deliberately mirrors the public TMDB response contract through
 
 Guest mode stores Watchlist, recent searches, Recently Viewed, viewing activity, settings, movie progress, TV progress and schedule snapshots locally. These values are convenience data, not credential storage or a guaranteed backup.
 
+The Today-first Home work derives dated releases only from TV entries in Watchlist. It groups Today, the remaining days through Sunday, and later Coming Soon dates; movies remain in the Home Watchlist strip. `GET /schedule/tv/:id` is shared by local and production adapters and reports season coverage instead of claiming a complete schedule after an upstream failure. Local schedule snapshots merge checked seasons, retain stale episodes from unchecked seasons, and never enter account sync. This branch has not deployed that route or Home layout.
+
 Optional email/password accounts are implemented by the production API. Passwords are processed through the account endpoints, account/sync data is stored in D1, and account email is sent through Resend when configured.
 
 ### Sync work awaiting release

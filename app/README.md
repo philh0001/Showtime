@@ -58,7 +58,9 @@ The released sync implementation merges guest and account collections on first l
 
 The website offers an optional iPhone Home Screen experience. Safari and the Home Screen app have separate local storage. To transfer a guest library, create and verify an account in Safari, wait for sync, then sign in from the Home Screen icon. The profile page keeps the installation steps available after the Home tip is dismissed.
 
-Home checks the saved TV shows for upcoming episodes in the background when a local schedule is missing or older than a day. It checks at most eight shows per visit, preserves saved results if a request fails, and offers a retry. The signed-in Account page shows email verification, cloud sync state, and library counts from the current device.
+Home reads dated episodes from the saved TV shows in Watchlist. It puts Today, This Week and Coming Soon ahead of a compact Your Watchlist strip; Continue Watching and the other previews follow. The release list does not depend on watched progress. Same-day episodes of one show expand within one row. The supplied `showtime-logo.png` retains its subtitle alignment as one image, and the web favicon uses the supplied 32-pixel mark.
+
+The schedule cache remains device-local. Home shows cached rows first, then requests `GET /schedule/tv/:id` for missing or eligible saved shows. Successful checked seasons replace their old episode set; temporarily unavailable seasons retain cached rows marked incomplete. Complete and cap-limited responses refresh after 12 hours, temporary partials after 30 minutes, and failures after 15 minutes. The client permits two concurrent show requests and six new show requests per minute; a 429 pauses requests for one minute and gets one automatic retry. Manual Retry bypasses freshness but respects the pause. A TV detail visit seeds only a missing schedule record and never replaces an API-checked one. The signed-in Account page shows email verification, cloud sync state, and library counts from the current device.
 
 ## Feature rules worth preserving
 
@@ -67,6 +69,7 @@ Home checks the saved TV shows for upcoming episodes in the background when a lo
 - Specials remain visible but untracked.
 - Future and undated episodes cannot be marked watched.
 - Air dates use the device's local calendar and UK `DD/MM/YYYY` display.
+- Dated Home releases come only from saved TV shows; saved movies remain in Your Watchlist.
 - TMDB attribution remains visible and upstream payloads are reduced to the public app contract.
 
 ## Documentation

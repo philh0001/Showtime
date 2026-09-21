@@ -15,6 +15,8 @@
 
 `app/` is exported into `production/web/dist/` and served by the Static Assets Worker. `production/api/` imports the shared TMDB core, calls TMDB with a Worker secret, and uses D1 for accounts/sync plus Resend for account email.
 
+The Today-first Home branch adds `GET /schedule/tv/:id` to the public TMDB API. It fetches a TV summary and at most 12 regular seasons with at most three parallel season requests; the response caps dated episodes at 200 and reports per-season coverage. The route reserves 13 work units under the existing detail-category and work limits. Complete and cap-limited responses use the existing ten-minute API cache; temporary partials and errors are not cached. This route is branch work until a separately reviewed deployment.
+
 Neither production package may import `local-uat/`. Shared behaviour belongs in `app/` or `shared/`.
 
 ## Install

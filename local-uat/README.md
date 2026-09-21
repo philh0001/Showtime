@@ -31,6 +31,8 @@ Expo normally discovers the local API address. If you need to override it, creat
 
 Use `npm run local:tmdb -- "Batman"` for a direct server-side TMDB diagnostic.
 
+The local API also serves `GET /schedule/tv/:id` through the shared handler. It returns dated regular-season episodes plus `checked`, `unavailable` or `limited` coverage for each eligible season. The browser checks saved TV shows in the background without opening their detail pages.
+
 ## Test
 
 ```sh
@@ -38,6 +40,8 @@ npm run local:test
 npm run app:check
 npm run test:structure
 ```
+
+For Home acceptance, start with a fresh browser profile and 30–50 saved TV shows. Check the first dated row, progressive updates, a slow season, a partial season failure, 429 recovery, repeated focus, Watchlist add/remove, and cached rows after an error. Check 360px and 390px phone-browser widths and 1440px desktop width; label screenshots as browser emulation or physical-device evidence.
 
 ## Boundaries
 
