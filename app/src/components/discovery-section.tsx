@@ -6,6 +6,7 @@ import { HomePosterCard } from '@/components/home-poster-card';
 import { loadDiscovery } from '@/services/discovery';
 import type { DiscoveryResult } from '@/services/discovery-cache';
 import { loadSettings } from '@/services/settings';
+import { subscribeLibraryChanges } from '@/services/library-changes';
 
 export function DiscoverySection() {
   const [data, setData] = useState<DiscoveryResult | null>(null);
@@ -35,7 +36,8 @@ export function DiscoverySection() {
   }, []);
   useFocusEffect(useCallback(() => {
     void refresh();
-    return () => { request.current += 1; };
+    const unsubscribe = subscribeLibraryChanges((origin) => { if (origin === 'remote') void refresh(); });
+    return () => { unsubscribe(); request.current += 1; };
   }, [refresh]));
 
   if (!enabled) return null;

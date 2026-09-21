@@ -30,6 +30,15 @@ test('activity keeps current-status reversals and filters movie/TV IDs independe
   assert.equal(describeViewingAction({ kind: 'aired', seasonNumber: 1, episodeNumbers: [2, 3], watched: true }), 'Watched 2 episodes in season 1');
 });
 
+test('activity parsing retains different device events even when sequences collide', () => {
+  const parsed = parseViewingActivity(JSON.stringify([
+    event(1, { id: 'device-a', title: movie }),
+    event(1, { id: 'device-b', title: { ...movie, id: 3 } }),
+  ]));
+  assert.equal(parsed.records.length, 2);
+  assert.deepEqual(new Set(parsed.records.map((item) => item.id)), new Set(['device-a', 'device-b']));
+});
+
 test('concurrent history writes preserve all actions, including repeat viewings', async () => {
   let stored = null;
   const storage = createViewingActivityStorage({ getItem: async () => stored, setItem: async (_key, value) => { stored = value; } }, () => '2026-09-13T12:00:00.000Z');
@@ -41,6 +50,7 @@ test('concurrent history writes preserve all actions, including repeat viewings'
   const loaded = await storage.load();
   assert.deepEqual(loaded.records.map((item) => item.sequence), [3, 2, 1]);
   assert.deepEqual(loaded.records.map((item) => item.action.watched), [true, false, true]);
+  assert.equal(new Set(loaded.records.map((item) => item.id)).size, 3);
 });
 
 test('history preserves unreadable storage and recovers after a failed write', async () => {

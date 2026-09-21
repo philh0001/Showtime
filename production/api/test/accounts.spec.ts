@@ -21,7 +21,7 @@ function json(body: unknown, extraHeaders: Record<string, string> = {}) {
 
 const TABLES = ["sync_state", "password_reset_tokens", "email_verification_tokens", "sessions", "identities", "users"];
 
-// Mirrors migrations/0001_accounts_and_sync.sql. Tests run inside the Workers
+// Mirrors migrations/0001_accounts_and_sync.sql plus 0002_sync_revision.sql. Tests run inside the Workers
 // sandbox, where filesystem access to the repo does not resolve the same way
 // as under plain Node, so the schema is inlined here rather than read from disk.
 // Applied via batch() (one statement per prepare) since D1's exec() requires
@@ -73,6 +73,7 @@ const STATEMENTS = [
     )),
     data TEXT NOT NULL,
     updated_at TEXT NOT NULL,
+    revision INTEGER NOT NULL DEFAULT 1,
     PRIMARY KEY (user_id, collection)
   )`,
 ];
@@ -211,31 +212,58 @@ describe("Sync push and pull", () => {
     const auth = { Authorization: `Bearer ${token}` };
     const push = await request("/sync/push", {
       method: "POST",
-      ...json({ collection: "watchlist", data: [{ id: 1, mediaType: "Movie" }] }, auth),
+      ...json({ collection: "watchlist", data: [{ id: 1, mediaType: "Movie" }], expectedRevision: null }, auth),
     });
     expect(push.status).toBe(200);
 
     const pull = await request("/sync/pull", { headers: auth });
     const pullBody = await pull.json() as Record<string, any>;
     expect(pullBody.collections.watchlist.data).toEqual([{ id: 1, mediaType: "Movie" }]);
+    expect(pullBody.collections.watchlist.revision).toBe(1);
   });
 
-  it("does not overwrite a newer stored value with a stale push", async () => {
-    const { putSyncState, getAllSyncState } = await import("../src/auth/db");
+  it("rejects a stale device push and preserves the newer value", async () => {
     const token = await verifiedSession("conflict@example.com");
     const auth = { Authorization: `Bearer ${token}` };
-    await request("/sync/push", { method: "POST", ...json({ collection: "settings", data: { trending: true } }, auth) });
-
-    const sessionInfo = await (await request("/auth/session", { headers: auth })).json() as Record<string, any>;
-    const userId = sessionInfo.user.id as string;
-    const rows = await getAllSyncState(env.SHOWTIME_DB, userId);
-    const current = rows.find((row) => row.collection === "settings")!;
-    const staleUpdatedAt = new Date(new Date(current.updated_at).getTime() - 60_000).toISOString();
-    await putSyncState(env.SHOWTIME_DB, userId, "settings", JSON.stringify({ trending: "stale" }), staleUpdatedAt);
+    const first = await request("/sync/push", { method: "POST", ...json({ collection: "settings", data: { showTrending: true }, expectedRevision: null }, auth) });
+    expect(first.status).toBe(200);
+    expect((await first.json() as Record<string, any>).revision).toBe(1);
+    const second = await request("/sync/push", { method: "POST", ...json({ collection: "settings", data: { showTrending: false }, expectedRevision: 1 }, auth) });
+    expect(second.status).toBe(200);
+    expect((await second.json() as Record<string, any>).revision).toBe(2);
+    const stale = await request("/sync/push", { method: "POST", ...json({ collection: "settings", data: { showTrending: true }, expectedRevision: 1 }, auth) });
+    expect(stale.status).toBe(409);
 
     const pull = await request("/sync/pull", { headers: auth });
     const pullBody = await pull.json() as Record<string, any>;
-    expect(pullBody.collections.settings.data).toEqual({ trending: true });
+    expect(pullBody.collections.settings.data).toEqual({ showTrending: false });
+    expect(pullBody.collections.settings.revision).toBe(2);
+  });
+
+  it("rejects pushes without a revision so older clients cannot bypass conflict checks", async () => {
+    const token = await verifiedSession("legacy-push@example.com");
+    const auth = { Authorization: `Bearer ${token}` };
+    const push = await request("/sync/push", { method: "POST", ...json({ collection: "settings", data: { showTrending: true } }, auth) });
+    expect(push.status).toBe(428);
+  });
+
+  it("keeps one account's synced collections private from another account", async () => {
+    const firstToken = await verifiedSession("first-private@example.com");
+    const secondToken = await verifiedSession("second-private@example.com");
+    const firstAuth = { Authorization: `Bearer ${firstToken}` };
+    const secondAuth = { Authorization: `Bearer ${secondToken}` };
+    const firstPush = await request("/sync/push", { method: "POST", ...json({
+      collection: "settings", data: { showTrending: false }, expectedRevision: null,
+    }, firstAuth) });
+    expect(firstPush.status).toBe(200);
+    const secondPull = await request("/sync/pull", { headers: secondAuth });
+    expect((await secondPull.json() as Record<string, any>).collections.settings).toBeUndefined();
+    const secondPush = await request("/sync/push", { method: "POST", ...json({
+      collection: "settings", data: { showTrending: true }, expectedRevision: null,
+    }, secondAuth) });
+    expect(secondPush.status).toBe(200);
+    const firstPull = await request("/sync/pull", { headers: firstAuth });
+    expect((await firstPull.json() as Record<string, any>).collections.settings.data).toEqual({ showTrending: false });
   });
 
   it("rejects an unknown collection and oversized data", async () => {
@@ -246,7 +274,7 @@ describe("Sync push and pull", () => {
 
     const oversized = await request("/sync/push", {
       method: "POST",
-      ...json({ collection: "watchlist", data: "x".repeat(250_000) }, auth),
+      ...json({ collection: "watchlist", data: "x".repeat(250_000), expectedRevision: null }, auth),
     });
     expect(oversized.status).toBe(413);
   }, 15_000);

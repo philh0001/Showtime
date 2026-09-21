@@ -6,7 +6,7 @@ export type ViewingAction =
   | { kind: 'episode'; seasonNumber: number; episodeNumber: number; watched: boolean }
   | { kind: 'aired'; seasonNumber: number; episodeNumbers: number[]; watched: boolean };
 export type ViewingActivity = {
-  sequence: number; title: RecentlyViewedSnapshot; action: ViewingAction; happenedAt: string;
+  id?: string; sequence: number; title: RecentlyViewedSnapshot; action: ViewingAction; happenedAt: string;
 };
 export type ActivityLoadResult = { status: 'available'; records: ViewingActivity[] } | { status: 'unavailable' };
 export type ActivityFilter = 'all' | 'Movie' | 'TV';
@@ -36,6 +36,7 @@ export function normalizeViewingActivity(value: unknown): ViewingActivity | null
   if (!value || typeof value !== 'object') return null;
   const event = value as Record<string, unknown>;
   if (!positive(event.sequence) || typeof event.happenedAt !== 'string'
+    || (event.id !== undefined && (typeof event.id !== 'string' || !event.id))
     || !Number.isFinite(Date.parse(event.happenedAt))
     || new Date(event.happenedAt).toISOString() !== event.happenedAt
     || !event.title || typeof event.title !== 'object') return null;
@@ -46,7 +47,8 @@ export function normalizeViewingActivity(value: unknown): ViewingActivity | null
     || (title.posterUrl !== null && typeof title.posterUrl !== 'string')) return null;
   const action = normalizeAction(event.action, title.mediaType);
   if (!action) return null;
-  return { sequence: event.sequence, happenedAt: event.happenedAt, action,
+  return { ...(typeof event.id === 'string' ? { id: event.id } : {}),
+    sequence: event.sequence, happenedAt: event.happenedAt, action,
     title: { id: title.id, mediaType: title.mediaType, title: title.title.trim(),
       year: title.year as string | null, posterUrl: title.posterUrl as string | null } };
 }
@@ -56,10 +58,11 @@ export function parseViewingActivity(stored: string | null): ActivityLoadResult 
   try {
     const data: unknown = JSON.parse(stored);
     if (!Array.isArray(data)) return { status: 'unavailable' };
-    const events = new Map<number, ViewingActivity>();
+    const events = new Map<string, ViewingActivity>();
     for (const value of data) {
       const event = normalizeViewingActivity(value);
-      if (event && !events.has(event.sequence)) events.set(event.sequence, event);
+      const key = event?.id ?? `legacy:${event?.sequence}`;
+      if (event && !events.has(key)) events.set(key, event);
     }
     return { status: 'available', records: [...events.values()]
       .sort((a, b) => b.happenedAt.localeCompare(a.happenedAt) || b.sequence - a.sequence) };

@@ -33,6 +33,7 @@ export type SyncStateRow = {
   collection: string;
   data: string;
   updated_at: string;
+  revision: number;
 };
 
 export async function findUserByEmail(db: D1Database, email: string): Promise<UserRow | null> {
@@ -121,17 +122,29 @@ export async function updatePasswordHash(db: D1Database, userId: string, passwor
 }
 
 export async function getAllSyncState(db: D1Database, userId: string): Promise<SyncStateRow[]> {
-  const { results } = await db.prepare("SELECT collection, data, updated_at FROM sync_state WHERE user_id = ?")
+  const { results } = await db.prepare("SELECT collection, data, updated_at, revision FROM sync_state WHERE user_id = ?")
     .bind(userId).all<SyncStateRow>();
   return results;
 }
 
-// Only overwrites the stored blob if the incoming value is at least as new,
-// so a slow/racing device never clobbers a newer write from another device.
-export async function putSyncState(db: D1Database, userId: string, collection: string, data: string, updatedAt: string): Promise<void> {
-  await db.prepare(`
-    INSERT INTO sync_state (user_id, collection, data, updated_at) VALUES (?, ?, ?, ?)
-    ON CONFLICT(user_id, collection) DO UPDATE SET data = excluded.data, updated_at = excluded.updated_at
-    WHERE excluded.updated_at >= sync_state.updated_at
-  `).bind(userId, collection, data, updatedAt).run();
+// A conditional write is atomic in D1. A stale device must pull and merge
+// before trying again; server timestamps cannot establish what it last saw.
+export async function putSyncState(
+  db: D1Database, userId: string, collection: string, data: string,
+  updatedAt: string, expectedRevision: number | null,
+): Promise<number | null> {
+  if (expectedRevision === null) {
+    const inserted = await db.prepare(`
+      INSERT INTO sync_state (user_id, collection, data, updated_at, revision)
+      VALUES (?, ?, ?, ?, 1) ON CONFLICT(user_id, collection) DO NOTHING
+      RETURNING revision
+    `).bind(userId, collection, data, updatedAt).first<{ revision: number }>();
+    return inserted?.revision ?? null;
+  }
+  const updated = await db.prepare(`
+    UPDATE sync_state SET data = ?, updated_at = ?, revision = revision + 1
+    WHERE user_id = ? AND collection = ? AND revision = ?
+    RETURNING revision
+  `).bind(data, updatedAt, userId, collection, expectedRevision).first<{ revision: number }>();
+  return updated?.revision ?? null;
 }

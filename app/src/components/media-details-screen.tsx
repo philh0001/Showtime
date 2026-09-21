@@ -15,6 +15,7 @@ import { recordRecentlyViewed } from '@/services/recently-viewed';
 import { recordTvSchedule } from '@/services/tv-schedule';
 import { isInWatchlist, type WatchlistItem } from '@/services/watchlist-rules';
 import { addToWatchlist, loadWatchlist, removeFromWatchlist } from '@/services/watchlist';
+import { useRemoteLibraryVersion } from '@/hooks/use-remote-library-version';
 
 type LoadState =
   | { status: 'loading' }
@@ -88,6 +89,7 @@ function DetailsLoader({ mediaType, id }: { mediaType: MediaType; id: string }) 
 }
 
 function DetailsContent({ details }: { details: MediaDetails }) {
+  const libraryVersion = useRemoteLibraryVersion();
   const [saved, setSaved] = useState<boolean | null>(null);
   const [saving, setSaving] = useState(false);
   const [watchlistError, setWatchlistError] = useState<string | null>(null);
@@ -109,7 +111,7 @@ function DetailsContent({ details }: { details: MediaDetails }) {
     return () => {
       active = false;
     };
-  }, [details.id, details.mediaType]);
+  }, [details.id, details.mediaType, libraryVersion]);
 
   async function toggleWatchlist() {
     if (saved === null || saving) return;

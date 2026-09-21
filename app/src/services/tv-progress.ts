@@ -1,8 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { createTvProgressStorage } from './tv-progress-storage';
+import { createNotifyingStorage } from './library-changes';
 
-const progressStorage = createTvProgressStorage(AsyncStorage);
+const progressStorage = createTvProgressStorage(createNotifyingStorage(AsyncStorage));
 
 export const loadTvProgress = progressStorage.load;
 export const synchronizeTvProgress = progressStorage.synchronize;

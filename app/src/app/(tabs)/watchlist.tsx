@@ -18,6 +18,7 @@ import {
 } from '@/services/watchlist-progress';
 import type { WatchlistItem } from '@/services/watchlist-rules';
 import { loadWatchlist, removeFromWatchlist } from '@/services/watchlist';
+import { subscribeLibraryChanges } from '@/services/library-changes';
 
 export default function WatchlistScreen() {
   const [items, setItems] = useState<WatchlistItem[]>([]);
@@ -49,6 +50,7 @@ export default function WatchlistScreen() {
 
   useFocusEffect(useCallback(() => {
     void refresh();
+    return subscribeLibraryChanges((origin) => { if (origin === 'remote') void refresh(); });
   }, [refresh]));
 
   const visibleItems = filterWatchlistItems(items, filter, tvProgress, movieProgress);

@@ -6,6 +6,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ProfileSettings } from '@/components/profile-settings';
 import { useAuth } from '@/hooks/use-auth';
+import { subscribeLibraryChanges } from '@/services/library-changes';
 
 import { loadHomeData, type HomeData } from '@/services/home-data';
 import { loadMovieProgress } from '@/services/movie-progress';
@@ -30,7 +31,8 @@ export default function ProfileScreen() {
   }, []);
   useFocusEffect(useCallback(() => {
     void refresh();
-    return () => { request.current += 1; };
+    const unsubscribe = subscribeLibraryChanges((origin) => { if (origin === 'remote') void refresh(); });
+    return () => { unsubscribe(); request.current += 1; };
   }, [refresh]));
   const stats = data ? getViewingStats(data.watchlist, data.movieProgress, data.tvProgress) : null;
   const hasError = stats && Object.values(stats).some((value) => value === null);

@@ -3,6 +3,7 @@ import { useCallback, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { loadSettings, setShowTrending } from '@/services/settings';
 import type { SettingsResult } from '@/services/settings-storage';
+import { subscribeLibraryChanges } from '@/services/library-changes';
 
 export function ProfileSettings() {
   const [settings, setSettings] = useState<SettingsResult | null>(null);
@@ -17,7 +18,8 @@ export function ProfileSettings() {
   }, []);
   useFocusEffect(useCallback(() => {
     void refresh();
-    return () => { request.current += 1; };
+    const unsubscribe = subscribeLibraryChanges((origin) => { if (origin === 'remote') void refresh(); });
+    return () => { unsubscribe(); request.current += 1; };
   }, [refresh]));
   async function toggle(value: boolean) {
     if (settings?.status !== 'available' || busy.current) return;

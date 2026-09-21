@@ -18,7 +18,9 @@ export function createViewingActivityStorage(storage: Storage, now = () => new D
         const loaded = await read();
         if (loaded.status === 'unavailable') throw new Error('Viewing history unavailable.');
         const sequence = loaded.records.reduce((max, item) => Math.max(max, item.sequence), 0) + 1;
-        const event = normalizeViewingActivity({ sequence, title, action, happenedAt });
+        const id = globalThis.crypto?.randomUUID?.()
+          ?? `${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
+        const event = normalizeViewingActivity({ id, sequence, title, action, happenedAt });
         if (!event) throw new Error('Invalid viewing activity.');
         await storage.setItem(ACTIVITY_KEY, JSON.stringify([event, ...loaded.records]));
       });

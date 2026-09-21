@@ -22,6 +22,7 @@ Before editing, classify the change as shared app, shared TMDB core, production,
 - Avoid copying code between production and local/UAT; extract genuinely shared behaviour instead.
 - Do not commit secrets, local environment files, generated bundles, dependency directories or temporary evidence.
 - Do not treat a dry-run bundle as proof of a remote deployment or remote binding health.
+- For the pending sync revision release, review and apply D1 migration `0002_sync_revision.sql` before deploying the matching API Worker; coordinate the API and web releases and verify two-device sync. Do not apply the migration during local feature work.
 - Do not push directly to `main` during feature work.
 
 ## Verification

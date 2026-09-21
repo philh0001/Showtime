@@ -64,16 +64,16 @@ export function resetPassword(token: string, password: string) {
 }
 
 export type SyncCollection = 'watchlist' | 'movie-progress' | 'tv-progress' | 'viewing-activity' | 'settings';
-export type SyncPullBody = { collections: Record<string, { data: unknown; updatedAt: string }>; error?: string };
+export type SyncPullBody = { collections: Record<string, { data: unknown; updatedAt: string; revision: number }>; error?: string };
 
 export function syncPull(token: string) {
   return request<SyncPullBody>('/sync/pull', { token });
 }
 
-export function syncPush(token: string, collection: SyncCollection, data: unknown) {
-  return request<{ collection: string; updatedAt: string; error?: string }>('/sync/push', {
+export function syncPush(token: string, collection: SyncCollection, data: unknown, expectedRevision: number | null) {
+  return request<{ collection: string; updatedAt: string; revision: number; error?: string }>('/sync/push', {
     method: 'POST',
     token,
-    body: JSON.stringify({ collection, data }),
+    body: JSON.stringify({ collection, data, expectedRevision }),
   });
 }

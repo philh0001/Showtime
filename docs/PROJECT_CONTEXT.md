@@ -51,19 +51,9 @@ Guest mode stores Watchlist, recent searches, Recently Viewed, viewing activity,
 
 Optional email/password accounts are implemented by the production API. Passwords are processed through the account endpoints, account/sync data is stored in D1, and account email is sent through Resend when configured.
 
-### Known sync gap
+### Sync work awaiting release
 
-Authentication succeeds, but login to an existing populated account does not always hydrate and merge remote media state into the local UI. Guest data and remote data can therefore fail to appear together, and manual Sync may appear ineffective.
-
-The required fix must:
-
-- restore remote Watchlist, movie and TV progress on a clean client;
-- merge guest and remote collections without losing either side;
-- persist the merged result remotely;
-- refresh visible client state after the merge;
-- remain idempotent and preserve local data on failure.
-
-Guest/local mode remains available while this gap is resolved.
+The feature worktree contains a first-login merge, account-scoped sync metadata, conditional D1 revision writes, stale-write retries, local-edit triggers, visible refresh and tests for two-device recovery. It is local code only: no D1 migration, API Worker or website deployment has been applied to production. See [Library sync design](SYNC-DESIGN.md) for the merge contract, release order and remaining limits.
 
 ## Important product rules
 

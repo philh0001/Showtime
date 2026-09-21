@@ -77,6 +77,7 @@ Local development and acceptance testing are owned by [`local-uat/`](local-uat/R
 
 - [Application internals](app/README.md)
 - [Project context](docs/PROJECT_CONTEXT.md)
+- [Library sync design](docs/SYNC-DESIGN.md)
 - [Deployment and distribution](docs/DEPLOYMENT-AND-DISTRIBUTION.md)
 - [Cloudflare operations runbook](docs/CLOUDFLARE-RUNBOOK.md)
 - [Roadmap](docs/ROADMAP.md)

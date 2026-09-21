@@ -55,6 +55,8 @@ npm run production:deploy:api
 
 This targets `showtime-api`. Deployment does not automatically apply D1 migrations. Run the remote smoke sequence in [the Cloudflare runbook](../docs/CLOUDFLARE-RUNBOOK.md).
 
+The sync revision change prepared in this worktree requires `api/migrations/0002_sync_revision.sql` before its API Worker is deployed. The migration adds a revision to existing sync rows; the updated API rejects old clients' unversioned pushes. Release the API and web changes together after hosted acceptance testing. None of these operations has been run against the live database or Workers for this change. See [Library sync design](../docs/SYNC-DESIGN.md).
+
 ## Safety and rollback
 
 Wrangler dry runs do not prove remote secrets, routes, D1 bindings or email configuration. List deployed versions before rollback. A code rollback does not reverse D1 data or migrations, so assess data compatibility separately.

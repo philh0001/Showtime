@@ -46,7 +46,7 @@ From the repository root:
 npm run app:check
 ```
 
-That runs lint, TypeScript and 92 client tests. Run the separate online recommendation check with `npm --prefix app run dependencies:check` only when reviewing an intentional Expo dependency update; network metadata can recommend newer patch releases than the pinned lockfile.
+That runs lint, TypeScript and the client tests. Run the separate online recommendation check with `npm --prefix app run dependencies:check` only when reviewing an intentional Expo dependency update; network metadata can recommend newer patch releases than the pinned lockfile.
 
 For changes affecting export or production endpoint selection, also run `npm run production:build` and the generated-bundle checks in `npm run production:check`.
 
@@ -54,7 +54,7 @@ For changes affecting export or production endpoint selection, also run `npm run
 
 Guest mode stores Watchlist, recent searches, Recently Viewed, settings, movie status, TV progress, schedules and viewing activity locally. Optional email/password accounts use the production API and D1-backed sync.
 
-A known sync gap remains: logging into an existing populated account does not always hydrate and merge remote collections into the local UI. Fixes must preserve both guest and remote data, avoid duplicates and refresh visible state after merge.
+The local sync implementation merges guest and account collections on first login, then uses an account-scoped last-synced snapshot and conditional D1 revisions for later merges. Successful local writes schedule sync, and pulled changes refresh visible library screens. Failed sync leaves local data available. Signing out keeps the local library. These changes are prepared locally and require the D1 migration plus a later coordinated release before they affect the live site. See [Library sync design](../docs/SYNC-DESIGN.md) for conflict rules and limitations.
 
 ## Feature rules worth preserving
 

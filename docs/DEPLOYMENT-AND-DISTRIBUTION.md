@@ -74,7 +74,7 @@ D1 migrations are separate data operations. Review and back up as appropriate be
 
 ## Browser and local data
 
-The public Web/PWA release is the primary distribution channel. Guest data uses browser-local storage and can be lost if site data is cleared. Optional accounts are intended to provide backup and multi-device sync, but the known login hydration/merge gap must be resolved before that promise is considered complete.
+The public Web/PWA release is the primary distribution channel. Guest data uses browser-local storage and can be lost if site data is cleared. Optional accounts use the Cloudflare Worker and D1. The revised merge implementation is prepared locally and needs its D1 revision migration, a coordinated release and hosted acceptance testing before the live backup and multi-device promise is considered complete. See [Library sync design](SYNC-DESIGN.md).
 
 Installation to an iPhone Home Screen is a browser/PWA capability, not a native App Store release. A future native client or widget should proceed only if web feedback demonstrates enough additional value.
 

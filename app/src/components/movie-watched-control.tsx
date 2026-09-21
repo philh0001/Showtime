@@ -16,10 +16,12 @@ import {
   markMovieWatched,
 } from '@/services/movie-progress';
 import { recordViewingActivity } from '@/services/viewing-activity';
+import { useRemoteLibraryVersion } from '@/hooks/use-remote-library-version';
 
 type LoadStatus = 'loading' | 'available' | 'unavailable';
 
 export function MovieWatchedControl({ snapshot }: { snapshot: WatchedMovieSnapshot }) {
+  const libraryVersion = useRemoteLibraryVersion();
   const [records, setRecords] = useState<WatchedMovie[]>([]);
   const [status, setStatus] = useState<LoadStatus>('loading');
   const [saving, setSaving] = useState(false);
@@ -45,7 +47,7 @@ export function MovieWatchedControl({ snapshot }: { snapshot: WatchedMovieSnapsh
     return () => {
       active = false;
     };
-  }, [snapshot.movieId, loadAttempt]);
+  }, [snapshot.movieId, loadAttempt, libraryVersion]);
 
   const watched = findWatchedMovie(records, snapshot.movieId);
 

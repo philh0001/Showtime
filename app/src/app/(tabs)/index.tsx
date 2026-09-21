@@ -17,6 +17,7 @@ import { loadWatchlist } from '@/services/watchlist';
 import { loadTvProgress } from '@/services/tv-progress';
 import { loadTvSchedules } from '@/services/tv-schedule';
 import { useSearchController } from '@/services/search-controller';
+import { subscribeLibraryChanges } from '@/services/library-changes';
 import { getContinueWatching, type ViewingProgress } from '@/services/viewing-summary';
 
 export default function HomeScreen() {
@@ -36,7 +37,8 @@ export default function HomeScreen() {
 
   useFocusEffect(useCallback(() => {
     void refresh();
-    return () => { request.current += 1; };
+    const unsubscribe = subscribeLibraryChanges((origin) => { if (origin === 'remote') void refresh(); });
+    return () => { unsubscribe(); request.current += 1; };
   }, [refresh]));
 
   const recentItems = data?.recentlyViewed.status === 'available' ? data.recentlyViewed.items : [];

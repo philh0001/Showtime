@@ -6,6 +6,7 @@ import {
   removeWatchlistItem,
   type WatchlistItem,
 } from './watchlist-rules';
+import { publishLibraryChange } from './library-changes';
 
 export const WATCHLIST_KEY = '@showtime/watchlist';
 
@@ -17,6 +18,7 @@ export async function loadWatchlist() {
 export async function addToWatchlist(item: WatchlistItem) {
   const watchlist = addWatchlistItem(await loadWatchlist(), item);
   await AsyncStorage.setItem(WATCHLIST_KEY, JSON.stringify(watchlist));
+  publishLibraryChange('local');
   return watchlist;
 }
 
@@ -26,5 +28,6 @@ export async function removeFromWatchlist(
 ) {
   const watchlist = removeWatchlistItem(await loadWatchlist(), id, mediaType);
   await AsyncStorage.setItem(WATCHLIST_KEY, JSON.stringify(watchlist));
+  publishLibraryChange('local');
   return watchlist;
 }

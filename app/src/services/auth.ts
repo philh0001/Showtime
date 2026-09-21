@@ -1,5 +1,6 @@
 import * as accountApi from './account-api';
 import { clearStoredSession, loadStoredSession, saveStoredSession, type StoredSession } from './auth-session';
+import { resolveStoredSession } from './auth-restoration';
 
 export type AuthResult = { ok: true; session: StoredSession; devVerificationToken?: string } | { ok: false; error: string };
 
@@ -31,14 +32,14 @@ export async function signOut(session: StoredSession | null): Promise<void> {
 export async function restoreSession(): Promise<StoredSession | null> {
   const stored = await loadStoredSession();
   if (!stored) return null;
-  const response = await accountApi.fetchSession(stored.sessionToken);
-  if (!response.ok) {
+  const response = await accountApi.fetchSession(stored.sessionToken).catch(() => null);
+  const resolved = resolveStoredSession(stored, response);
+  if (resolved.clear) {
     await clearStoredSession();
     return null;
   }
-  const refreshed: StoredSession = { sessionToken: stored.sessionToken, user: response.body.user };
-  await saveStoredSession(refreshed);
-  return refreshed;
+  if (resolved.session && response?.ok) await saveStoredSession(resolved.session);
+  return resolved.session;
 }
 
 export async function verifyEmail(token: string): Promise<{ ok: boolean; error?: string }> {

@@ -30,6 +30,7 @@ import {
 import { createRecentlyViewedSnapshot } from '@/services/recently-viewed-rules';
 import { recordViewingActivity } from '@/services/viewing-activity';
 import type { ViewingAction } from '@/services/viewing-activity-rules';
+import { useRemoteLibraryVersion } from '@/hooks/use-remote-library-version';
 
 type TrackingState =
   | { status: 'loading' }
@@ -37,6 +38,7 @@ type TrackingState =
   | { status: 'ready'; records: TvProgress[] };
 
 export function TvTrackingSection({ details }: { details: MediaDetails }) {
+  const libraryVersion = useRemoteLibraryVersion();
   const [tracking, setTracking] = useState<TrackingState>({ status: 'loading' });
   const [savingKey, setSavingKey] = useState<string | null>(null);
   const [trackingError, setTrackingError] = useState<string | null>(null);
@@ -69,7 +71,7 @@ export function TvTrackingSection({ details }: { details: MediaDetails }) {
     return () => {
       active = false;
     };
-  }, [details.id, latestEpisodeMetadata, trackableSeasons]);
+  }, [details.id, latestEpisodeMetadata, trackableSeasons, libraryVersion]);
 
   const progress = tracking.status === 'ready'
     ? findTvProgress(tracking.records, details.id)

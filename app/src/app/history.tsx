@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { loadViewingActivity } from '@/services/viewing-activity';
 import { describeViewingAction, filterViewingActivity, type ActivityFilter, type ActivityLoadResult, type ViewingActivity } from '@/services/viewing-activity-rules';
 import { formatLocalUkWatchedDate } from '@/services/movie-progress-rules';
+import { subscribeLibraryChanges } from '@/services/library-changes';
 
 export default function HistoryScreen() {
   const [data, setData] = useState<ActivityLoadResult | null>(null);
@@ -21,7 +22,8 @@ export default function HistoryScreen() {
   }, []);
   useFocusEffect(useCallback(() => {
     void refresh();
-    return () => { request.current += 1; };
+    const unsubscribe = subscribeLibraryChanges((origin) => { if (origin === 'remote') void refresh(); });
+    return () => { unsubscribe(); request.current += 1; };
   }, [refresh]));
   const records = data?.status === 'available' ? filterViewingActivity(data.records, filter) : [];
   return <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
@@ -37,7 +39,7 @@ export default function HistoryScreen() {
       : data?.status === 'unavailable' ? <View style={styles.message}>
         <Text accessibilityRole="alert" style={styles.secondary}>Viewing history could not be loaded.</Text>
         <Pressable accessibilityRole="button" onPress={() => void refresh()} style={styles.retry}><Text style={styles.title}>Try again</Text></Pressable>
-      </View> : <FlatList data={records} keyExtractor={(item) => String(item.sequence)}
+      </View> : <FlatList data={records} keyExtractor={(item) => item.id ?? String(item.sequence)}
         contentContainerStyle={styles.list} renderItem={({ item }) => <ActivityRow event={item} />}
         ListEmptyComponent={<Text style={styles.secondary}>No viewing activity{filter === 'all' ? ' yet' : ` for ${filter === 'Movie' ? 'movies' : 'TV'}`}.</Text>} />}
   </SafeAreaView>;
