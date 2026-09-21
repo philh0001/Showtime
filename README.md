@@ -83,6 +83,8 @@ The v1.1.5 website release gives Watchlist and Profile a consistent desktop widt
 
 The v1.1.6 website release displays saved Watchlist titles in a two-column desktop card layout while retaining the phone list. See the [v1.1.6 release record](docs/verification/2026-09-21-watchlist-desktop-cards.md).
 
+The v1.1.7 website release adapts Watchlist from one to four cards per row as screen space grows. See the [v1.1.7 release record](docs/verification/2026-09-21-watchlist-responsive-columns.md).
+
 ## Local / UAT
 
 Local development and acceptance testing are owned by [`local-uat/`](local-uat/README.md). The Node proxy is permissive local tooling and is never deployed. There is currently no hosted UAT service, UAT domain, UAT D1 database, or remote UAT secret set.

@@ -21,10 +21,15 @@ import type { WatchlistItem } from '@/services/watchlist-rules';
 import { loadWatchlist, removeFromWatchlist } from '@/services/watchlist';
 import { subscribeLibraryChanges } from '@/services/library-changes';
 
+const MIN_CARD_WIDTH = 250;
+const MAX_COLUMNS = 4;
+
 export default function WatchlistScreen() {
   const { width: windowWidth } = useWindowDimensions();
-  const desktop = windowWidth >= 900;
-  const cardWidth = (Math.min(windowWidth, Layout.maxContentWidth) - Layout.pagePadding * 2 - Space.lg) / 2;
+  const availableWidth = Math.max(0, Math.min(windowWidth, Layout.maxContentWidth) - Layout.pagePadding * 2);
+  const columns = Math.max(1, Math.min(MAX_COLUMNS, Math.floor((availableWidth + Space.lg) / (MIN_CARD_WIDTH + Space.lg))));
+  const cards = columns > 1;
+  const cardWidth = (availableWidth - Space.lg * (columns - 1)) / columns;
   const [items, setItems] = useState<WatchlistItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -78,9 +83,9 @@ export default function WatchlistScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <FlatList
-        key={desktop ? 'desktop' : 'mobile'}
-        numColumns={desktop ? 2 : 1}
-        columnWrapperStyle={desktop ? styles.desktopColumns : undefined}
+        key={`columns-${columns}`}
+        numColumns={columns}
+        columnWrapperStyle={cards ? styles.desktopColumns : undefined}
         data={visibleItems}
         keyExtractor={itemKey}
         contentContainerStyle={[styles.content, !loading && visibleItems.length === 0 && styles.emptyContent]}
@@ -121,11 +126,11 @@ export default function WatchlistScreen() {
             status={getWatchlistStatus(item, tvProgress, movieProgress)}
             removing={removing === itemKey(item)}
             onRemove={() => void remove(item)}
-            desktop={desktop}
+            cards={cards}
             cardWidth={cardWidth}
           />
         )}
-        ItemSeparatorComponent={() => <View style={desktop ? styles.desktopSeparator : styles.separator} />}
+        ItemSeparatorComponent={() => <View style={cards ? styles.desktopSeparator : styles.separator} />}
       />
     </SafeAreaView>
   );
@@ -174,7 +179,7 @@ function WatchlistRow({
   status,
   removing,
   onRemove,
-  desktop,
+  cards,
   cardWidth,
 }: {
   item: WatchlistItem;
@@ -182,11 +187,11 @@ function WatchlistRow({
   status: WatchlistStatus;
   removing: boolean;
   onRemove: () => void;
-  desktop: boolean;
+  cards: boolean;
   cardWidth: number;
 }) {
   return (
-    <View style={[styles.row, desktop && styles.desktopRow, desktop && { width: cardWidth }]}>
+    <View style={[styles.row, cards && styles.desktopRow, cards && { width: cardWidth }]}>
       <Link
         href={{
           pathname: item.mediaType === 'Movie' ? '/movie/[id]' : '/tv/[id]',
