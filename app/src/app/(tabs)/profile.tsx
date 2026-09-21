@@ -134,7 +134,7 @@ export default function ProfileScreen() {
       <View style={styles.section}>
         <Text accessibilityRole="header" style={styles.heading}>About Showtime</Text>
         <View style={styles.infoCard}>
-          <Text style={styles.muted}>Version {Constants.expoConfig?.version ?? '1.1.6'}</Text>
+          <Text style={styles.muted}>Version {Constants.expoConfig?.version ?? '1.1.7'}</Text>
           <Text style={styles.muted}>{status === 'signedIn'
             ? 'Viewing data is saved on this device. A verified account can also store it for use elsewhere.'
             : 'Viewing data is saved on this device.'}</Text>
