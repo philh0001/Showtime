@@ -57,7 +57,10 @@ npm run production:check
 
 ## Production
 
-Production is owned by [`production/`](production/README.md). The live API is `https://api.showtimetracker.show`; the legacy web Worker hostname redirects to the canonical website. Deployment commands are intentionally explicit:
+Production is owned by [`production/`](production/README.md). The live API is
+`https://api.showtimetracker.show`. The web Worker source includes a legacy-host
+redirect, but the live hostname returned HTTP 200 on 21 September 2026. The
+next web release must verify the redirect. Deployment commands are explicit:
 
 ```sh
 npm run production:deploy:web

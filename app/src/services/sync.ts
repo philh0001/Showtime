@@ -8,7 +8,7 @@ import { ACTIVITY_KEY } from './viewing-activity-storage';
 import { SETTINGS_KEY } from './settings-storage';
 
 // Syncs the five local AsyncStorage collections with the Worker's per-user
-// blob storage (see worker/src/api/sync.ts). Each collection is treated as
+// blob storage (see production/api/src/api/sync.ts). Each collection is treated as
 // one opaque JSON blob, matching the server's storage model exactly, so no
 // per-item merge logic is needed here.
 const SYNC_META_KEY = 'showtime.sync-meta.v1';

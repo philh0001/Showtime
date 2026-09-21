@@ -8,13 +8,18 @@ Showtime is a web-first application already deployed on Cloudflare:
 - API custom domain: `https://api.showtimetracker.show`
 - Web Worker: `showtime-web`
 - API Worker: `showtime-api`
-- Legacy web hostname: redirects permanently to the canonical website
+- Legacy web hostname: source has a permanent redirect; the live hostname
+  returned HTTP 200 on 21 September 2026
 
 Local/UAT is not hosted. `local-uat/api/` exists only for development and acceptance work and must never be deployed.
 
 ## Architecture
 
-The shared client in `app/` is exported to `production/web/dist/`. The Static Assets Worker serves the single-page application and handles the legacy-host redirect. The browser calls the API Worker, which imports `shared/tmdb-api/`, holds the TMDB credential server-side, applies CORS and rate limits, and provides account/sync endpoints backed by D1.
+The shared client in `app/` is exported to `production/web/dist/`. The Static
+Assets Worker serves the single-page application; its next release must verify
+the legacy-host redirect. The browser calls the API Worker, which imports
+`shared/tmdb-api/`, holds the TMDB credential server-side, applies CORS and
+rate limits, and provides account/sync endpoints backed by D1.
 
 ```text
 app/ -> production web export -> showtime-web

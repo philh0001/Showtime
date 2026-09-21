@@ -10,7 +10,7 @@
     "local:test": "node --test shared/tmdb-api/*.test.mjs local-uat/api/*.test.mjs",
     "app:check": "npm --prefix app run check",
     "production:build": "npm --prefix production/web run build",
-    "production:check": "npm run app:check && npm --prefix production/api run check && npm --prefix production/api run bundle && npm --prefix production/web run check",
+    "production:check": "npm run app:check && npm --prefix production/api run check && npm --prefix production/api run bundle && npm --prefix production/api audit --audit-level=high && npm --prefix production/web run check",
     "production:deploy:web": "npm --prefix production/web run deploy",
     "production:deploy:api": "npm --prefix production/api run deploy",
     "test:structure": "node --test tests/repository-structure.test.mjs scripts/run-local.test.mjs",

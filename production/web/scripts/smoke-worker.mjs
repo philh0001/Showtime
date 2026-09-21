@@ -34,7 +34,7 @@ export async function runSmoke(base, origin) {
   const routes = [
     ['/search?query=Batman', 200],
     ['/discovery', 200],
-    ['/details/movie/1', 200],
+    ['/details/movie/550', 200],
     ['/details/tv/1', 200],
     ['/details/tv/1/season/1', 200],
     ['/details/person/1', 200],

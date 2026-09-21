@@ -6,7 +6,8 @@
 
 - Website: `https://showtimetracker.show`
 - API custom domain: `https://api.showtimetracker.show`
-- Legacy web hostname: `https://showtime-web.showtime-workers.workers.dev` (301 redirect to the canonical site)
+- Legacy web hostname: `https://showtime-web.showtime-workers.workers.dev`
+  (live HTTP 200 on 21 September 2026; source expects a 301 redirect)
 - Workers: `showtime-web` and `showtime-api`
 
 ## Architecture

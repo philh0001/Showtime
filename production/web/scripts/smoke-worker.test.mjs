@@ -21,6 +21,7 @@ test('checks the fixed public route table without printing response bodies', asy
       ? 403
       : origin !== 'https://showtimetracker.show' ? 401
       : request.method !== 'GET' ? 405
+      : request.url === '/details/movie/1' ? 404
         : request.url === '/search?query=' ? 400
           : request.url === '/not-found' ? 404 : 200;
     response.writeHead(status, {

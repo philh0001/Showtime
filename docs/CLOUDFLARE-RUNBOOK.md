@@ -30,6 +30,9 @@ Confirm:
 
 ## Deploy the website
 
+The legacy hostname returned HTTP 200 rather than the source's expected 301 on
+21 September 2026. Treat the redirect check below as a release acceptance item.
+
 ```sh
 npm run production:deploy:web
 ```
