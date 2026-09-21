@@ -9,6 +9,7 @@ Website release `v1.1.1` adds desktop Home header links for Sign in and Create a
 - At 950px, a browser check opened Create account from the Home header, submitted a mocked successful sign-up response, and reached `/?welcome=account-created` with the confirmation card and signed-in header. The mock made no real account and sent no email.
 - Only `showtime-web` was deployed. Cloudflare Worker version: `3a31cc20-1223-48c3-a0db-96bfcbfe3ad7`. The API Worker and D1 were unchanged.
 - Live `https://showtimetracker.show/`, `/account?mode=sign-up`, `/profile`, `/manifest.json` and `/apple-touch-icon.png` returned HTTP 200. The live entry bundle contained the install guide, account confirmation and `1.1.1` label. The legacy Workers hostname returned HTTP 301 to `https://showtimetracker.show/search?q=batman`, preserving the path and query.
+- After release, the owner reported that the website works in Chrome and Brave. Browser versions and the exact paths exercised were not specified.
 
 ## Remaining acceptance check
 
