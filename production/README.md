@@ -5,6 +5,7 @@
 ## Live services
 
 - Website: `https://showtimetracker.show`
+- Current website version: v1.1.0 (shown under Profile → About Showtime)
 - API custom domain: `https://api.showtimetracker.show`
 - Legacy web hostname: `https://showtime-web.showtime-workers.workers.dev`
   (redirect-only; a live request on 21 September 2026 returned 301 with path and query preserved)
