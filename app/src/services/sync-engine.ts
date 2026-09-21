@@ -1,4 +1,4 @@
-import type { ApiResponse, SyncCollection, SyncPullBody } from './account-api';
+import type { ApiResponse, SyncCollection, SyncPullBody } from './sync-types';
 import { parseMovieProgress } from './movie-progress-rules.ts';
 import { parseTvProgress } from './tv-progress-rules.ts';
 import { parseViewingActivity } from './viewing-activity-rules.ts';

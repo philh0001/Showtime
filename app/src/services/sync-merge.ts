@@ -1,4 +1,4 @@
-import type { SyncCollection } from './account-api';
+import type { SyncCollection } from './sync-types';
 
 const ABSENT = Symbol('absent');
 type Entry = unknown | typeof ABSENT;

@@ -8,6 +8,7 @@
     "skipLibCheck": true,
     "noEmit": true,
     "types": ["@cloudflare/vitest-plugin/types"],
+    "allowImportingTsExtensions": true,
     "allowJs": true,
     "checkJs": false
   },

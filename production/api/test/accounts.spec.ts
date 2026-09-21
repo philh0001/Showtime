@@ -1,6 +1,7 @@
 import { env } from "cloudflare:workers";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import worker from "../src/index";
+import type { SyncCollection, SyncPullBody } from "../../../app/src/services/sync-types";
 
 const ORIGIN = "https://allowed.example";
 const dispatch = worker.fetch as (request: Request, workerEnv: Env) => Promise<Response>;
@@ -264,6 +265,43 @@ describe("Sync push and pull", () => {
     expect(secondPush.status).toBe(200);
     const firstPull = await request("/sync/pull", { headers: firstAuth });
     expect((await firstPull.json() as Record<string, any>).collections.settings.data).toEqual({ showTrending: false });
+  });
+
+  it("merges a guest watchlist through the real sync routes and restores it on a second device", async () => {
+    const { createSyncEngine } = await import("../../../app/src/services/sync-engine.ts");
+    const token = await verifiedSession("devices@example.com");
+    const auth = { Authorization: `Bearer ${token}` };
+    const item = (id: number) => ({ id, mediaType: "Movie", title: `Film ${id}`, year: null, posterUrl: null });
+    const original = await request("/sync/push", { method: "POST", ...json({
+      collection: "watchlist", data: [item(2)], expectedRevision: null,
+    }, auth) });
+    expect(original.status).toBe(200);
+    const storage = (initial: Record<string, string> = {}) => {
+      const entries = new Map(Object.entries(initial));
+      return {
+        getItem: async (key: string) => entries.get(key) ?? null,
+        setItem: async (key: string, value: string) => { entries.set(key, value); },
+        removeItem: async (key: string) => { entries.delete(key); },
+      };
+    };
+    const clientApi = {
+      async pull(session: string) {
+        const response = await request("/sync/pull", { headers: { Authorization: `Bearer ${session}` } });
+        return { ok: response.ok, status: response.status, body: await response.json() as SyncPullBody };
+      },
+      async push(session: string, collection: SyncCollection, data: unknown, expectedRevision: number | null) {
+        const response = await request("/sync/push", { method: "POST", ...json({
+          collection, data, expectedRevision,
+        }, { Authorization: `Bearer ${session}` }) });
+        return { ok: response.ok, status: response.status,
+          body: await response.json() as { revision: number; updatedAt: string; error?: string } };
+      },
+    };
+    const firstDevice = storage({ watchlist: JSON.stringify([item(1)]) });
+    expect((await createSyncEngine(firstDevice, clientApi, { watchlist: "watchlist" }).run(token, "account")).ok).toBe(true);
+    const secondDevice = storage();
+    expect((await createSyncEngine(secondDevice, clientApi, { watchlist: "watchlist" }).run(token, "account")).ok).toBe(true);
+    expect(JSON.parse((await secondDevice.getItem("watchlist"))!)).toEqual([item(1), item(2)]);
   });
 
   it("rejects an unknown collection and oversized data", async () => {
