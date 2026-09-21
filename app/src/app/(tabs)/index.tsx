@@ -1,6 +1,6 @@
 import { Link, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useRef, useState, type ReactNode } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { SearchPanel } from '@/components/search-panel';
@@ -12,37 +12,16 @@ import { HomePosterCard, type HomePosterItem } from '@/components/home-poster-ca
 import { DiscoverySection } from '@/components/discovery-section';
 import { UpcomingSection } from '@/components/upcoming-section';
 import { loadHomeData, type HomeData } from '@/services/home-data';
-import { fetchDetails } from '@/services/details';
-import { createHomeScheduleRefresh, selectScheduleIdsToRefresh } from '@/services/home-schedule-refresh';
+import { refreshSavedTvSchedules } from '@/services/schedule-api';
 import { type WatchedMovie } from '@/services/movie-progress-rules';
 import { loadMovieProgress } from '@/services/movie-progress';
 import { loadRecentlyViewed } from '@/services/recently-viewed';
 import { loadWatchlist } from '@/services/watchlist';
 import { loadTvProgress } from '@/services/tv-progress';
-import { loadTvSchedules, recordTvSchedule } from '@/services/tv-schedule';
+import { loadTvSchedules } from '@/services/tv-schedule';
 import { useSearchController } from '@/services/search-controller';
 import { subscribeLibraryChanges } from '@/services/library-changes';
 import { getContinueWatching, type ViewingProgress } from '@/services/viewing-summary';
-
-async function fetchHomeTvDetails(id: number, signal: AbortSignal) {
-  const controller = new AbortController();
-  const abort = () => controller.abort();
-  signal.addEventListener('abort', abort, { once: true });
-  const timeout = setTimeout(abort, 15000);
-  try {
-    if (signal.aborted) controller.abort();
-    return await fetchDetails('tv', String(id), controller.signal);
-  } finally {
-    clearTimeout(timeout);
-    signal.removeEventListener('abort', abort);
-  }
-}
-
-const refreshHomeSchedules = createHomeScheduleRefresh({
-  fetchTvDetails: fetchHomeTvDetails,
-  recordTvSchedule,
-  loadTvSchedules,
-});
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -53,41 +32,42 @@ export default function HomeScreen() {
   const [checkingSchedules, setCheckingSchedules] = useState(false);
   const [scheduleRefreshFailed, setScheduleRefreshFailed] = useState(false);
   const request = useRef(0);
-  const controller = useRef<AbortController | null>(null);
+  const hasLoaded = useRef(false);
 
   const refresh = useCallback(async (forceSchedules = false) => {
     const current = ++request.current;
-    controller.current?.abort();
-    const nextController = new AbortController();
-    controller.current = nextController;
-    setLoading(true);
+    if (!hasLoaded.current) setLoading(true);
     setCheckingSchedules(false);
     setScheduleRefreshFailed(false);
     const next = await loadHomeData({ loadRecentlyViewed, loadWatchlist, loadMovieProgress, loadTvProgress, loadTvSchedules });
     if (current !== request.current) return;
     setData(next);
+    hasLoaded.current = true;
     setLoading(false);
-    if (next.tvSchedules.status !== 'available') return;
+    if (next.tvSchedules.status !== 'available' || next.watchlist.status !== 'available') return;
 
-    const watchlist = next.watchlist.status === 'available' ? next.watchlist.items : [];
-    const nowMs = Date.now();
-    const missing = selectScheduleIdsToRefresh({ watchlist, progress: next.tvProgress, cache: next.tvSchedules, nowMs });
-    if (missing.length === 0) return;
+    const watchlist = next.watchlist.items;
+    if (!watchlist.some((item) => item.mediaType === 'TV')) return;
     setCheckingSchedules(true);
-    const result = await refreshHomeSchedules({
-      watchlist, progress: next.tvProgress, cache: next.tvSchedules,
-      signal: nextController.signal, nowMs, force: forceSchedules,
+    const result = await refreshSavedTvSchedules(watchlist, {
+      force: forceSchedules,
+      onUpdate: (records) => {
+        if (current === request.current) setData((existing) => existing
+          ? { ...existing, tvSchedules: { status: 'available', records } } : existing);
+      },
+      onFailure: () => { if (current === request.current) setScheduleRefreshFailed(true); },
     });
-    if (current !== request.current || nextController.signal.aborted) return;
-    setData({ ...next, tvSchedules: result.cache });
+    if (current !== request.current) return;
+    setData((existing) => existing
+      ? { ...existing, tvSchedules: { status: 'available', records: result.records } } : existing);
     setCheckingSchedules(false);
-    setScheduleRefreshFailed(result.failed > 0 || result.attempted === 0);
+    setScheduleRefreshFailed(result.failedIds.length > 0);
   }, []);
 
   useFocusEffect(useCallback(() => {
     void refresh();
-    const unsubscribe = subscribeLibraryChanges((origin) => { if (origin === 'remote') void refresh(); });
-    return () => { unsubscribe(); request.current += 1; controller.current?.abort(); };
+    const unsubscribe = subscribeLibraryChanges(() => { void refresh(); });
+    return () => { unsubscribe(); request.current += 1; };
   }, [refresh]));
 
   const recentItems = data?.recentlyViewed.status === 'available' ? data.recentlyViewed.items : [];
@@ -136,15 +116,23 @@ export default function HomeScreen() {
           </View>
         )}
 
-        <IPhoneInstallPrompt />
+        <UpcomingSection watchlist={watchlistItems} watchlistKnown={data?.watchlist.status === 'available'}
+          cache={data?.tvSchedules ?? { status: 'available', records: [] }}
+          loading={loading} checking={checkingSchedules} refreshFailed={scheduleRefreshFailed} onRetry={() => refresh(true)} />
 
-        {loading && <View style={styles.message}>
-          <ActivityIndicator color={BrandColors.gold} accessibilityLabel="Loading Home" />
-          <Text style={styles.secondary}>Loading your Home screen…</Text>
+        {!loading && <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text accessibilityRole="header" style={styles.sectionTitle}>Your Watchlist</Text>
+            <Link href="/watchlist" style={styles.seeAll}>See all</Link>
+          </View>
+          {watchlistItems.length > 0
+            ? <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.rail}>
+              {watchlistItems.slice(0, 10).map((item) => <HomePosterCard key={`${item.mediaType}:${item.id}`} item={item} />)}
+            </ScrollView>
+            : <Text style={styles.secondary}>Save shows and movies to keep them here.</Text>}
         </View>}
 
-        {!loading && data && <UpcomingSection watchlist={watchlistItems} progress={data.tvProgress} cache={data.tvSchedules}
-          checking={checkingSchedules} refreshFailed={scheduleRefreshFailed} onRetry={() => refresh(true)} />}
+        <IPhoneInstallPrompt />
 
         {!loading && continueWatching.length > 0 && <PosterRail title="Continue Watching" items={continueWatching.slice(0, 20)} getProgress={(item) => continueWatching.find((show) => show.id === item.id)?.progress} />}
 
@@ -209,7 +197,8 @@ function watchedMovieToPosterItem(movie: WatchedMovie): HomePosterItem {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: BrandColors.background },
-  content: { paddingHorizontal: Layout.phonePadding, paddingTop: Space.lg, paddingBottom: Space.xxl, gap: Space.lg },
+  content: { width: '100%', maxWidth: Layout.maxContentWidth, alignSelf: 'center',
+    paddingHorizontal: Layout.phonePadding, paddingTop: Space.lg, paddingBottom: Space.xxl, gap: Space.lg },
   header: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', gap: Space.lg, marginBottom: Space.xs },
   brand: { flex: 1, maxWidth: 420, minWidth: 0 },
   logo: { color: BrandColors.text, fontSize: 30, fontWeight: '800', letterSpacing: 0.5 },
