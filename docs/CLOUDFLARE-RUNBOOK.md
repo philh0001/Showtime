@@ -1,73 +1,87 @@
-# Cloudflare Worker Operations Runbook
+# Cloudflare operations runbook
 
-This runbook is an operational gate, not a substitute for account security.
-Stop on any failed check, secret or sentinel leak, unexpected 5xx, unsafe
-header, quota/CPU error, or failed rollback.
+This runbook operates the web-first production environment only. The repository reorganisation itself did not deploy either Worker.
 
-## Pre-deployment gate
+## Before any deployment
 
-From `mobile/`, export the production web output immediately before scanning:
+From the repository root, install pinned dependencies if required:
 
-```powershell
-npm run web:export:production
-npm run worker:release-check
+```sh
+npm --prefix app ci
+npm --prefix production/api ci
+npm --prefix production/web ci
 ```
 
-The release check must pass without waivers. It includes mobile lint/typecheck,
-tests, Worker checks, a dry-run bundle, dependency audit, and credential scans.
+Run the complete non-deploying gate:
 
-## Account and deployment
-
-Before authenticating, verify the Cloudflare email, enable MFA, store recovery
-codes securely, and test a supported recovery path.
-
-```powershell
-cd ../worker
-npx wrangler login
-npx wrangler whoami
-npx wrangler secret put TMDB_READ_ACCESS_TOKEN
-npx wrangler deploy --config ../mobile/wrangler.jsonc
-npm run deploy
-npx wrangler deployments list
-cd ../mobile
-$env:SHOWTIME_API_URL='https://showtime-api.showtime-workers.workers.dev'
-npm run worker:smoke
+```sh
+npm run production:check
 ```
 
-`ALLOWED_ORIGINS` is checked in as the exact frontend origin, not the API
-origin; it must remain an exact `https://` origin with
-no path, wildcard, or trailing slash. Enter the TMDB token only at the
-interactive secret prompt; never put it in a command, file, log, or screenshot.
-Confirm `preview_urls: false` and disabled invocation logging in the Cloudflare
-dashboard.
+Confirm:
 
-## Privacy and monitoring checks
+- the generated bundle contains `https://api.showtimetracker.show`;
+- no TMDB credential or `localhost:3001` appears in generated output;
+- API resource identity tests still pin `showtime-api`, its custom domain, D1 ID and origins;
+- web configuration still pins `showtime-web`, `src/worker.ts` and `./dist`;
+- the authenticated Cloudflare account is the intended production account;
+- required remote Worker secrets and bindings exist;
+- any proposed D1 migration has a separate reviewed plan.
 
-Run a unique sentinel search through the hosted endpoint, then inspect Workers
-Logs and live logs. The sentinel, query text, full URL, token, caller
-headers, and upstream bodies must be absent. Custom events may contain only the
-documented request ID, route, status, duration, and cache outcome.
+## Deploy the website
 
-Monitor Worker CPU/quota, 5xx responses, TMDB 429s, cache effectiveness, and
-rate-limit rejections. Stop and investigate any unexpected signal.
-
-## Rollback and recovery
-
-From `mobile/`, record the approved API deployment version ID without recording
-secrets:
-
-```powershell
-cd ../worker
-npx wrangler deployments list
-npx wrangler rollback <KNOWN_GOOD_VERSION_ID>
-npx wrangler deployments list
-cd ../mobile
-npm run worker:smoke
-cd ../worker
-npx wrangler deploy
+```sh
+npm run production:deploy:web
 ```
 
-Replace the version ID from Wrangler output. Confirm the approved version is
-restored after the drill. Review active sessions and tokens, revoke unused
-access, and rotate `TMDB_READ_ACCESS_TOKEN` through the interactive secret
-prompt if compromise is suspected. Never record token values or recovery codes.
+This deploys only `showtime-web`. Check:
+
+1. `https://showtimetracker.show/` returns the new site.
+2. A deep route such as `/profile` resolves through SPA fallback.
+3. `https://showtime-web.showtime-workers.workers.dev/search?q=batman` redirects with path and query intact.
+4. Search and discovery call `https://api.showtimetracker.show`.
+
+## Deploy the API
+
+```sh
+npm run production:deploy:api
+```
+
+This deploys only `showtime-api`; it does not apply D1 migrations. After deployment, set the smoke targets in the same terminal and run:
+
+```powershell
+$env:SHOWTIME_API_URL='https://api.showtimetracker.show'
+$env:SHOWTIME_FRONTEND_ORIGIN='https://showtimetracker.show'
+npm --prefix production/web run smoke
+```
+
+The smoke suite sends the exact allowed production origin, checks the fixed public route table and confirms an explicit evil origin is denied. It never prints response bodies or credentials.
+
+Also verify account endpoints, D1-backed sync and a safe email flow when those systems were affected.
+
+## Monitoring and privacy
+
+- Keep Worker invocation logging and retained request data to the minimum needed for operations.
+- Logs must not contain authorization values, TMDB query values, request/response bodies, tokens or email reset/verification secrets.
+- Treat D1 records and account email addresses as personal data.
+- Check rate-limit behaviour and error rates after API changes.
+
+## Versions and rollback
+
+Before rollback, list versions from the owning package so the Worker target is unambiguous:
+
+```sh
+npm --prefix production/web exec -- wrangler versions list
+npm --prefix production/api exec -- wrangler versions list
+```
+
+Select the reviewed version ID, then use the matching package:
+
+```sh
+npm --prefix production/web exec -- wrangler rollback VERSION_ID
+npm --prefix production/api exec -- wrangler rollback VERSION_ID
+```
+
+After rollback, repeat the website checks or API smoke suite. Record the incident, version IDs and outcome without credentials or personal data.
+
+A Worker rollback changes code only. It does not roll back D1 data, migrations, Resend activity or client-local state. If schema compatibility is uncertain, stop and assess data recovery before changing code versions.

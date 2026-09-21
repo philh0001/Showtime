@@ -1,33 +1,61 @@
 # Production
 
+`production/` owns every deployable Cloudflare component for Showtime's web-first live service. Local/UAT tooling is outside this tree and is never deployed.
+
 ## Live services
 
-The canonical website is `https://showtimetracker.show`, backed by the `showtime-web` Static Assets Worker. The API is the `showtime-api` Worker at `https://api.showtimetracker.show`. The legacy `showtime-web.showtime-workers.workers.dev` hostname redirects to the canonical website.
+- Website: `https://showtimetracker.show`
+- API custom domain: `https://api.showtimetracker.show`
+- Legacy web hostname: `https://showtime-web.showtime-workers.workers.dev` (301 redirect to the canonical site)
+- Workers: `showtime-web` and `showtime-api`
 
 ## Architecture
 
-`app/` is exported into `production/web/dist/` and served by the web Worker. The API Worker calls TMDB and uses Cloudflare D1 for account and sync data plus Resend for account email.
+`app/` is exported into `production/web/dist/` and served by the Static Assets Worker. `production/api/` imports the shared TMDB core, calls TMDB with a Worker secret, and uses D1 for accounts/sync plus Resend for account email.
+
+Neither production package may import `local-uat/`. Shared behaviour belongs in `app/` or `shared/`.
 
 ## Install
 
-Run `npm ci` in `app/`, `production/api/`, and `production/web/`. Each package owns its lockfile and dependencies.
+From the repository root:
+
+```sh
+npm --prefix app ci
+npm --prefix production/api ci
+npm --prefix production/web ci
+```
 
 ## Build and check
 
-From the repository root, use `npm run production:build` to create the browser bundle and `npm run production:check` for the complete non-deploying release gate.
+```sh
+npm run production:build
+npm run production:check
+```
+
+The gate checks the client, production API, web export, Worker bundles, audits, resource identities, credentials and the embedded canonical API URL. It does not deploy.
 
 ## Deploy web
 
-Run `npm run production:deploy:web` only after `npm run production:check` passes and Cloudflare authentication targets the production account. This deploys `showtime-web`. Afterwards, check the canonical homepage, a deep route, the legacy-host redirect, and the generated bundle's API URL.
+After a reviewed, passing release gate and production-account authentication:
+
+```sh
+npm run production:deploy:web
+```
+
+This targets `showtime-web`. Verify the homepage, a deep route, the legacy redirect and the API URL in the served bundle.
 
 ## Deploy API
 
-Run `npm run production:deploy:api` only after the API checks pass, required Worker secrets are configured remotely, and any D1 migration has been reviewed separately. This deploys `showtime-api`; it does not apply a database migration automatically. Run the remote smoke check after deployment.
+After confirming remote secrets, bindings and any separately reviewed D1 migration:
 
-## Safety
+```sh
+npm run production:deploy:api
+```
 
-The Node server under `local-uat/` is never deployed. Wrangler dry runs validate packaging, but do not prove that remote secrets, routes, D1 bindings, or account configuration are correct.
+This targets `showtime-api`. Deployment does not automatically apply D1 migrations. Run the remote smoke sequence in [the Cloudflare runbook](../docs/CLOUDFLARE-RUNBOOK.md).
 
-## Rollback
+## Safety and rollback
 
-List the relevant Worker's deployed versions before selecting a rollback target. A code rollback does not roll back D1 data or migrations, so assess data compatibility independently.
+Wrangler dry runs do not prove remote secrets, routes, D1 bindings or email configuration. List deployed versions before rollback. A code rollback does not reverse D1 data or migrations, so assess data compatibility separately.
+
+See [Deployment and Distribution](../docs/DEPLOYMENT-AND-DISTRIBUTION.md) for architecture and [the operations runbook](../docs/CLOUDFLARE-RUNBOOK.md) for release and recovery steps.

@@ -28,7 +28,7 @@
 
 ## Review Focus
 
-1. **Production bundle selects the wrong API:** the exported JavaScript must contain `https://showtime-api.showtime-workers.workers.dev` and must not contain `localhost:3001` or a TMDB credential; Task 6 adds this release test and Task 9 runs it on the generated bundle.
+1. **Production bundle selects the wrong API:** the exported JavaScript must contain `https://api.showtimetracker.show` and must not contain `localhost:3001` or a TMDB credential; Task 6 adds this release test and Task 9 runs it on the generated bundle.
 2. **Moved Wrangler config resolves the wrong entry point or asset directory:** both configs must preserve Worker identities and bindings, and both dry-run bundles must pass; Tasks 5 and 6 pin these contracts.
 3. **Environment coupling returns through imports:** production and local/UAT source must import only the shared core, never each other; Task 7 adds a repository-wide boundary test.
 4. **Ignored secrets or generated output become tracked during moves:** Task 7 asserts ignore behaviour and Task 9 checks tracked files plus the credential scan without displaying secret values.

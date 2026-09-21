@@ -1,290 +1,80 @@
-# Deployment and Distribution
+# Deployment and distribution
 
-## Goals
+## Current release model
 
-Showtime's first public release should be easy to try from a normal URL, keep
-the TMDB credential outside every browser and mobile bundle, and remain
-effectively free to operate while usage stays within the relevant free tiers.
-It should not require an account, a custom domain, TestFlight or an App Store
-installation.
+Showtime is a web-first application already deployed on Cloudflare:
 
-The Cloudflare API and web frontend described below are deployed. Physical
-device, persistence, installability and broader public-release checks remain.
+- Canonical website: `https://showtimetracker.show`
+- API custom domain: `https://api.showtimetracker.show`
+- Web Worker: `showtime-web`
+- API Worker: `showtime-api`
+- Legacy web hostname: redirects permanently to the canonical website
 
-## Current Development Architecture
+Local/UAT is not hosted. `local-uat/api/` exists only for development and acceptance work and must never be deployed.
 
-The verified development architecture remains:
+## Architecture
 
-```text
-Expo Go / browser
-        |
-        v
-Showtime
-        |
-        v
-local Node server
-        |
-        v
-TMDB
-```
-
-The Node server on the development PC keeps the TMDB credential out of the
-Expo client. TMDB-powered features depend on that server and are not yet
-independently available over the public internet.
-
-## Production Architecture
-
-The planned production architecture is separate from the local setup:
+The shared client in `app/` is exported to `production/web/dist/`. The Static Assets Worker serves the single-page application and handles the legacy-host redirect. The browser calls the API Worker, which imports `shared/tmdb-api/`, holds the TMDB credential server-side, applies CORS and rate limits, and provides account/sync endpoints backed by D1.
 
 ```text
-Showtime Web/PWA
-Future native client if required
-        |
-        v
-Cloudflare Worker API
-        |
-        v
-TMDB
+app/ -> production web export -> showtime-web
+browser -> api.showtimetracker.show -> showtime-api -> TMDB / D1 / Resend
 ```
 
-Cloudflare is the production host. Azure remains useful as a general learning
-platform but is not required for Showtime.
+Production and local/UAT are adapters. Neither may import the other, and shared behaviour must not be duplicated between them.
 
-Deployment, smoke testing, rollback, secret rotation and incident response are
-defined in [`CLOUDFLARE-RUNBOOK.md`](CLOUDFLARE-RUNBOOK.md). The runbook is
-mandatory before any hosted endpoint or client cutover is used.
+## Install
 
-## Cloudflare Hosting
+From the repository root:
 
-The API/proxy runs as a Cloudflare Worker and the Expo single-page web output is
-deployed with Workers Static Assets. The production endpoints are:
-
-- Web: `https://showtime-web.showtime-workers.workers.dev`
-- API: `https://showtime-api.showtime-workers.workers.dev`
-
-Relevant current guidance:
-
-- [Workers best practices](https://developers.cloudflare.com/workers/best-practices/workers-best-practices/)
-- [Workers Static Assets](https://developers.cloudflare.com/workers/static-assets/)
-- [Single-page application routing](https://developers.cloudflare.com/workers/static-assets/routing/single-page-application/)
-
-Both Workers use checked-in Wrangler configuration. The generated frontend
-bundle contains the public API URL but no TMDB credential.
-
-## Production API
-
-The production API preserves the local proxy's trust boundary for public
-traffic. It:
-
-- adapts the required TMDB proxy routes to the Cloudflare Workers runtime;
-- stores the TMDB token as a Worker secret, never as plaintext client or
-  committed configuration;
-- gives the Web/PWA and any later native client an explicit production endpoint;
-- returns production-safe errors without leaking credentials or internals;
-- applies suitable origin, request-validation and abuse controls;
-- adds proportionate logging and monitoring without recording secrets;
-- scans source and generated client output for credentials; and
-- still requires verification of Search, Details and discovery over mobile data
-  and with the development PC switched off.
-
-The current local server is for private development and must not be exposed or
-deployed as-is.
-
-The Worker `ALLOWED_ORIGINS` value is the exact HTTPS origin of the deployed
-Showtime web frontend. It is not the API origin, a wildcard, or a placeholder.
-
-## Web/PWA Distribution
-
-The Web/PWA is the first planned public-distribution route:
-
-```text
-User receives URL
-      |
-      v
-opens Showtime
-      |
-      v
-uses it immediately
-      |
-      v
-optionally adds it to their iPhone Home Screen
+```sh
+npm --prefix app ci
+npm --prefix production/api ci
+npm --prefix production/web ci
 ```
 
-The release should use a Cloudflare-provided hostname initially. Cloudflare
-provides `workers.dev` hostnames for getting started without first adding a
-custom domain. A custom domain can be considered later if the project becomes
-public-facing or important enough to justify one; it is not an initial release
-requirement. See Cloudflare's current guidance for
-[`workers.dev`](https://developers.cloudflare.com/workers/configuration/routing/workers-dev/)
-and [routing options](https://developers.cloudflare.com/workers/configuration/routing/).
+The three lockfiles are independent so app dependencies and production Worker tooling remain explicit.
 
-Before public sharing, verify the production URL in iPhone Safari and supported
-desktop browsers, including navigation, responsive layouts, API failures,
-reloads, restarts and reasonable offline/error behaviour.
+## Non-deploying release gate
 
-## Persistent Local User Data
-
-The first public Web/PWA release remains guest-first and local-first. Watchlist,
-watched movies, watched seasons and episodes, TV progress, Continue Watching,
-viewing history and settings are persistent user data. They must not be treated
-as disposable network cache data.
-
-```text
-TMDB/API responses, posters and temporary network data
-        |
-        v
-cache where useful
-
-Watchlist, progress, history and preferences
-        |
-        v
-persistent browser/device storage
+```sh
+npm run production:check
 ```
 
-The browser implementation may use a different storage mechanism from native
-AsyncStorage, but it must preserve the same user-facing expectation: if a user
-adds a show, closes Safari and later returns on the same browser and device, the
-show remains. Storage choices and migrations must be evaluated during Phase 8;
-this document does not select or implement them.
+This runs the client gate, API shared/Worker tests and typecheck, both Worker dry-run bundles, the production web export, dependency audits and credential scans. The generated JavaScript must contain `https://api.showtimetracker.show` and must not contain the TMDB credential, `localhost:3001`, an `api_key` parameter or the old API Workers hostname.
 
-### Local storage limitations
+A passing gate proves source and packaging checks only. It does not prove remote secrets, D1 state, routing, email delivery or that a deployment occurred.
 
-Guest/local data:
+## Deploy
 
-- does not automatically follow the user to another browser or device;
-- may be removed if the user clears browser or site data;
-- is not a cloud backup; and
-- may be subject to browser/platform storage policies.
+Deployment is always an explicit reviewed action:
 
-These limitations are acceptable for the initial release and should be stated
-clearly in the product.
-
-## iPhone Add to Home Screen
-
-The intended optional iPhone experience is:
-
-1. Open Showtime in Safari.
-2. Use **Add to Home Screen**.
-3. Launch Showtime from its own icon.
-4. Use the app-like standalone presentation where the browser and platform
-   support it.
-
-A PWA is not identical to a native iOS application. Its Home Screen icon and
-standalone presentation are part of the web strategy. A true native widget,
-such as one showing upcoming episodes, would require native work and remains a
-possible much-later feature.
-
-## Future Accounts and Cloud Sync
-
-Accounts are not a gate for public use. They should be considered only after a
-Web/PWA release has real users who demonstrate a need for cloud backup,
-cross-device progress, or synchronised Watchlists, history and settings.
-
-```text
-Guest/local mode
-       +
-optional account
-       |
-       v
-cloud backup and synchronisation
+```sh
+npm run production:deploy:web
+npm run production:deploy:api
 ```
 
-No authentication or database provider is selected. Provider evaluation,
-account design, migration, conflict handling and privacy requirements belong to
-Phase 9 if that phase proves worthwhile.
+Deploy only the intended component. Re-run the relevant post-deploy checks from [the Cloudflare runbook](CLOUDFLARE-RUNBOOK.md). Do not infer an API deployment from a website deployment or vice versa.
 
-## TMDB Credential Security
+D1 migrations are separate data operations. Review and back up as appropriate before applying one; neither deploy nor rollback automatically changes the database schema.
 
-The TMDB Read Access Token must remain server-side. It must never be placed in
-an `EXPO_PUBLIC_` variable, web bundle, native application bundle, committed
-file, log or screenshot. Cloudflare documents encrypted Worker secrets for API
-tokens and other sensitive values; production implementation should follow the
-then-current [Workers secrets guidance](https://developers.cloudflare.com/workers/configuration/secrets/).
+## Environment and credential rules
 
-The release checklist must include a credential scan of source and generated
-web/native output. Browser clients should receive only the restricted response
-fields required by Showtime.
+- `TMDB_READ_ACCESS_TOKEN` is server-side only.
+- Production secrets belong in Cloudflare Worker secrets, never source, app config or generated JavaScript.
+- Local development secrets belong only in ignored `local-uat/.env.local`.
+- The production web export may embed only the public API URL.
+- CORS must allow the exact canonical frontend origin.
+- Account email credentials and template configuration remain API Worker concerns.
 
-## Cost Strategy
+## Browser and local data
 
-The early release should remain effectively free to operate while traffic and
-resource use stay within the relevant free tiers. Do not build decisions around
-hard-coded price or quota figures: review Cloudflare and any other service's
-current terms immediately before implementation and again before public launch.
-A custom domain and paid services are optional later decisions.
+The public Web/PWA release is the primary distribution channel. Guest data uses browser-local storage and can be lost if site data is cleared. Optional accounts are intended to provide backup and multi-device sync, but the known login hydration/merge gap must be resolved before that promise is considered complete.
 
-## Release Phases
+Installation to an iPhone Home Screen is a browser/PWA capability, not a native App Store release. A future native client or widget should proceed only if web feedback demonstrates enough additional value.
 
-```text
-Current local development
-        |
-        v
-Finish product/UI polish and physical-device QA
-        |
-        v
-Cloudflare-hosted production API
-        |
-        v
-Cloudflare-hosted Web/PWA
-        |
-        v
-Guest/local persistent storage
-        |
-        v
-Share Showtime through a normal URL
-        |
-        v
-Optional Add to Home Screen on iPhone
-        |
-        v
-Gather real-user feedback
-        |
-        v
-Optional accounts/cloud sync later
-        |
-        v
-Native App Store version only if worthwhile
-```
+## Cost and operations
 
-The detailed implementation and verification checklists remain in the
-[roadmap](ROADMAP.md).
+Prefer bounded responses, caching, rate limits and Cloudflare's free/low-cost services. Do not encode changing quota or price figures in architecture decisions without checking current provider documentation.
 
-## Future Native iOS Distribution
-
-Native distribution becomes a decision after the Web/PWA has users:
-
-```text
-Successful Web/PWA
-        |
-        v
-real users
-        |
-        v
-decide native adds enough value
-        |
-        v
-Apple Developer membership
-        |
-        v
-Expo/EAS production build
-        |
-        v
-TestFlight
-        |
-        v
-App Store
-```
-
-Apple Developer membership, TestFlight and App Store Connect are not current
-requirements. A native version should proceed only if it adds enough value over
-the PWA, for example through platform integrations that matter to users.
-
-## Out of Scope for the Initial Web Release
-
-- mandatory signup or authentication;
-- cloud backup or cross-device synchronisation;
-- selecting an authentication/database provider;
-- a custom domain;
-- TestFlight or App Store distribution;
-- a native iOS widget; and
-- treating local user state as disposable cache data.
+Maintain rollback awareness for both Workers. Code rollback does not restore D1 data, reverse migrations or undo external email effects.

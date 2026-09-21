@@ -1,5 +1,14 @@
 # Showtime Roadmap
 
+Showtime is web-first. The live website is `https://showtimetracker.show` and
+the API is `https://api.showtimetracker.show`. The shared client and TMDB core
+live in `app/` and `shared/`; deployable Cloudflare code lives in
+`production/`, while `local-uat/` holds local-only acceptance tooling. Native
+distribution remains a possible later direction.
+
+The dated milestone notes below record how the project reached this point.
+Open checkboxes still need verification or implementation.
+
 ## Phase 1 — Foundation
 
 Status: Complete
@@ -19,8 +28,8 @@ Status: Complete
 - [x] Verify all four tabs on physical iPhone
 - [x] Commit foundation milestone
 
-Configured app icons and the native splash image remain placeholders for a later
-Showtime branding pass.
+At the foundation milestone, app icons and splash artwork were placeholders;
+later web branding work is tracked under Phase 7.
 
 ---
 
@@ -47,10 +56,10 @@ Status: Complete for the first local version
 - [x] Add TMDB credits/attribution on Search
 - [x] Verify Search on physical iPhone
 
-Current limitation:
+Local/UAT limitation:
 
-The TMDB proxy currently runs on the development PC and is intended only for
-private local development.
+The `local-uat/` TMDB proxy runs on the development PC and is intended only
+for private local testing. The public site uses the deployed API Worker.
 
 Future refinement:
 
@@ -215,9 +224,9 @@ Future refinement:
 
 ## Phase 6 — Home, Viewing History & Discovery
 
-Status: Current milestone
+Status: Implemented; expanded browser and iPhone verification remains open
 
-Home now has its first local dashboard. Continue expanding it with viewing
+At the September 2026 milestone, Home gained a local dashboard with viewing
 activity, upcoming episodes, and discovery content.
 
 13 September update: Continue Watching, movie watched status, local upcoming
@@ -296,10 +305,10 @@ actions, with filters and detail links. Earlier activity is not reconstructed.
 
 ## Phase 7 — Profile & App Polish
 
-Status: Planned
+Status: In progress; web-first polish is implemented, with checks below open
 
-The Profile tab already exists. This phase turns it into useful application
-content and completes the first major UI/branding pass.
+This phase added Profile content and the first major web branding pass. The
+remaining polish and verification items stay open below.
 
 ### Profile
 
@@ -352,22 +361,24 @@ pass; smaller margins alone do not resolve it.
 
 ## Phase 8 — Production Hosting & Public Web/PWA
 
-Status: In progress
+Status: Deployed; acceptance checks below remain open
 
-The application should finish its current physical-device verification and
-major product/UI polish before this phase. The detailed strategy is in
-[`DEPLOYMENT-AND-DISTRIBUTION.md`](DEPLOYMENT-AND-DISTRIBUTION.md).
+The public website and API are deployed. Their current source and release
+commands live in `production/`; local acceptance tooling lives in
+`local-uat/`. The current release procedure is in
+[`CLOUDFLARE-RUNBOOK.md`](CLOUDFLARE-RUNBOOK.md).
 
-The current architecture is:
+The local/UAT architecture is:
 
-`Expo Go / browser -> Showtime -> local Node server -> TMDB`
+`app/ browser client -> local-uat/api Node server -> shared/tmdb-api -> TMDB`
 
 The deployed production architecture is:
 
-`Showtime Web/PWA (and a future native client if required) -> Cloudflare Worker API -> TMDB`
+`showtimetracker.show (showtime-web) -> api.showtimetracker.show (showtime-api) -> TMDB / D1`
 
 The hosted web app and API remove the development-PC dependency for browser
-use. Physical-device, persistence and installability checks remain open.
+use. There is no hosted UAT service, UAT D1 database or remote UAT secret set.
+Physical-device, persistence and installability checks remain open.
 
 ### Production API
 
@@ -375,7 +386,7 @@ use. Physical-device, persistence and installability checks remain open.
 - [x] Enforce the documented mandatory no-go release conditions
 - [x] Adapt the Showtime TMDB proxy for a Cloudflare Worker
 - [x] Store the TMDB credential as a server-side Worker secret
-- [x] Ensure the TMDB credential is never bundled into the mobile app
+- [x] Ensure the TMDB credential is never bundled into the browser client
 - [x] Configure the production web client to use the hosted endpoint
 - [x] Add production-safe server error handling
 - [x] Add proportionate logging/monitoring without recording secrets
@@ -394,6 +405,9 @@ use. Physical-device, persistence and installability checks remain open.
 - [x] Export the Expo web build for production
 - [x] Deploy it with Cloudflare Workers Static Assets
 - [x] Use a Cloudflare-provided hostname initially
+- [x] Serve the canonical website at `https://showtimetracker.show`
+- [x] Serve the API at `https://api.showtimetracker.show`
+- [x] Separate production deployment code from local/UAT tooling
 - [ ] Verify navigation and major flows in iPhone Safari
 - [ ] Verify navigation and major flows in supported desktop browsers
 - [ ] Verify persistent local storage for Watchlist, progress, history and settings

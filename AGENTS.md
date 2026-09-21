@@ -1,95 +1,43 @@
-# Showtime Development Instructions
+# Showtime development instructions
 
-## Project
+## Repository contract
 
-Showtime is a mobile application for tracking movies and TV shows,
-discovering content, and maintaining a personal watchlist.
+Showtime is a web-first movie and TV tracking application. The live product is the Cloudflare-hosted website at `https://showtimetracker.show`; native apps are only a possible later direction.
 
-The project is being built as both a working application and a
-portfolio project, so code quality, documentation, Git history,
-and clear architectural decisions matter.
+Before editing, classify the change as shared app, shared TMDB core, production, or local/UAT:
 
-## Technology
+- Shared UI, routes, state and product behaviour belong in `app/`.
+- Environment-neutral TMDB parsing and handlers belong in `shared/tmdb-api/`.
+- Deployable files, Cloudflare configuration and release tooling belong in `production/`.
+- Local-only servers and QA tooling belong in `local-uat/`.
+- Cross-environment behaviour belongs in `app/` or `shared/` and is never duplicated.
 
-Current stack:
+`production/` must not import `local-uat/`, and `local-uat/` must not import `production/`. The local Node proxy is never deployed. The website and browser workflow are primary; preserve inexpensive native compatibility without making native distribution part of routine releases.
 
-- React Native
-- Expo SDK 57
-- Expo Router
-- TypeScript
-- Git and GitHub
-- Physical iPhone testing through Expo Go
+## Change discipline
 
-The mobile application lives in:
-
-`mobile/`
-
-Before changing anything inside `mobile/`, also read:
-
-`mobile/AGENTS.md`
-
-## Development approach
-
-Work incrementally.
-
-Before making a significant change:
-
-1. Explain what is going to change.
-2. Explain why the change is needed.
-3. Keep the change small and focused.
-4. Avoid adding unnecessary dependencies or abstractions.
-5. Verify the result before moving on.
-
-Do not make large unexplained changes across many files.
-
-When introducing a new React, TypeScript, Expo, API, database,
-or architectural concept, explain it in straightforward language.
+- Work incrementally and keep changes focused.
+- Preserve Worker names, routes, custom domains, bindings, D1 identifiers, secret names and the server-side TMDB credential boundary unless an approved design explicitly changes them.
+- Use root package scripts so the target environment is visible.
+- Avoid copying code between production and local/UAT; extract genuinely shared behaviour instead.
+- Do not commit secrets, local environment files, generated bundles, dependency directories or temporary evidence.
+- Do not treat a dry-run bundle as proof of a remote deployment or remote binding health.
+- Do not push directly to `main` during feature work.
 
 ## Verification
 
-For mobile changes:
+Run the narrowest relevant tests while developing, then the owning package gate:
 
-- Run the relevant lint/type checks.
-- Verify the app still loads through Expo.
-- Test important UI changes on the physical iPhone when appropriate.
-- Do not claim something works without verification.
+- Shared client: `npm run app:check`
+- Shared TMDB and local adapter: `npm run local:test`
+- Boundaries and root tooling: `npm run test:structure`
+- Production API and website: `npm run production:check`
+- Whole repository: `npm run check`
 
-## Git
+For visual changes, also verify the current browser layout and important routes. iOS or Android export/testing is a secondary compatibility check when a change touches native behaviour.
 
-Use small, meaningful commits.
+## Documentation is part of every structural change
 
-Do not commit:
+Any path, command, environment, or deployment change must update `README.md`, the owning environment README, affected current docs, `AGENTS.md`, and `.github/copilot-instructions.md` in the same change.
 
-- secrets
-- API keys
-- environment files containing secrets
-- generated build output
-- unnecessary temporary files
-
-Do not push directly to `main` while feature work is in progress.
-
-## Current navigation
-
-The application currently has four primary areas:
-
-- Home
-- Search
-- Watchlist
-- Profile
-
-## Current development phase
-
-The project is in Phase 6, with the core navigation, Search, Watchlist, Profile,
-movie/TV details, tracking, viewing history and Home dashboard implemented.
-
-Priorities are:
-
-1. Complete Phase 6 physical-device verification.
-2. Polish the UI and simplify TV tracking where needed.
-3. Finish the remaining responsive, accessibility, branding and product
-   refinements.
-4. Then prepare the production API and public Web/PWA described in
-   `docs/DEPLOYMENT-AND-DISTRIBUTION.md`.
-
-Prefer building the simplest useful version first and expanding it
-incrementally.
+Files under `docs/superpowers/` and dated verification records are historical. Do not rewrite them merely because current paths changed; current guidance lives in the files listed above.
