@@ -22,7 +22,9 @@ export async function handleSyncPull(user: UserRow, { db }: Deps): Promise<ApiRe
     try {
       collections[row.collection] = { data: JSON.parse(row.data), updatedAt: row.updated_at, revision: row.revision };
     } catch {
-      // Skip a corrupt stored row rather than fail the whole pull.
+      // An omitted row looks like a deletion to older clients. Keep the
+      // collection untouched and make the storage failure visible instead.
+      return { status: 500, body: { error: "Stored sync data is unavailable." } };
     }
   }
   return { status: 200, body: { collections } };

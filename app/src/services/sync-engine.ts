@@ -120,7 +120,11 @@ export function createSyncEngine(storage: Storage, api: Api, keys: Partial<Recor
             throw new Error(`${collection} is unreadable in the cloud.`);
           }
           if (local === null && !serverEntry && !known) { complete = true; break; }
-          const merged = mergeSyncData(collection, known?.data, local, serverEntry?.data ?? null);
+          // A missing key, cloud row or null cloud snapshot is not an explicit
+          // delete. Collections save empty arrays after deliberate removals.
+          const merged = local === null ? (serverEntry?.data ?? null)
+            : !serverEntry || serverEntry.data === null ? local
+              : mergeSyncData(collection, known?.data, local, serverEntry.data);
           if (!validData(collection, merged)) throw new Error(`${collection} could not be merged safely.`);
           let changed = false;
           if (JSON.stringify(merged) !== JSON.stringify(serverEntry?.data ?? null)) {

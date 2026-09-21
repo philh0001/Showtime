@@ -267,6 +267,18 @@ describe("Sync push and pull", () => {
     expect((await firstPull.json() as Record<string, any>).collections.settings.data).toEqual({ showTrending: false });
   });
 
+  it("reports a corrupt cloud snapshot instead of presenting it as a missing collection", async () => {
+    const token = await verifiedSession("corrupt-cloud@example.com");
+    const auth = { Authorization: `Bearer ${token}` };
+    const session = await (await request("/auth/session", { headers: auth })).json() as Record<string, any>;
+    await env.SHOWTIME_DB.prepare(`
+      INSERT INTO sync_state (user_id, collection, data, updated_at) VALUES (?, 'watchlist', '{broken', ?)
+    `).bind(session.user.id, '2026-01-01T00:00:00.000Z').run();
+    const pull = await request("/sync/pull", { headers: auth });
+    expect(pull.status).toBe(500);
+    expect((await pull.json() as Record<string, any>).error).toBeTypeOf("string");
+  });
+
   it("merges a guest watchlist through the real sync routes and restores it on a second device", async () => {
     const { createSyncEngine } = await import("../../../app/src/services/sync-engine.ts");
     const token = await verifiedSession("devices@example.com");

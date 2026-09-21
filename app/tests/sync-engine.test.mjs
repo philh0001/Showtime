@@ -21,6 +21,7 @@ function remote(initial = null) {
   return {
     get data() { return entry?.data; },
     get revision() { return entry?.revision; },
+    clear() { entry = null; },
     failNextPush() { failPush = true; },
     beforeNextPush() { beforePush = true; },
     async pull() { return { ok: true, status: 200, body: { collections: entry ? { watchlist: structuredClone(entry) } : {} } }; },
@@ -113,6 +114,40 @@ test('a second device restores account data and sends its changes back to the fi
   assert.equal((await second.run('second-token', 'same-account')).ok, true);
   assert.equal((await first.run('first-token', 'same-account')).ok, true);
   assert.deepEqual(JSON.parse(await firstStorage.getItem('watchlist')), [film(1), film(2)]);
+});
+
+test('a missing local collection key restores cloud data instead of deleting it', async () => {
+  const storage = memoryStorage();
+  const api = remote([film(1)]);
+  const sync = createSyncEngine(storage, api, { watchlist: 'watchlist' });
+  assert.equal((await sync.run('token', 'account')).ok, true);
+  await storage.removeItem('watchlist');
+  assert.equal((await api.push('other-device', 'watchlist', [film(1), film(2)], 1)).ok, true);
+  assert.equal((await sync.run('token', 'account')).ok, true);
+  assert.deepEqual(api.data, [film(1), film(2)]);
+  assert.deepEqual(JSON.parse(await storage.getItem('watchlist')), [film(1), film(2)]);
+});
+
+test('a missing cloud row is repaired from the saved local collection', async () => {
+  const storage = memoryStorage();
+  const api = remote([film(1)]);
+  const sync = createSyncEngine(storage, api, { watchlist: 'watchlist' });
+  assert.equal((await sync.run('token', 'account')).ok, true);
+  api.clear();
+  assert.equal((await sync.run('token', 'account')).ok, true);
+  assert.deepEqual(api.data, [film(1)]);
+  assert.deepEqual(JSON.parse(await storage.getItem('watchlist')), [film(1)]);
+});
+
+test('a null cloud snapshot does not erase a saved local collection', async () => {
+  const storage = memoryStorage();
+  const api = remote([film(1)]);
+  const sync = createSyncEngine(storage, api, { watchlist: 'watchlist' });
+  assert.equal((await sync.run('token', 'account')).ok, true);
+  assert.equal((await api.push('other-device', 'watchlist', null, 1)).ok, true);
+  assert.equal((await sync.run('token', 'account')).ok, true);
+  assert.deepEqual(api.data, [film(1)]);
+  assert.deepEqual(JSON.parse(await storage.getItem('watchlist')), [film(1)]);
 });
 
 test('registration merges guest films and TV episodes with an existing account for a clean device', async () => {
