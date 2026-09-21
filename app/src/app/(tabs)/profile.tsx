@@ -23,6 +23,7 @@ import { loadWatchlist } from '@/services/watchlist';
 
 export default function ProfileScreen() {
   const { width: windowWidth } = useWindowDimensions();
+  const desktop = windowWidth >= 900;
   const [data, setData] = useState<HomeData | null>(null);
   const [activity, setActivity] = useState<ActivityLoadResult | null>(null);
   const [loading, setLoading] = useState(true);
@@ -54,8 +55,8 @@ export default function ProfileScreen() {
   const initial = email?.charAt(0).toUpperCase() ?? 'S';
 
   return <SafeAreaView style={styles.container}>
-    <ScrollView contentContainerStyle={[styles.content, { width: Math.max(0, Math.min(windowWidth - Layout.phonePadding * 2, 720)) }]}>
-      <Text accessibilityRole="header" style={styles.title}>Profile</Text>
+    <ScrollView contentContainerStyle={[styles.content, desktop && styles.desktopContent]}>
+      <Text accessibilityRole="header" style={[styles.title, desktop && styles.desktopTitle]}>Profile</Text>
       <View style={styles.identity}>
         <View style={styles.avatar} accessible accessibilityLabel={`${accountName} avatar`}><Text style={styles.avatarText}>{initial}</Text></View>
         <View style={styles.identityText}>
@@ -84,6 +85,8 @@ export default function ProfileScreen() {
         <Pressable accessibilityRole="button" onPress={() => void refresh()} style={styles.retry}><Text style={styles.inlineLink}>Try again</Text></Pressable>
       </View>}
 
+      <View style={[styles.sections, desktop && styles.desktopSections]}>
+      <View style={[styles.mainColumn, desktop && styles.desktopMainColumn]}>
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text accessibilityRole="header" style={styles.heading}>Recent Activity</Text>
@@ -106,7 +109,9 @@ export default function ProfileScreen() {
           <Link href="/watchlist" style={styles.cardLink}>Watchlist ›</Link>
         </View>
       </View>
+      </View>
 
+      <View style={[styles.sideColumn, desktop && styles.desktopSideColumn]}>
       <View style={styles.section}>
         <Text accessibilityRole="header" style={styles.heading}>Account</Text>
         <View style={styles.infoCard}>
@@ -129,7 +134,7 @@ export default function ProfileScreen() {
       <View style={styles.section}>
         <Text accessibilityRole="header" style={styles.heading}>About Showtime</Text>
         <View style={styles.infoCard}>
-          <Text style={styles.muted}>Version {Constants.expoConfig?.version ?? '1.1.4'}</Text>
+          <Text style={styles.muted}>Version {Constants.expoConfig?.version ?? '1.1.5'}</Text>
           <Text style={styles.muted}>{status === 'signedIn'
             ? 'Viewing data is saved on this device. A verified account can also store it for use elsewhere.'
             : 'Viewing data is saved on this device.'}</Text>
@@ -138,6 +143,8 @@ export default function ProfileScreen() {
           </Link>
           <Text style={styles.credit}>This product uses the TMDB API but is not endorsed or certified by TMDB.</Text>
         </View>
+      </View>
+      </View>
       </View>
     </ScrollView>
   </SafeAreaView>;
@@ -172,8 +179,11 @@ function ActivityRow({ event }: { event: ViewingActivity }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: BrandColors.background },
-  content: { alignSelf: 'center', paddingTop: Space.lg, paddingBottom: Space.xxl, gap: Space.lg },
+  content: { alignSelf: 'center', width: '100%', maxWidth: Layout.maxContentWidth,
+    paddingHorizontal: Layout.phonePadding, paddingTop: Space.lg, paddingBottom: Space.xxl, gap: Space.lg },
+  desktopContent: { paddingHorizontal: Layout.pagePadding, paddingTop: Space.xl, gap: Space.xl },
   title: { color: BrandColors.text, fontSize: 28, fontWeight: '800' },
+  desktopTitle: { fontSize: 32 },
   identity: { flexDirection: 'row', alignItems: 'center', gap: Space.md },
   avatar: { width: 52, height: 52, borderRadius: 26, backgroundColor: BrandColors.gold, alignItems: 'center', justifyContent: 'center' },
   avatarText: { color: BrandColors.onGold, fontSize: 22, fontWeight: '800' },
@@ -189,6 +199,12 @@ const styles = StyleSheet.create({
   statLabel: { color: BrandColors.textMuted, fontSize: 12, textAlign: 'center', lineHeight: 17 },
   statsNote: { color: BrandColors.textMuted, fontSize: 12, marginTop: -Space.md },
   summary: { color: BrandColors.textMuted, fontSize: 12, marginTop: -Space.sm },
+  sections: { gap: Space.lg },
+  desktopSections: { flexDirection: 'row', alignItems: 'flex-start', gap: Space.xl },
+  mainColumn: { gap: Space.lg },
+  sideColumn: { gap: Space.lg },
+  desktopMainColumn: { flex: 1.6, minWidth: 0 },
+  desktopSideColumn: { flex: 1, minWidth: 0 },
   section: { gap: Space.sm },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   heading: { color: BrandColors.text, fontSize: 20, fontWeight: '800' },

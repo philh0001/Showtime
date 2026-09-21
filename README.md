@@ -79,6 +79,8 @@ The v1.1.3 website release refreshes missing Home schedules for saved TV shows a
 
 The v1.1.4 website release refreshes Profile and Account with a clearer activity summary, simpler account copy, and the existing iPhone installation help. See the [v1.1.4 release record](docs/verification/2026-09-21-profile-account-refresh.md).
 
+The v1.1.5 website release gives Watchlist and Profile a consistent desktop width and arranges Profile content in two columns on wider screens. See the [v1.1.5 release record](docs/verification/2026-09-21-profile-watchlist-desktop.md).
+
 ## Local / UAT
 
 Local development and acceptance testing are owned by [`local-uat/`](local-uat/README.md). The Node proxy is permissive local tooling and is never deployed. There is currently no hosted UAT service, UAT domain, UAT D1 database, or remote UAT secret set.

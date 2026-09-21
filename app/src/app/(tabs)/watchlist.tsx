@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import { ActivityIndicator, FlatList, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Layout } from '@/constants/design';
 import type { MovieProgressLoadResult } from '@/services/movie-progress-rules';
 import { loadMovieProgress } from '@/services/movie-progress';
 import type { ProgressLoadResult } from '@/services/tv-progress-rules';
@@ -238,7 +239,7 @@ function itemKey(item: WatchlistItem) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0B0B0F' },
-  content: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 32 },
+  content: { alignSelf: 'center', maxWidth: Layout.maxContentWidth, width: '100%', paddingHorizontal: 24, paddingTop: 24, paddingBottom: 32 },
   emptyContent: { flexGrow: 1 },
   header: { marginBottom: 24 },
   title: { color: '#FFFFFF', fontSize: 32, fontWeight: '800', marginBottom: 8 },
