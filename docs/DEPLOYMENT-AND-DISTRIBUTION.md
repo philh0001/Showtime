@@ -76,7 +76,7 @@ D1 migrations are separate data operations. Review and back up as appropriate be
 
 The public Web/PWA release is the primary distribution channel. Guest data uses browser-local storage and can be lost if site data is cleared. Optional accounts use the Cloudflare Worker and D1. The revised merge implementation and D1 revision migration were deployed together on 21 September 2026. Automated checks passed; a real account and second-device merge still needs a hosted acceptance check before the live backup and multi-device promise is considered fully verified. See [Library sync design](SYNC-DESIGN.md).
 
-Installation to an iPhone Home Screen is a browser/PWA capability, not a native App Store release. A future native client or widget should proceed only if web feedback demonstrates enough additional value.
+Installation to an iPhone Home Screen is a browser/PWA capability, not a native App Store release. Safari and the Home Screen app have separate local storage. A guest should create and verify an account in Safari before installation, then sign in from the Home Screen icon to retrieve the synced library. The iPhone Home tip and Profile help explain this sequence. A real iPhone installation and cross-context account restore remain acceptance checks. A future native client or widget should proceed only if web feedback demonstrates enough additional value.
 
 ## Cost and operations
 

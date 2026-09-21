@@ -5,6 +5,7 @@ import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ProfileSettings } from '@/components/profile-settings';
+import { IPhoneInstallHelp } from '@/components/iphone-install-guide';
 import { useAuth } from '@/hooks/use-auth';
 import { subscribeLibraryChanges } from '@/services/library-changes';
 
@@ -76,9 +77,10 @@ export default function ProfileScreen() {
           )}
         </View>
         <ProfileSettings />
+        <IPhoneInstallHelp />
         <View style={styles.about}>
           <Text accessibilityRole="header" style={styles.heading}>About Showtime</Text>
-          <Text style={styles.subtitle}>Version {Constants.expoConfig?.version ?? '1.1.0'}</Text>
+          <Text style={styles.subtitle}>Version {Constants.expoConfig?.version ?? '1.1.1'}</Text>
           <Text style={styles.subtitle}>
             {status === 'signedIn' ? 'Viewing data is saved on this device and, once verified, synced to your account.'
               : 'Viewing data is saved on this device.'}

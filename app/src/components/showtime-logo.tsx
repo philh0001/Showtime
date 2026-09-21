@@ -17,6 +17,6 @@ export function ShowtimeLogo({ compact = false, decorative = false }: {
 }
 
 const styles = StyleSheet.create({
-  logo: { width: 420, height: 96, marginVertical: 4, maxWidth: '100%' },
+  logo: { width: '100%', maxWidth: 420, height: 96, marginVertical: 4 },
   mark: { width: 44, height: 44 },
 });

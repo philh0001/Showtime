@@ -54,7 +54,9 @@ For changes affecting export or production endpoint selection, also run `npm run
 
 Guest mode stores Watchlist, recent searches, Recently Viewed, settings, movie status, TV progress, schedules and viewing activity locally. Optional email/password accounts use the production API and D1-backed sync.
 
-The local sync implementation merges guest and account collections on first login, then uses an account-scoped last-synced snapshot and conditional D1 revisions for later merges. Successful local writes schedule sync, and pulled changes refresh visible library screens. Failed sync leaves local data available. Signing out keeps the local library. These changes are prepared locally and require the D1 migration plus a later coordinated release before they affect the live site. See [Library sync design](../docs/SYNC-DESIGN.md) for conflict rules and limitations.
+The released sync implementation merges guest and account collections on first login, then uses an account-scoped last-synced snapshot and conditional D1 revisions for later merges. Successful local writes schedule sync, and pulled changes refresh visible library screens. Failed sync leaves local data available. Signing out keeps the local library. See [Library sync design](../docs/SYNC-DESIGN.md) for conflict rules and limitations.
+
+The website offers an optional iPhone Home Screen experience. Safari and the Home Screen app have separate local storage. To transfer a guest library, create and verify an account in Safari, wait for sync, then sign in from the Home Screen icon. The profile page keeps the installation steps available after the Home tip is dismissed.
 
 ## Feature rules worth preserving
 

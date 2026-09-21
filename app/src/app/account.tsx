@@ -1,5 +1,5 @@
-import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -10,8 +10,9 @@ type Mode = 'sign-in' | 'sign-up' | 'forgot' | 'reset';
 
 export default function AccountScreen() {
   const router = useRouter();
+  const { mode: requestedMode } = useLocalSearchParams<{ mode?: string }>();
   const { status, user, signIn, signUp, signOut, refresh, syncing, lastSyncError, syncNow } = useAuth();
-  const [mode, setMode] = useState<Mode>('sign-in');
+  const [mode, setMode] = useState<Mode>(requestedMode === 'sign-up' ? 'sign-up' : 'sign-in');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [resetToken, setResetToken] = useState('');
@@ -21,13 +22,21 @@ export default function AccountScreen() {
   const [notice, setNotice] = useState<string | null>(null);
   const [devToken, setDevToken] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (requestedMode === 'sign-up' || requestedMode === 'sign-in') {
+      // The same Account route can be opened from either desktop header action.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setMode(requestedMode);
+    }
+  }, [requestedMode]);
+
   async function submitSignIn() {
     setBusy(true); setError(null); setNotice(null);
     const result = await signIn(email.trim(), password);
     setBusy(false);
     if (!result.ok) { setError(result.error); return; }
     setPassword('');
-    router.back();
+    router.replace('/');
   }
 
   async function submitSignUp() {
@@ -36,7 +45,7 @@ export default function AccountScreen() {
     setBusy(false);
     if (!result.ok) { setError(result.error); return; }
     setPassword('');
-    setNotice('Account created. Check your email and select the verification link to enable sync.');
+    router.replace('/?welcome=account-created');
   }
 
   async function submitForgot() {

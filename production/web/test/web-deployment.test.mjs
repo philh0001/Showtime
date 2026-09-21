@@ -65,3 +65,26 @@ test('release gate verifies the generated browser artifact', async () => {
   assert.equal(webPackage.scripts['verify:bundle'], 'node scripts/verify-bundle.mjs');
   assert.match(webPackage.scripts.check, /npm run build && npm run verify:bundle &&/);
 });
+
+test('website export identifies Showtime and includes iPhone Home Screen metadata', async () => {
+  const html = await readFile(path.join(webRoot, 'dist', 'index.html'), 'utf8');
+  const manifest = await readJson(path.join(webRoot, 'dist', 'manifest.json'));
+
+  assert.match(html, /<title>Showtime<\/title>/);
+  assert.match(html, /rel="manifest" href="\/manifest\.json"/);
+  assert.match(html, /rel="apple-touch-icon" href="\/apple-touch-icon\.png"/);
+  assert.equal(manifest.name, 'Showtime');
+  assert.equal(manifest.display, 'standalone');
+  assert.equal(manifest.start_url, '/');
+  assert.deepEqual(manifest.icons.map(({ src, sizes }) => [src, sizes]), [
+    ['/icon-192.png', '192x192'],
+    ['/icon-512.png', '512x512'],
+  ]);
+
+  for (const [name, size] of [['apple-touch-icon.png', 180], ['icon-192.png', 192], ['icon-512.png', 512]]) {
+    const png = await readFile(path.join(webRoot, 'dist', name));
+    assert.equal(png.toString('ascii', 1, 4), 'PNG');
+    assert.equal(png.readUInt32BE(16), size);
+    assert.equal(png.readUInt32BE(20), size);
+  }
+});

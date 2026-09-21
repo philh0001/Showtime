@@ -24,6 +24,8 @@ Local edits save immediately and request a debounced sync when a verified accoun
 
 Signing out revokes the session and retains the current local library, as specified for guest mode. Signing into a different account on the same browser will merge that retained local library into the new account. Users should clear browser site data before sharing a device if they do not want that transfer; a dedicated account-switch/clear-local-data flow is outside this change.
 
+On iPhone, Safari and the installed Home Screen app have separate local storage. Installing the icon does not copy a Safari guest library or its session. A guest should create and verify an account in Safari, allow sync to complete, then sign in again from the Home Screen app to retrieve the synced library. This requires a real iPhone acceptance check; browser emulation does not prove Safari-to-Home-Screen storage or email delivery.
+
 ## Release order and proof
 
 The production release applied `0002_sync_revision.sql` to the verified D1 database, with a Time Travel recovery bookmark captured beforehand and a Wrangler backup captured during migration. The API Worker and web Worker were then deployed. The full repository check and production route smoke suite passed, and the live website, account route and legacy redirect responded as expected. Automated integration tests cover account isolation, guest-to-account merge, a second device, offline edits, explicit unwatch and errors. A real browser/account check across two devices remains outstanding because there is no hosted UAT environment or controlled test account in this repository. A code rollback cannot remove the added D1 column or undo data writes. See the [release record](verification/2026-09-21-account-sync-production.md).

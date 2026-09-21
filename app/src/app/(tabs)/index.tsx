@@ -1,9 +1,11 @@
-import { Link, useFocusEffect } from 'expo-router';
+import { Link, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useRef, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { SearchPanel } from '@/components/search-panel';
+import { HomeAccountActions } from '@/components/home-account-actions';
+import { IPhoneInstallPrompt } from '@/components/iphone-install-guide';
 import { ShowtimeLogo } from '@/components/showtime-logo';
 import { BrandColors, ControlSize, Layout, Radii, Space } from '@/constants/design';
 import { HomePosterCard, type HomePosterItem } from '@/components/home-poster-card';
@@ -21,6 +23,8 @@ import { subscribeLibraryChanges } from '@/services/library-changes';
 import { getContinueWatching, type ViewingProgress } from '@/services/viewing-summary';
 
 export default function HomeScreen() {
+  const router = useRouter();
+  const { welcome } = useLocalSearchParams<{ welcome?: string }>();
   const search = useSearchController();
   const [data, setData] = useState<HomeData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -58,7 +62,8 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
-          <ShowtimeLogo decorative />
+          <View style={styles.brand}><ShowtimeLogo decorative /></View>
+          <HomeAccountActions />
         </View>
 
         <SearchPanel
@@ -73,6 +78,20 @@ export default function HomeScreen() {
           onClear={search.clear}
           onClearHistory={search.clearHistory}
         />
+
+        {welcome === 'account-created' && (
+          <View style={styles.welcomeCard}>
+            <View style={styles.welcomeCopy}>
+              <Text accessibilityRole="alert" style={styles.welcomeTitle}>Account created</Text>
+              <Text style={styles.welcomeText}>Your saved films and shows are still here. Check your email to verify your account and sync them across devices.</Text>
+            </View>
+            <Pressable accessibilityRole="button" accessibilityLabel="Dismiss account created message" onPress={() => router.replace('/')} style={styles.welcomeDismiss}>
+              <Text style={styles.welcomeDismissText}>Got it</Text>
+            </Pressable>
+          </View>
+        )}
+
+        <IPhoneInstallPrompt />
 
         {loading && <View style={styles.message}>
           <ActivityIndicator color={BrandColors.gold} accessibilityLabel="Loading Home" />
@@ -145,7 +164,8 @@ function watchedMovieToPosterItem(movie: WatchedMovie): HomePosterItem {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: BrandColors.background },
   content: { paddingHorizontal: Layout.phonePadding, paddingTop: Space.lg, paddingBottom: Space.xxl, gap: Space.lg },
-  header: { marginBottom: Space.xs },
+  header: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', gap: Space.lg, marginBottom: Space.xs },
+  brand: { flex: 1, maxWidth: 420, minWidth: 0 },
   logo: { color: BrandColors.text, fontSize: 30, fontWeight: '800', letterSpacing: 0.5 },
   message: { minHeight: 160, gap: Space.md, alignItems: 'center', justifyContent: 'center' },
   secondary: { color: BrandColors.textMuted, fontSize: 15, lineHeight: 22 },
@@ -173,4 +193,19 @@ const styles = StyleSheet.create({
   },
   retryText: { color: BrandColors.onGold, fontWeight: '700' },
   pressed: { opacity: 0.85 },
+  welcomeCard: {
+    backgroundColor: BrandColors.surface,
+    borderColor: BrandColors.success,
+    borderRadius: Radii.md,
+    borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Space.md,
+    padding: Space.lg,
+  },
+  welcomeCopy: { flex: 1, gap: Space.xs },
+  welcomeTitle: { color: BrandColors.text, fontSize: 17, fontWeight: '800' },
+  welcomeText: { color: BrandColors.textMuted, fontSize: 14, lineHeight: 20 },
+  welcomeDismiss: { minHeight: ControlSize.minimum, justifyContent: 'center', paddingHorizontal: Space.sm },
+  welcomeDismissText: { color: BrandColors.success, fontSize: 14, fontWeight: '800' },
 });
