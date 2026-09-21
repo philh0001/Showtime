@@ -11,6 +11,9 @@ test('returns exact immutable routes, canonical cache keys, and reserved work co
       kind: 'search', query: 'Batman', cacheKey: '/search?query=Batman', cost: 1,
     }],
     ['/discovery', { kind: 'discovery', cacheKey: '/discovery', cost: 2 }],
+    ['/schedule/tv/123', {
+      kind: 'tv-schedule', id: 123, cacheKey: '/schedule/tv/123', cost: 13,
+    }],
     ['/details/movie/272', {
       kind: 'movie-details', id: 272, cacheKey: '/details/movie/272', cost: 4,
     }],
@@ -53,6 +56,7 @@ test('requires exactly one trimmed search query of 1 to 100 characters', () => {
 test('rejects query parameters on every non-search route', () => {
   for (const path of [
     '/discovery?extra=b',
+    '/schedule/tv/123?extra=b',
     '/details/movie/272?extra=b',
     '/details/tv/1396?extra=b',
     '/details/tv/1396/season/1?extra=b',
@@ -76,6 +80,10 @@ test('rejects noncanonical or unsafe detail numbers as recognized malformed rout
     '/details/tv/1/season/0',
     '/details/tv/1/season/01',
     '/details/tv/1/season/9007199254740992',
+    '/schedule/tv/0',
+    '/schedule/tv/01',
+    '/schedule/tv/+1',
+    '/schedule/tv/9007199254740992',
   ]) {
     const result = parseGet(path);
     assert.equal(result.ok, false, path);
@@ -92,6 +100,7 @@ test('returns 404 for paths outside the closed route set', () => {
     '/details/company/1',
     '/details/movie/1/extra',
     '/details/tv/1/season/1/extra',
+    '/schedule/tv/1/extra',
     '/details/%2e%2e/discovery',
   ]) {
     assert.deepEqual(parseGet(path), {
@@ -141,6 +150,9 @@ test('parses OPTIONS only as a zero-cost adapter route', () => {
   );
   assert.equal(parseApiRequest({ method: 'OPTIONS', url: 'https://api.test/unknown' }).status, 404);
   assert.equal(parseApiRequest({ method: 'OPTIONS', url: 'https://api.test/details/movie/0' }).status, 400);
+  assert.deepEqual(parseApiRequest({ method: 'OPTIONS', url: 'https://api.test/schedule/tv/123' }), {
+    ok: true, route: { kind: 'options', cacheKey: '/schedule/tv/123', cost: 0 },
+  });
 });
 
 test('enforces the full URL limit in UTF-8 bytes before route handling', () => {

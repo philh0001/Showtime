@@ -80,6 +80,14 @@ function detailsRoute(pathname) {
   };
 }
 
+function scheduleRoute(pathname) {
+  const match = /^\/schedule\/tv\/([^/]*)$/.exec(pathname);
+  if (!match) return null;
+  const id = positiveSafeInteger(match[1]);
+  if (id === null) return failure(400, 'Choose a valid TV show.');
+  return { kind: 'tv-schedule', id, cacheKey: `/schedule/tv/${id}`, cost: 13 };
+}
+
 export function parseApiRequest({ method, url }) {
   if (new TextEncoder().encode(url).byteLength > MAX_URL_BYTES) {
     return failure(414, 'Request URL is too long.');
@@ -105,7 +113,7 @@ export function parseApiRequest({ method, url }) {
       ? { kind: 'discovery', cacheKey: '/discovery', cost: 2 }
       : failure(400, 'Query parameters are not allowed.');
   } else {
-    route = detailsRoute(incoming.pathname);
+    route = scheduleRoute(incoming.pathname) ?? detailsRoute(incoming.pathname);
     if (route && route.ok !== false && !noQueryParameters(incoming)) {
       route = failure(400, 'Query parameters are not allowed.');
     }
