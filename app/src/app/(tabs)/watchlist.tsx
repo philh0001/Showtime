@@ -1,10 +1,10 @@
 import { Image } from 'expo-image';
 import { Link, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, FlatList, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Layout } from '@/constants/design';
+import { BrandColors, Layout, Radii, Space } from '@/constants/design';
 import type { MovieProgressLoadResult } from '@/services/movie-progress-rules';
 import { loadMovieProgress } from '@/services/movie-progress';
 import type { ProgressLoadResult } from '@/services/tv-progress-rules';
@@ -22,6 +22,9 @@ import { loadWatchlist, removeFromWatchlist } from '@/services/watchlist';
 import { subscribeLibraryChanges } from '@/services/library-changes';
 
 export default function WatchlistScreen() {
+  const { width: windowWidth } = useWindowDimensions();
+  const desktop = windowWidth >= 900;
+  const cardWidth = (Math.min(windowWidth, Layout.maxContentWidth) - Layout.pagePadding * 2 - Space.lg) / 2;
   const [items, setItems] = useState<WatchlistItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -75,6 +78,9 @@ export default function WatchlistScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <FlatList
+        key={desktop ? 'desktop' : 'mobile'}
+        numColumns={desktop ? 2 : 1}
+        columnWrapperStyle={desktop ? styles.desktopColumns : undefined}
         data={visibleItems}
         keyExtractor={itemKey}
         contentContainerStyle={[styles.content, !loading && visibleItems.length === 0 && styles.emptyContent]}
@@ -115,9 +121,11 @@ export default function WatchlistScreen() {
             status={getWatchlistStatus(item, tvProgress, movieProgress)}
             removing={removing === itemKey(item)}
             onRemove={() => void remove(item)}
+            desktop={desktop}
+            cardWidth={cardWidth}
           />
         )}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
+        ItemSeparatorComponent={() => <View style={desktop ? styles.desktopSeparator : styles.separator} />}
       />
     </SafeAreaView>
   );
@@ -166,15 +174,19 @@ function WatchlistRow({
   status,
   removing,
   onRemove,
+  desktop,
+  cardWidth,
 }: {
   item: WatchlistItem;
   progressLabel: string | null;
   status: WatchlistStatus;
   removing: boolean;
   onRemove: () => void;
+  desktop: boolean;
+  cardWidth: number;
 }) {
   return (
-    <View style={styles.row}>
+    <View style={[styles.row, desktop && styles.desktopRow, desktop && { width: cardWidth }]}>
       <Link
         href={{
           pathname: item.mediaType === 'Movie' ? '/movie/[id]' : '/tv/[id]',
@@ -255,6 +267,10 @@ const styles = StyleSheet.create({
   retry: { backgroundColor: '#FFFFFF', borderRadius: 12, paddingHorizontal: 20, paddingVertical: 12 },
   retryText: { color: '#0B0B0F', fontSize: 15, fontWeight: '700' },
   row: { gap: 12 },
+  desktopRow: { backgroundColor: BrandColors.surfaceRaised, borderColor: BrandColors.border, borderRadius: Radii.md,
+    borderWidth: 1, padding: Space.lg },
+  desktopColumns: { gap: Space.lg },
+  desktopSeparator: { height: Space.lg },
   detailsLink: { flexDirection: 'row', gap: 16, alignItems: 'center' },
   poster: { width: 72, height: 108, borderRadius: 8, overflow: 'hidden', backgroundColor: '#212225', alignItems: 'center', justifyContent: 'center' },
   posterContent: { position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center' },
