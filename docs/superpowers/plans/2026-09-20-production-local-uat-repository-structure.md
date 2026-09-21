@@ -552,7 +552,7 @@ npm --prefix production/web ci
 Replace the path setup in `production/web/scripts/export-web.mjs` with:
 
 ```js
-const productionApiUrl = 'https://showtime-api.showtime-workers.workers.dev';
+const productionApiUrl = 'https://api.showtimetracker.show';
 const webRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const repositoryRoot = path.resolve(webRoot, '..', '..');
 const appRoot = path.join(repositoryRoot, 'app');
@@ -697,7 +697,7 @@ Write `production/README.md` with:
 ```powershell
 npm --prefix production/web test
 npm --prefix production/web run build
-rg -l --fixed-strings "https://showtime-api.showtime-workers.workers.dev" production/web/dist
+rg -l --fixed-strings "https://api.showtimetracker.show" production/web/dist
 rg -n "TMDB_READ_ACCESS_TOKEN|TMDB_API_KEY|Bearer eyJ|api_key=|localhost:3001" production/web/dist
 npm --prefix production/web run security:scan
 npm --prefix production/web run bundle
@@ -1095,7 +1095,7 @@ Expected: shared handler tests, generated types, TypeScript, Vitest, dry-run pac
 
 ```powershell
 npm --prefix production/web run check
-rg -l --fixed-strings "https://showtime-api.showtime-workers.workers.dev" production/web/dist
+rg -l --fixed-strings "https://api.showtimetracker.show" production/web/dist
 rg -n "TMDB_READ_ACCESS_TOKEN|TMDB_API_KEY|Bearer eyJ|api_key=|localhost:3001" production/web/dist
 ```
 
