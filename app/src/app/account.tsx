@@ -1,8 +1,9 @@
 import { Link, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BrandColors, ControlSize, Layout, Radii, Space } from '@/constants/design';
 import { useAuth } from '@/hooks/use-auth';
 import type { AccountUser } from '@/services/account-api';
 import { requestPasswordReset, resetPassword } from '@/services/auth';
@@ -18,6 +19,8 @@ import { loadWatchlist } from '@/services/watchlist';
 type Mode = 'sign-in' | 'sign-up' | 'forgot' | 'reset';
 
 export default function AccountScreen() {
+  const { width: windowWidth } = useWindowDimensions();
+  const contentWidth = Math.max(0, Math.min(windowWidth - Layout.phonePadding * 2, 560));
   const router = useRouter();
   const { mode: requestedMode } = useLocalSearchParams<{ mode?: string }>();
   const { status, user, signIn, signUp, signOut, refresh, syncing, lastSyncError, syncNow } = useAuth();
@@ -62,7 +65,7 @@ export default function AccountScreen() {
     const result = await requestPasswordReset(email.trim());
     setBusy(false);
     if (!result.ok) { setError(result.error ?? 'Could not request a reset.'); return; }
-    setNotice('If that email has an account, a reset link was requested.');
+    setNotice('If that email has an account, check your inbox for a reset link.');
     if (result.devResetToken) setDevToken(result.devResetToken);
     setMode('reset');
   }
@@ -78,26 +81,30 @@ export default function AccountScreen() {
   }
 
   if (status === 'signedIn' && user) {
-    return <SignedInAccount user={user} syncing={syncing} lastSyncError={lastSyncError}
+    return <SignedInAccount user={user} contentWidth={contentWidth} syncing={syncing} lastSyncError={lastSyncError}
       refresh={refresh} syncNow={syncNow} signOut={signOut} />;
   }
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>
+      <ScrollView contentContainerStyle={[styles.content, { width: contentWidth }]}>
+        <Text accessibilityRole="header" style={styles.title}>
           {mode === 'sign-in' ? 'Sign in' : mode === 'sign-up' ? 'Create account' : mode === 'forgot' ? 'Reset password' : 'New password'}
         </Text>
-        <Text style={styles.subtitle}>
-          An account lets your Watchlist, progress and viewing history follow you across devices.
-        </Text>
+        {mode !== 'sign-in' && <Text style={styles.subtitle}>
+          {mode === 'sign-up' ? 'Save your Watchlist and viewing progress to your account. Verify your email to use them on another device.'
+            : mode === 'forgot' ? 'Enter your email and we’ll send a link to reset your password.'
+              : 'Enter the code from your reset link, then choose a new password.'}
+        </Text>}
+
+        <View style={styles.form}>
 
         {(mode === 'sign-in' || mode === 'sign-up' || mode === 'forgot') && (
           <TextInput
             value={email}
             onChangeText={setEmail}
             placeholder="Email"
-            placeholderTextColor="#7A7A82"
+            placeholderTextColor={BrandColors.textMuted}
             autoCapitalize="none"
             autoCorrect={false}
             keyboardType="email-address"
@@ -110,7 +117,7 @@ export default function AccountScreen() {
             value={password}
             onChangeText={setPassword}
             placeholder="Password"
-            placeholderTextColor="#7A7A82"
+            placeholderTextColor={BrandColors.textMuted}
             secureTextEntry
             autoCapitalize="none"
             accessibilityLabel="Password"
@@ -123,7 +130,7 @@ export default function AccountScreen() {
               value={resetToken}
               onChangeText={setResetToken}
               placeholder="Reset token"
-              placeholderTextColor="#7A7A82"
+              placeholderTextColor={BrandColors.textMuted}
               autoCapitalize="none"
               autoCorrect={false}
               style={styles.input}
@@ -132,7 +139,7 @@ export default function AccountScreen() {
               value={newPassword}
               onChangeText={setNewPassword}
               placeholder="New password"
-              placeholderTextColor="#7A7A82"
+              placeholderTextColor={BrandColors.textMuted}
               secureTextEntry
               autoCapitalize="none"
               style={styles.input}
@@ -142,25 +149,30 @@ export default function AccountScreen() {
 
         {error && <Text accessibilityRole="alert" style={styles.error}>{error}</Text>}
         {notice && <Text style={styles.notice}>{notice}</Text>}
-        {devToken && <Text style={styles.devToken}>Dev reset token (temporary, until real email delivery is wired up): {devToken}</Text>}
+        {devToken && <Text style={styles.devToken}>Reset code for this local test: {devToken}</Text>}
 
         {mode === 'sign-in' && <PrimaryButton label={busy ? 'Signing in…' : 'Sign in'} onPress={() => void submitSignIn()} disabled={busy || !email.trim() || !password} />}
         {mode === 'sign-up' && <PrimaryButton label={busy ? 'Creating account…' : 'Create account'} onPress={() => void submitSignUp()} disabled={busy || !email.trim() || !password} />}
         {mode === 'forgot' && <PrimaryButton label={busy ? 'Requesting…' : 'Send reset link'} onPress={() => void submitForgot()} disabled={busy || !email.trim()} />}
         {mode === 'reset' && <PrimaryButton label={busy ? 'Resetting…' : 'Reset password'} onPress={() => void submitReset()} disabled={busy || !resetToken.trim() || !newPassword} />}
+        </View>
 
         <View style={styles.links}>
-          {mode !== 'sign-in' && <Pressable onPress={() => { setMode('sign-in'); setError(null); setNotice(null); }}><Text style={styles.link}>Sign in</Text></Pressable>}
-          {mode !== 'sign-up' && <Pressable onPress={() => { setMode('sign-up'); setError(null); setNotice(null); }}><Text style={styles.link}>Create an account</Text></Pressable>}
-          {mode !== 'forgot' && mode !== 'reset' && <Pressable onPress={() => { setMode('forgot'); setError(null); setNotice(null); }}><Text style={styles.link}>Forgot password?</Text></Pressable>}
+          {mode === 'sign-in' && <>
+            <Pressable accessibilityRole="button" onPress={() => { setMode('sign-up'); setError(null); setNotice(null); }} style={styles.linkButton}><Text style={styles.link}>Create an account</Text></Pressable>
+            <Pressable accessibilityRole="button" onPress={() => { setMode('forgot'); setError(null); setNotice(null); }} style={styles.linkButton}><Text style={styles.link}>Forgot password?</Text></Pressable>
+          </>}
+          {mode !== 'sign-in' && <Pressable accessibilityRole="button" onPress={() => { setMode('sign-in'); setError(null); setNotice(null); }} style={styles.linkButton}><Text style={styles.link}>Back to sign in</Text></Pressable>}
+          {mode === 'reset' && <Pressable accessibilityRole="button" onPress={() => { setMode('forgot'); setError(null); setNotice(null); }} style={styles.linkButton}><Text style={styles.link}>Request another link</Text></Pressable>}
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function SignedInAccount({ user, syncing, lastSyncError, refresh, syncNow, signOut }: {
+function SignedInAccount({ user, contentWidth, syncing, lastSyncError, refresh, syncNow, signOut }: {
   user: AccountUser;
+  contentWidth: number;
   syncing: boolean;
   lastSyncError: string | null;
   refresh: () => Promise<void>;
@@ -191,8 +203,8 @@ function SignedInAccount({ user, syncing, lastSyncError, refresh, syncNow, signO
   }
 
   return <SafeAreaView style={styles.container}>
-    <ScrollView contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Account details</Text>
+    <ScrollView contentContainerStyle={[styles.content, { width: contentWidth }]}>
+      <Text accessibilityRole="header" style={styles.title}>Your account</Text>
       <View style={styles.banner}>
         <Text style={styles.sectionHeading}>Signed in as</Text>
         <Text style={styles.email}>{user.email}</Text>
@@ -201,7 +213,7 @@ function SignedInAccount({ user, syncing, lastSyncError, refresh, syncNow, signO
       </View>
 
       {!user.emailVerified && <View style={styles.banner}>
-        <Text style={styles.bannerText}>Verify your email to sync across devices. Select the link in the email we sent, then refresh your account status.</Text>
+        <Text style={styles.bannerText}>Open the verification link in your email, then refresh your account status here.</Text>
         <PrimaryButton label={refreshing ? 'Refreshing…' : 'Refresh account status'} onPress={() => void refreshStatus()} disabled={refreshing} />
       </View>}
       {user.emailVerified && <View style={styles.section}>
@@ -212,8 +224,8 @@ function SignedInAccount({ user, syncing, lastSyncError, refresh, syncNow, signO
       <View style={styles.banner}>
         <Text accessibilityRole="header" style={styles.sectionHeading}>Library on this device</Text>
         <Text style={styles.subtitle}>{user.emailVerified
-          ? 'These counts are from this device. Your verified account can sync this library.'
-          : 'These counts are from this device. Verify your email to sync this library.'}</Text>
+          ? 'These counts are from this device. Your account can also store this library.'
+          : 'These counts are from this device. Verify your email to save this library to your account.'}</Text>
         <AccountRow label="Watchlist titles" value={displayCount(stats?.watchlist)} />
         <AccountRow label="Movies watched" value={displayCount(stats?.moviesWatched)} />
         <AccountRow label="Shows with progress" value={displayCount(stats?.showsTracked)} />
@@ -243,43 +255,49 @@ function AccountRow({ label, value }: { label: string; value: string }) {
 function PrimaryButton({ label, onPress, disabled }: { label: string; onPress: () => void; disabled?: boolean }) {
   return (
     <Pressable accessibilityRole="button" onPress={onPress} disabled={disabled} style={[styles.primaryButton, disabled && styles.primaryDisabled]}>
-      {disabled && label.endsWith('…') ? <ActivityIndicator color="#0B0B0F" /> : <Text style={styles.primaryText}>{label}</Text>}
+      {disabled && label.endsWith('…') ? <ActivityIndicator color={BrandColors.onGold} /> : <Text style={styles.primaryText}>{label}</Text>}
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0B0B0F' },
-  content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 32, gap: 14 },
-  title: { color: '#FFFFFF', fontSize: 26, fontWeight: '800' },
-  subtitle: { color: '#A7A7B0', fontSize: 15, lineHeight: 22 },
+  container: { flex: 1, backgroundColor: BrandColors.background },
+  content: { alignSelf: 'center', paddingTop: Space.lg, paddingBottom: Space.xxl, gap: Space.lg },
+  title: { color: BrandColors.text, fontSize: 28, fontWeight: '800' },
+  subtitle: { color: BrandColors.textMuted, fontSize: 15, lineHeight: 22 },
+  form: { backgroundColor: BrandColors.surfaceRaised, borderRadius: Radii.md, borderWidth: 1,
+    borderColor: BrandColors.border, padding: Space.lg, gap: Space.md },
   input: {
-    backgroundColor: '#191C22',
+    backgroundColor: BrandColors.surface,
     borderWidth: 1,
-    borderColor: '#2B3038',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    color: '#FFFFFF',
+    borderColor: BrandColors.border,
+    borderRadius: Radii.md,
+    minHeight: ControlSize.search,
+    paddingHorizontal: Space.lg,
+    paddingVertical: Space.md,
+    color: BrandColors.text,
     fontSize: 16,
   },
-  primaryButton: { backgroundColor: '#63D7BA', borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
+  primaryButton: { backgroundColor: BrandColors.gold, borderRadius: Radii.md, minHeight: ControlSize.search,
+    alignItems: 'center', justifyContent: 'center', paddingHorizontal: Space.lg },
   primaryDisabled: { opacity: 0.6 },
-  primaryText: { color: '#0B0B0F', fontSize: 16, fontWeight: '700' },
-  secondaryButton: { paddingVertical: 14, alignItems: 'center' },
-  secondaryText: { color: '#FF8A8A', fontSize: 15, fontWeight: '700' },
-  links: { gap: 10, marginTop: 4 },
-  link: { color: '#63D7BA', fontSize: 15, fontWeight: '700' },
-  error: { color: '#FF8A8A', fontSize: 14 },
-  notice: { color: '#63D7BA', fontSize: 14 },
-  devToken: { color: '#D7A84A', fontSize: 12 },
-  banner: { backgroundColor: '#191C22', borderRadius: 12, padding: 14, gap: 10, borderWidth: 1, borderColor: '#2B3038' },
-  bannerText: { color: '#DDDEE3', fontSize: 14, lineHeight: 20 },
-  section: { gap: 10 },
-  sectionHeading: { color: '#FFFFFF', fontSize: 17, fontWeight: '700' },
-  email: { color: '#DDDEE3', fontSize: 15 },
-  accountRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12, paddingVertical: 5 },
-  accountLabel: { color: '#A7A7B0', fontSize: 14, flex: 1 },
-  accountValue: { color: '#FFFFFF', fontSize: 14, fontWeight: '700', textAlign: 'right' },
-  accountLinks: { flexDirection: 'row', flexWrap: 'wrap', gap: 18, paddingTop: 6 },
+  primaryText: { color: BrandColors.onGold, fontSize: 16, fontWeight: '700' },
+  secondaryButton: { minHeight: ControlSize.minimum, justifyContent: 'center', alignItems: 'center' },
+  secondaryText: { color: BrandColors.danger, fontSize: 15, fontWeight: '700' },
+  links: { flexDirection: 'row', flexWrap: 'wrap', gap: Space.lg },
+  linkButton: { minHeight: ControlSize.minimum, justifyContent: 'center' },
+  link: { color: BrandColors.goldBright, fontSize: 15, fontWeight: '700' },
+  error: { color: BrandColors.danger, fontSize: 14, lineHeight: 20 },
+  notice: { color: BrandColors.success, fontSize: 14, lineHeight: 20 },
+  devToken: { color: BrandColors.goldBright, fontSize: 13, lineHeight: 20 },
+  banner: { backgroundColor: BrandColors.surfaceRaised, borderRadius: Radii.md, padding: Space.lg,
+    gap: Space.md, borderWidth: 1, borderColor: BrandColors.border },
+  bannerText: { color: BrandColors.textMuted, fontSize: 14, lineHeight: 20 },
+  section: { gap: Space.sm },
+  sectionHeading: { color: BrandColors.text, fontSize: 17, fontWeight: '700' },
+  email: { color: BrandColors.text, fontSize: 16, fontWeight: '700' },
+  accountRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: Space.md, paddingVertical: Space.xs },
+  accountLabel: { color: BrandColors.textMuted, fontSize: 14, flex: 1 },
+  accountValue: { color: BrandColors.text, fontSize: 14, fontWeight: '700', textAlign: 'right' },
+  accountLinks: { flexDirection: 'row', flexWrap: 'wrap', gap: Space.lg, paddingTop: Space.sm },
 });

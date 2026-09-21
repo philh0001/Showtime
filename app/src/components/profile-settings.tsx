@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { loadSettings, setShowTrending } from '@/services/settings';
 import type { SettingsResult } from '@/services/settings-storage';
 import { subscribeLibraryChanges } from '@/services/library-changes';
+import { BrandColors, ControlSize, Radii, Space } from '@/constants/design';
 
 export function ProfileSettings() {
   const [settings, setSettings] = useState<SettingsResult | null>(null);
@@ -38,11 +39,14 @@ export function ProfileSettings() {
   }
   return <View style={styles.section}>
     <Text accessibilityRole="header" style={styles.heading}>Settings</Text>
-    <View style={styles.row}>
-      <Text style={styles.label}>Trending on Home</Text>
-      <Switch accessibilityLabel="Trending on Home" value={settings?.status === 'available' && settings.showTrending}
-        disabled={settings?.status !== 'available' || saving} onValueChange={(value) => void toggle(value)}
-        trackColor={{ false: '#38383F', true: '#23886F' }} thumbColor="#FFFFFF" />
+    <View style={styles.card}>
+      <View style={styles.row}>
+        <Text style={styles.label}>Trending on Home</Text>
+        <Switch accessibilityLabel="Trending on Home" value={settings?.status === 'available' && settings.showTrending}
+          disabled={settings?.status !== 'available' || saving} onValueChange={(value) => void toggle(value)}
+          trackColor={{ false: BrandColors.border, true: BrandColors.gold }} thumbColor={BrandColors.text} />
+      </View>
+      <Text style={styles.description}>Show popular titles on Home.</Text>
     </View>
     {settings?.status === 'unavailable' && <View>
       <Text accessibilityRole="alert" style={styles.error}>Settings could not be loaded.</Text>
@@ -53,10 +57,14 @@ export function ProfileSettings() {
 }
 
 const styles = StyleSheet.create({
-  section: { marginTop: 12, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#29292F', gap: 10 },
-  heading: { color: '#FFFFFF', fontSize: 22, fontWeight: '700' },
-  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 16, paddingVertical: 8 },
-  label: { color: '#DDDEE3', fontSize: 16, flexShrink: 1 },
-  error: { color: '#FF8A8A', fontSize: 14, lineHeight: 21 },
-  retry: { paddingVertical: 14, alignSelf: 'flex-start' },
+  section: { gap: Space.sm },
+  heading: { color: BrandColors.text, fontSize: 20, fontWeight: '800' },
+  card: { backgroundColor: BrandColors.surfaceRaised, borderRadius: Radii.md, borderWidth: 1,
+    borderColor: BrandColors.border, paddingHorizontal: Space.lg, paddingVertical: Space.sm },
+  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Space.md,
+    minHeight: ControlSize.minimum },
+  label: { color: BrandColors.text, fontSize: 15, fontWeight: '700', flexShrink: 1 },
+  description: { color: BrandColors.textMuted, fontSize: 12, lineHeight: 18, paddingBottom: Space.sm },
+  error: { color: BrandColors.danger, fontSize: 14, lineHeight: 21 },
+  retry: { minHeight: ControlSize.minimum, justifyContent: 'center', alignSelf: 'flex-start' },
 });
