@@ -4,14 +4,16 @@ import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from 'react-native';
 
-import { BrandColors, ControlSize, Radii, Space } from '@/constants/design';
+import { BrandColors, ControlSize, Layout, Radii, Space } from '@/constants/design';
 import type { SearchResult } from '@/services/search';
 
 type SearchPanelProps = {
@@ -45,6 +47,12 @@ export function SearchPanel({
 }: SearchPanelProps) {
   const [failedPosterIds, setFailedPosterIds] = useState<Set<string>>(new Set());
   const [isFocused, setIsFocused] = useState(false);
+  const { width: windowWidth } = useWindowDimensions();
+  const availableWidth = Math.max(0, Math.min(windowWidth, Layout.maxContentWidth) - Layout.pagePadding * 2);
+  const resultColumns = compact ? 1 : Math.max(1, Math.min(4,
+    Math.floor((availableWidth + Space.md) / (320 + Space.md))));
+  const resultWidth = (availableWidth - Space.md * (resultColumns - 1)) / resultColumns;
+  const grid = resultColumns > 1;
 
   const recentSuggestions = useMemo(() => suggestions.slice(0, compact ? 3 : undefined), [compact, suggestions]);
   const canSubmit = query.trim().length > 0 && status !== 'loading';
@@ -135,14 +143,17 @@ export function SearchPanel({
       )}
 
       {query.trim().length > 0 && results.length > 0 && (
-        <View style={styles.resultsWrap}>
+        <View style={[styles.resultsWrap, grid && styles.resultsGridWrap]}>
           <FlatList
+            key={`results-${resultColumns}`}
+            numColumns={resultColumns}
+            columnWrapperStyle={grid ? styles.resultColumns : undefined}
             data={results}
             keyExtractor={(item) => item.id}
             keyboardShouldPersistTaps="handled"
             scrollEnabled={false}
             style={styles.resultsList}
-            contentContainerStyle={styles.resultsListContent}
+            contentContainerStyle={[styles.resultsListContent, grid && styles.resultsGridContent]}
             ListEmptyComponent={status === 'idle' ? <Text style={styles.emptyText}>{emptyText}</Text> : null}
             renderItem={({ item }) => {
               const failed = failedPosterIds.has(item.id);
@@ -153,7 +164,10 @@ export function SearchPanel({
                   <Pressable
                     accessibilityRole="link"
                     accessibilityLabel={`View ${item.title}, ${item.mediaType}`}
-                    style={({ pressed }) => [styles.resultRow, pressed && styles.resultRowPressed]}
+                    style={Platform.OS === 'web'
+                      ? [styles.resultRow, grid && styles.gridResultRow, grid && { width: resultWidth }]
+                      : ({ pressed }) => [styles.resultRow, grid && styles.gridResultRow,
+                        grid && { width: resultWidth }, pressed && styles.resultRowPressed]}
                   >
                     {item.posterUrl && !failed ? (
                       <Image
@@ -341,12 +355,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     overflow: 'hidden',
   },
+  resultsGridWrap: { backgroundColor: 'transparent', borderWidth: 0, overflow: 'visible' },
   resultsList: {
     width: '100%',
   },
   resultsListContent: {
     paddingVertical: 0,
   },
+  resultsGridContent: { gap: Space.md },
+  resultColumns: { gap: Space.md },
   resultRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -360,6 +377,8 @@ const styles = StyleSheet.create({
   resultRowPressed: {
     backgroundColor: BrandColors.surfaceInteractive,
   },
+  gridResultRow: { backgroundColor: BrandColors.surface, borderWidth: 1,
+    borderColor: BrandColors.border, borderRadius: Radii.md },
   poster: {
     width: 72,
     height: 108,

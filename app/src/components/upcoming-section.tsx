@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { Link, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { AppState, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { AppState, Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
 import { BrandColors, ControlSize, Radii, Space } from '@/constants/design';
 import { formatUkDate, getDeviceLocalIsoDate } from '@/services/air-date-rules';
@@ -16,13 +16,13 @@ function dayLabel(date: string, today: string) {
   return `${date === current.toISOString().slice(0, 10) ? 'Tomorrow · ' : ''}${day} · ${formatUkDate(date)}`;
 }
 
-function Row({ row, today }: { row: HomeScheduleRow; today: string }) {
+function Row({ row, today, wide }: { row: HomeScheduleRow; today: string; wide: boolean }) {
   const [expanded, setExpanded] = useState(false);
   const first = row.episodes[0];
   const count = row.episodes.length;
   const premiere = first.episodeNumber === 1
     ? first.seasonNumber === 1 ? 'Series premiere' : 'Season premiere' : null;
-  return <View style={styles.rowWrap}>
+  return <View style={[styles.rowWrap, wide && styles.wideRowWrap]}>
     <Link href={{ pathname: '/tv/[id]', params: { id: String(row.id) } }} asChild>
       <Pressable accessibilityRole="link" accessibilityLabel={`Open ${row.title}, ${count} episode${count === 1 ? '' : 's'}, ${formatUkDate(row.date)}`}
         style={Platform.OS === 'web' ? styles.row : ({ pressed }) => [styles.row, pressed && styles.pressed]}>
@@ -69,6 +69,8 @@ export function UpcomingSection({ watchlist, cache, watchlistKnown = true, loadi
   watchlist: WatchlistItem[]; cache: ScheduleLoadResult; watchlistKnown?: boolean; loading?: boolean;
   checking?: boolean; refreshFailed?: boolean; onRetry: () => Promise<void>;
 }) {
+  const { width: windowWidth } = useWindowDimensions();
+  const wide = windowWidth >= 1200;
   const [today, setToday] = useState(getDeviceLocalIsoDate);
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [expandedWeek, setExpandedWeek] = useState(false);
@@ -92,10 +94,10 @@ export function UpcomingSection({ watchlist, cache, watchlistKnown = true, loadi
   const visibleWeek = expandedWeek ? view.weekDays : view.weekDays.slice(0, 3);
   const visibleSoon = expandedSoon ? view.comingSoon : view.comingSoon.slice(0, 3);
 
-  return <View style={styles.schedule}>
-    <View style={styles.section}>
+  return <View style={[styles.schedule, wide && styles.scheduleWide]}>
+    <View style={[styles.section, wide && styles.scheduleColumn]}>
       <Text accessibilityRole="header" style={styles.heading}>Today</Text>
-      {view.today.map((row) => <Row key={`${row.id}:${row.date}`} row={row} today={today} />)}
+      {view.today.map((row) => <Row key={`${row.id}:${row.date}`} row={row} today={today} wide={wide} />)}
       {(loading || (checking && !hasUpcoming)) && <SkeletonRows />}
       {!loading && watchlistKnown && savedIds.size === 0 && <View style={styles.emptyCard}>
         <Text style={styles.message}>Add TV shows to your Watchlist to see what’s coming up.</Text>
@@ -119,11 +121,11 @@ export function UpcomingSection({ watchlist, cache, watchlistKnown = true, loadi
       </View>}
     </View>
 
-    {visibleWeek.length > 0 && <View style={styles.section}>
+    {visibleWeek.length > 0 && <View style={[styles.section, wide && styles.scheduleColumn]}>
       <Text accessibilityRole="header" style={styles.heading}>This Week</Text>
       {visibleWeek.map((day) => <View key={day.date} style={styles.dayGroup}>
         <Text style={styles.dayHeading}>{dayLabel(day.date, today)}</Text>
-        {day.rows.map((row) => <Row key={`${row.id}:${row.date}`} row={row} today={today} />)}
+        {day.rows.map((row) => <Row key={`${row.id}:${row.date}`} row={row} today={today} wide={wide} />)}
       </View>)}
       {view.weekDays.length > visibleWeek.length && <Pressable accessibilityRole="button"
         onPress={() => setExpandedWeek(true)} style={styles.expandButton}>
@@ -131,9 +133,9 @@ export function UpcomingSection({ watchlist, cache, watchlistKnown = true, loadi
       </Pressable>}
     </View>}
 
-    {visibleSoon.length > 0 && <View style={styles.section}>
+    {visibleSoon.length > 0 && <View style={[styles.section, wide && styles.scheduleColumn]}>
       <Text accessibilityRole="header" style={styles.heading}>Coming Soon</Text>
-      {visibleSoon.map((row) => <Row key={`${row.id}:${row.date}`} row={row} today={today} />)}
+      {visibleSoon.map((row) => <Row key={`${row.id}:${row.date}`} row={row} today={today} wide={wide} />)}
       {view.comingSoon.length > visibleSoon.length && <Pressable accessibilityRole="button"
         onPress={() => setExpandedSoon(true)} style={styles.expandButton}>
         <Text style={styles.expandText}>Show more upcoming episodes</Text>
@@ -144,11 +146,15 @@ export function UpcomingSection({ watchlist, cache, watchlistKnown = true, loadi
 
 const styles = StyleSheet.create({
   schedule: { gap: Space.xl },
+  scheduleWide: { flexDirection: 'row', alignItems: 'flex-start' },
+  scheduleColumn: { flex: 1, minWidth: 0 },
   section: { gap: Space.sm },
   heading: { color: BrandColors.text, fontSize: 21, fontWeight: '800' },
   dayGroup: { gap: Space.xs },
   dayHeading: { color: BrandColors.goldBright, fontSize: 13, fontWeight: '700', marginTop: Space.sm },
   rowWrap: { borderBottomWidth: 1, borderBottomColor: BrandColors.border },
+  wideRowWrap: { backgroundColor: BrandColors.surfaceRaised, borderWidth: 1,
+    borderColor: BrandColors.border, borderRadius: Radii.md, paddingHorizontal: Space.sm },
   row: { flexDirection: 'row', alignItems: 'center', gap: Space.md, minHeight: 76, paddingVertical: Space.sm },
   poster: { width: 46, height: 66, borderRadius: Radii.sm, backgroundColor: BrandColors.surfaceRaised,
     overflow: 'hidden', justifyContent: 'center', alignItems: 'center' },

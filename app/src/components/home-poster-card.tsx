@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { Link } from 'expo-router';
 import { useState } from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import type { ViewingProgress } from '@/services/viewing-summary';
 
 export type HomePosterItem = {
@@ -24,6 +24,8 @@ export function HomePosterCard({
   compact?: boolean;
 }) {
   const [imageFailed, setImageFailed] = useState(false);
+  const { width: windowWidth } = useWindowDimensions();
+  const wide = windowWidth >= 1200 && !compact;
   return (
     <Link
       href={{
@@ -35,10 +37,10 @@ export function HomePosterCard({
       <Pressable
         accessibilityRole="link"
         accessibilityLabel={`Open ${item.title}, ${item.mediaType}${statusLabel ? `, ${statusLabel.toLowerCase()}` : ''}`}
-        style={Platform.OS === 'web' ? StyleSheet.flatten([styles.card, compact && styles.compactCard])
-          : ({ pressed }) => [styles.card, compact && styles.compactCard, pressed && styles.pressed]}
+        style={Platform.OS === 'web' ? StyleSheet.flatten([styles.card, wide && styles.wideCard, compact && styles.compactCard])
+          : ({ pressed }) => [styles.card, wide && styles.wideCard, compact && styles.compactCard, pressed && styles.pressed]}
       >
-        <View style={[styles.poster, compact && styles.compactPoster]}>
+        <View style={[styles.poster, wide && styles.widePoster, compact && styles.compactPoster]}>
           <View style={[styles.posterContent, statusLabel && styles.watchedPoster]}>
             {item.posterUrl && !imageFailed
               ? <Image
@@ -83,6 +85,7 @@ export function HomePosterCard({
 
 const styles = StyleSheet.create({
   card: { width: 126, gap: 6 },
+  wideCard: { width: 160 },
   info: { gap: 6 },
   compactCard: { width: '100%', flexDirection: 'row', alignItems: 'center', gap: 14 },
   compactPoster: { width: 72, height: 108, borderRadius: 8 },
@@ -100,6 +103,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  widePoster: { width: 160, height: 240 },
   posterContent: { position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center' },
   watchedPoster: { opacity: 0.55 },
   statusBadge: {

@@ -22,7 +22,7 @@ test('brand tokens keep readable text and usable controls', () => {
   assert.ok(contrast(BrandColors.onGold, BrandColors.gold) >= 4.5);
   assert.ok(contrast(BrandColors.textMuted, BrandColors.background) >= 4.5);
   assert.ok(ControlSize.minimum >= 44);
-  assert.equal(Layout.maxContentWidth, 1120);
+  assert.equal(Layout.maxContentWidth, 1800);
 });
 
 test('brand SVGs are original accessible vector assets', async () => {
