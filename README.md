@@ -73,6 +73,8 @@ The revised guest-to-account library merge and D1 revision migration were releas
 
 The v1.1.1 website release added desktop account entry and iPhone Home Screen guidance. Its automated and browser checks are in the [v1.1.1 release record](docs/verification/2026-09-21-account-install-ux.md); a real iPhone account restore is still awaiting acceptance.
 
+The v1.1.2 website release made the Profile iPhone guide collapsible. See the [v1.1.2 release record](docs/verification/2026-09-21-iphone-help-collapse.md).
+
 ## Local / UAT
 
 Local development and acceptance testing are owned by [`local-uat/`](local-uat/README.md). The Node proxy is permissive local tooling and is never deployed. There is currently no hosted UAT service, UAT domain, UAT D1 database, or remote UAT secret set.
