@@ -75,6 +75,8 @@ The v1.1.1 website release added desktop account entry and iPhone Home Screen gu
 
 The v1.1.2 website release made the Profile iPhone guide collapsible. See the [v1.1.2 release record](docs/verification/2026-09-21-iphone-help-collapse.md).
 
+The v1.1.3 website release refreshes missing Home schedules for saved TV shows and adds a useful signed-in Account overview. See the [v1.1.3 release record](docs/verification/2026-09-21-home-schedules-account-overview.md).
+
 ## Local / UAT
 
 Local development and acceptance testing are owned by [`local-uat/`](local-uat/README.md). The Node proxy is permissive local tooling and is never deployed. There is currently no hosted UAT service, UAT domain, UAT D1 database, or remote UAT secret set.
