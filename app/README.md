@@ -60,6 +60,8 @@ The website offers an optional iPhone Home Screen experience. Safari and the Hom
 
 Home reads dated episodes from the saved TV shows in Watchlist. It puts Today, This Week and Coming Soon ahead of a compact Your Watchlist strip; Continue Watching and the other previews follow. The release list does not depend on watched progress. Same-day episodes of one show expand within one row. The supplied `showtime-logo.png` retains its subtitle alignment as one image, and the web favicon uses the supplied 32-pixel mark.
 
+The four main tabs use a shared 1800px maximum content width on desktop. Home's release sections and Search results use desktop columns; Watchlist cards and Profile columns grow with the available width. Phone layouts remain stacked.
+
 The schedule cache remains device-local. Home shows cached rows first, then requests `GET /schedule/tv/:id` for missing or eligible saved shows. Successful checked seasons replace their old episode set; temporarily unavailable seasons retain cached rows marked incomplete. Complete and cap-limited responses refresh after 12 hours, temporary partials after 30 minutes, and failures after 15 minutes. The client permits two concurrent show requests and six new show requests per minute; a 429 pauses requests for one minute and gets one automatic retry. Manual Retry bypasses freshness but respects the pause. A TV detail visit seeds only a missing schedule record and never replaces an API-checked one. The signed-in Account page shows email verification, cloud sync state, and library counts from the current device.
 
 ## Feature rules worth preserving

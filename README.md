@@ -2,7 +2,7 @@
 
 Showtime is a web-first movie and TV tracker. The live website is [showtimetracker.show](https://showtimetracker.show). The repository has two explicit environment areas: `production/` for deployable Cloudflare code and `local-uat/` for local-only development and acceptance tooling. Shared product code lives in `app/` and `shared/` and must not be copied into either environment.
 
-The product supports search, discovery, Watchlist, movie and TV progress, viewing history, upcoming episodes, optional accounts, and cloud sync. The current website release is v1.1.8, shown under Profile → About Showtime. Native apps are a possible later direction, not a current release target.
+The product supports search, discovery, Watchlist, movie and TV progress, viewing history, upcoming episodes, optional accounts, and cloud sync. The current website release is v1.1.9, shown under Profile → About Showtime. Native apps are a possible later direction, not a current release target.
 
 ## Repository map
 
@@ -86,6 +86,8 @@ The v1.1.6 website release displays saved Watchlist titles in a two-column deskt
 The v1.1.7 website release adapts Watchlist from one to four cards per row as screen space grows. See the [v1.1.7 release record](docs/verification/2026-09-21-watchlist-responsive-columns.md).
 
 The v1.1.8 release puts saved TV episode dates first on Home and uses the owner's supplied logo and favicon. See the [v1.1.8 release record](docs/verification/2026-09-21-today-first-home.md).
+
+The v1.1.9 website release expands Home, Search, Watchlist and Profile across wide desktop screens while keeping the phone layout. See the [v1.1.9 release record](docs/verification/2026-09-21-desktop-fluid-layout.md).
 
 ## Local / UAT
 
