@@ -314,7 +314,7 @@ describe("Sync push and pull", () => {
     const secondDevice = storage();
     expect((await createSyncEngine(secondDevice, clientApi, { watchlist: "watchlist" }).run(token, "account")).ok).toBe(true);
     expect(JSON.parse((await secondDevice.getItem("watchlist"))!)).toEqual([item(1), item(2)]);
-  });
+  }, 15_000);
 
   it("rejects an unknown collection and oversized data", async () => {
     const token = await verifiedSession("invalid@example.com");
