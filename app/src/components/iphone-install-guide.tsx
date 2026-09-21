@@ -55,13 +55,26 @@ export function IPhoneInstallPrompt() {
 }
 
 export function IPhoneInstallHelp() {
+  const [expanded, setExpanded] = useState(false);
   if (Platform.OS !== 'web') return null;
   return (
     <View style={styles.help}>
-      <Text accessibilityRole="header" style={styles.heading}>Add Showtime to your iPhone</Text>
-      <Text style={styles.body}>Open showtimetracker.show in Safari:</Text>
-      <InstallSteps />
-      <Text style={styles.note}>The Home Screen app has separate saved data. Use a verified account in Safari, then sign in again from the icon to restore your library.</Text>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={expanded ? 'Hide iPhone install steps' : 'Show iPhone install steps'}
+        accessibilityState={{ expanded }}
+        aria-expanded={expanded}
+        onPress={() => setExpanded((value) => !value)}
+        style={styles.helpToggle}
+      >
+        <Text style={styles.heading}>Add Showtime to your iPhone</Text>
+        <Text style={styles.toggleText}>{expanded ? 'Hide' : 'Show steps'}</Text>
+      </Pressable>
+      {expanded && <>
+        <Text style={styles.body}>Open showtimetracker.show in Safari:</Text>
+        <InstallSteps />
+        <Text style={styles.note}>The Home Screen app has separate saved data. Use a verified account in Safari, then sign in again from the icon to restore your library.</Text>
+      </>}
     </View>
   );
 }
@@ -82,8 +95,10 @@ const styles = StyleSheet.create({
     marginTop: Space.lg,
     paddingTop: Space.lg,
   },
+  helpToggle: { alignItems: 'center', flexDirection: 'row', gap: Space.sm, minHeight: ControlSize.minimum },
   headingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Space.sm },
   heading: { color: BrandColors.text, flex: 1, fontSize: 18, fontWeight: '800' },
+  toggleText: { color: BrandColors.goldBright, fontSize: 14, fontWeight: '700' },
   body: { color: BrandColors.textMuted, fontSize: 14, lineHeight: 20 },
   note: { color: BrandColors.textMuted, fontSize: 13, lineHeight: 19 },
   accountLink: { color: BrandColors.goldBright, fontSize: 14, fontWeight: '700', paddingVertical: Space.sm },

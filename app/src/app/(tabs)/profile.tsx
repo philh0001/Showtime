@@ -80,7 +80,7 @@ export default function ProfileScreen() {
         <IPhoneInstallHelp />
         <View style={styles.about}>
           <Text accessibilityRole="header" style={styles.heading}>About Showtime</Text>
-          <Text style={styles.subtitle}>Version {Constants.expoConfig?.version ?? '1.1.1'}</Text>
+          <Text style={styles.subtitle}>Version {Constants.expoConfig?.version ?? '1.1.2'}</Text>
           <Text style={styles.subtitle}>
             {status === 'signedIn' ? 'Viewing data is saved on this device and, once verified, synced to your account.'
               : 'Viewing data is saved on this device.'}
