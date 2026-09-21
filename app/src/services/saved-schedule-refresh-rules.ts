@@ -93,9 +93,25 @@ export function createSavedScheduleRefresh(deps: Dependencies) {
         const id = targets[cursor++];
         let pending = inFlight.get(id);
         if (!pending) {
-          pending = requestOne(id);
-          inFlight.set(id, pending);
-          void pending.finally(() => { if (inFlight.get(id) === pending) inFlight.delete(id); });
+          if (!options.force) {
+            if (now() < (failedUntil.get(id) ?? 0)) {
+              failedIds.add(id);
+              options.onFailure?.(id);
+              continue;
+            }
+            const latest = await deps.load();
+            if (latest.status === 'available' && fresh(latest.records.find((record) => record.id === id))) {
+              options.onUpdate?.(latest.records);
+              continue;
+            }
+          }
+          pending = inFlight.get(id);
+          if (!pending) {
+            pending = requestOne(id);
+            inFlight.set(id, pending);
+            void pending.then(() => { if (inFlight.get(id) === pending) inFlight.delete(id); },
+              () => { if (inFlight.get(id) === pending) inFlight.delete(id); });
+          }
         }
         if (!(await pending)) {
           failedIds.add(id);

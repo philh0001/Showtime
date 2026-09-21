@@ -138,8 +138,9 @@ export function isFreshCompleteHomeSchedule(records: TvSchedule[], savedTvIds: S
   return savedTvIds.size > 0 && [...savedTvIds].every((id) => {
     const record = records.find((item) => item.id === id);
     const checkedAt = record?.apiCheckedAt ? Date.parse(record.apiCheckedAt) : NaN;
+    // Home refreshes this clock once a minute; a result can land between ticks.
     return record?.coverage === 'complete' && Number.isFinite(checkedAt)
-      && checkedAt <= nowMs && nowMs - checkedAt < 12 * 60 * 60 * 1000;
+      && checkedAt <= nowMs + 60_000 && nowMs - checkedAt < 12 * 60 * 60 * 1000;
   });
 }
 

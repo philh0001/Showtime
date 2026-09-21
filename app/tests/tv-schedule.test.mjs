@@ -107,6 +107,10 @@ test('confirmed empty copy requires every saved show to have a fresh complete AP
   assert.equal(isFreshCompleteHomeSchedule([checked], new Set([1, 2]), now), false);
   assert.equal(isFreshCompleteHomeSchedule([checked], new Set([1]), now + 13 * 60 * 60 * 1000), false);
   assert.equal(isFreshCompleteHomeSchedule([schedule(1)], new Set([1]), now), false);
+  const justChecked = { ...checked, apiCheckedAt: new Date(now + 30_000).toISOString() };
+  assert.equal(isFreshCompleteHomeSchedule([justChecked], new Set([1]), now), true);
+  assert.equal(isFreshCompleteHomeSchedule([{ ...justChecked,
+    apiCheckedAt: new Date(now + 61_000).toISOString() }], new Set([1]), now), false);
 });
 
 test('a successful API result replaces the same show even if an old device clock was ahead', async () => {

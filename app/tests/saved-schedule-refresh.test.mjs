@@ -31,6 +31,32 @@ test('fetches only saved TV shows, emits each result, and shares in-flight work'
   assert.equal(updates.length, 1);
 });
 
+test('overlapping reordered refreshes skip shows already checked by the other queue', async () => {
+  let clock = Date.parse('2026-09-21T12:00:00Z');
+  let records = [];
+  const calls = [];
+  let release;
+  const gate = new Promise((resolve) => { release = resolve; });
+  const refresh = createSavedScheduleRefresh({
+    fetchSchedule: async (id) => {
+      calls.push(id);
+      if (id <= 2) await gate;
+      return response(id);
+    },
+    load: async () => ({ status: 'available', records }),
+    save: async (record) => { records = [record, ...records.filter((item) => item.id !== record.id)]; },
+    now: () => clock,
+    wait: async (ms) => { clock += ms; await new Promise((resolve) => setImmediate(resolve)); },
+  });
+  const first = refresh([1, 2, 3, 4].map((id) => show(id)));
+  while (calls.length < 2) await new Promise((resolve) => setImmediate(resolve));
+  const second = refresh([4, 3, 2, 1].map((id) => show(id)));
+  await new Promise((resolve) => setImmediate(resolve));
+  release();
+  await Promise.all([first, second]);
+  assert.deepEqual([...calls].sort(), [1, 2, 3, 4]);
+});
+
 test('legacy records refresh immediately and complete records respect twelve-hour freshness', async () => {
   let records = [{ id: 1, mediaType: 'TV', title: 'Show 1', year: null, posterUrl: null,
     checkedAt: '2026-09-21T11:00:00.000Z', coverage: 'legacy', nextEpisode: null, episodes: [] }];
