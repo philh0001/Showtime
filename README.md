@@ -71,6 +71,8 @@ Run them only as a reviewed release operation after the production gate passes. 
 
 The revised guest-to-account library merge and D1 revision migration were released on 21 September 2026. Automated checks and production route smoke tests passed; a real two-device account check remains outstanding. See the [release record](docs/verification/2026-09-21-account-sync-production.md).
 
+The v1.1.1 website release added desktop account entry and iPhone Home Screen guidance. Its automated and browser checks are in the [v1.1.1 release record](docs/verification/2026-09-21-account-install-ux.md); a real iPhone account restore is still awaiting acceptance.
+
 ## Local / UAT
 
 Local development and acceptance testing are owned by [`local-uat/`](local-uat/README.md). The Node proxy is permissive local tooling and is never deployed. There is currently no hosted UAT service, UAT domain, UAT D1 database, or remote UAT secret set.
