@@ -34,7 +34,7 @@ The client may call a local or production API, but it never contains the TMDB cr
 
 ## Local API selection
 
-For local/UAT setup, copy `local-uat/.env.example` to `local-uat/.env.local` and set `TMDB_READ_ACCESS_TOKEN`. The token stays in the Node process. `EXPO_PUBLIC_SEARCH_API_URL`, when needed, may contain only the public URL of that local server.
+For local/UAT setup, copy `local-uat/.env.example` to `local-uat/.env.local` and set `TMDB_READ_ACCESS_TOKEN`. The token stays in the Node process. If local API address discovery needs an override, create ignored `app/.env.local` with `EXPO_PUBLIC_SEARCH_API_URL=http://YOUR_COMPUTER_IP:3001` and restart Expo. That public variable must contain only the local server URL, never a credential.
 
 Production exports are created by `production/web/scripts/export-web.mjs`, which supplies `https://api.showtimetracker.show` at build time. There are no deployment commands in this package.
 

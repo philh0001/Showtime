@@ -74,15 +74,15 @@ Also verify account endpoints, D1-backed sync and a safe email flow when those s
 Before rollback, list versions from the owning package so the Worker target is unambiguous:
 
 ```sh
-npm --prefix production/web exec -- wrangler versions list
-npm --prefix production/api exec -- wrangler versions list
+npm --prefix production/web run versions:list
+npm --prefix production/api run versions:list
 ```
 
 Select the reviewed version ID, then use the matching package:
 
 ```sh
-npm --prefix production/web exec -- wrangler rollback VERSION_ID
-npm --prefix production/api exec -- wrangler rollback VERSION_ID
+npm --prefix production/web run rollback -- VERSION_ID
+npm --prefix production/api run rollback -- VERSION_ID
 ```
 
 After rollback, repeat the website checks or API smoke suite. Record the incident, version IDs and outcome without credentials or personal data.

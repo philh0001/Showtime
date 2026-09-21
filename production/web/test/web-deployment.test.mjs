@@ -51,3 +51,17 @@ test('production export script embeds only the public custom API URL', async () 
   assert.doesNotMatch(exportScript, /npx\.cmd/);
   assert.doesNotMatch(exportScript, /TMDB_(?:API_KEY|READ_ACCESS_TOKEN)/);
 });
+
+test('version inspection and rollback run inside each Worker package', async () => {
+  for (const packageRoot of [webRoot, path.join(repositoryRoot, 'production', 'api')]) {
+    const workerPackage = await readJson(path.join(packageRoot, 'package.json'));
+    assert.equal(workerPackage.scripts['versions:list'], 'wrangler versions list');
+    assert.equal(workerPackage.scripts.rollback, 'wrangler rollback');
+  }
+});
+
+test('release gate verifies the generated browser artifact', async () => {
+  const webPackage = await readJson(path.join(webRoot, 'package.json'));
+  assert.equal(webPackage.scripts['verify:bundle'], 'node scripts/verify-bundle.mjs');
+  assert.match(webPackage.scripts.check, /npm run build && npm run verify:bundle &&/);
+});

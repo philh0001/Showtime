@@ -3,17 +3,26 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const appRoot = path.join(repositoryRoot, 'app');
 
-export function localCommands(platform = process.platform) {
+export function localCommands() {
   return [
-    { command: process.execPath, args: ['local-uat/api/start.mjs'] },
-    { command: platform === 'win32' ? 'npm.cmd' : 'npm', args: ['--prefix', 'app', 'run', 'web'] },
+    {
+      command: process.execPath,
+      args: [path.join(repositoryRoot, 'local-uat', 'api', 'start.mjs')],
+      cwd: repositoryRoot,
+    },
+    {
+      command: process.execPath,
+      args: [path.join(appRoot, 'node_modules', 'expo', 'bin', 'cli'), 'start', '--web'],
+      cwd: appRoot,
+    },
   ];
 }
 
 export function runLocal() {
-  const children = localCommands().map(({ command, args }) => spawn(command, args, {
-    cwd: repositoryRoot,
+  const children = localCommands().map(({ command, args, cwd }) => spawn(command, args, {
+    cwd,
     env: process.env,
     stdio: 'inherit',
   }));

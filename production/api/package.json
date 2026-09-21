@@ -9,6 +9,8 @@
     "typecheck": "tsc --project tsconfig.json --noEmit",
     "check": "npm run api:test && npm run types && npm run typecheck && npm test -- --run",
     "bundle": "wrangler deploy --dry-run --outdir worker-dist",
+    "versions:list": "wrangler versions list",
+    "rollback": "wrangler rollback",
     "deploy": "wrangler deploy"
   },
   "devDependencies": {

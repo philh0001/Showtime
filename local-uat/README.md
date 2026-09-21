@@ -27,6 +27,8 @@ npm run local:api
 npm run local:web
 ```
 
+Expo normally discovers the local API address. If you need to override it, create ignored `app/.env.local` with `EXPO_PUBLIC_SEARCH_API_URL=http://YOUR_COMPUTER_IP:3001`, then restart Expo. Keep the TMDB token only in `local-uat/.env.local`; Expo reads `app/.env.local`, not the local API process's environment.
+
 Use `npm run local:tmdb -- "Batman"` for a direct server-side TMDB diagnostic.
 
 ## Test

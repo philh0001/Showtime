@@ -1,11 +1,22 @@
 import assert from 'node:assert/strict';
+import { spawn } from 'node:child_process';
+import { once } from 'node:events';
 import test from 'node:test';
 import { localCommands } from './run-local.mjs';
 
-test('starts the local API and web client with platform-safe commands', () => {
-  const windows = localCommands('win32');
-  assert.deepEqual(windows[0].args, ['local-uat/api/start.mjs']);
-  assert.equal(windows[1].command, 'npm.cmd');
-  assert.deepEqual(windows[1].args, ['--prefix', 'app', 'run', 'web']);
-  assert.equal(localCommands('linux')[1].command, 'npm');
+test('starts the local API and Expo web client as direct Node children', () => {
+  const [api, web] = localCommands();
+  assert.equal(api.command, process.execPath);
+  assert.match(api.args[0], /local-uat[\\/]api[\\/]start\.mjs$/);
+  assert.equal(web.command, process.execPath);
+  assert.match(web.args[0], /app[\\/]node_modules[\\/]expo[\\/]bin[\\/]cli$/);
+  assert.deepEqual(web.args.slice(1), ['start', '--web']);
+  assert.match(web.cwd, /[\\/]app$/);
+});
+
+test('local web command can launch the installed Expo CLI', async () => {
+  const web = localCommands()[1];
+  const child = spawn(web.command, [web.args[0], '--version'], { cwd: web.cwd, stdio: 'ignore' });
+  const [code] = await once(child, 'exit');
+  assert.equal(code, 0);
 });
