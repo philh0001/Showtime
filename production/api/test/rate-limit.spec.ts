@@ -20,6 +20,7 @@ describe("Worker rate limits", () => {
     ["discovery", 2, "DISCOVERY_LIMITER"],
     ["movie-details", 4, "DETAILS_LIMITER"],
     ["tv-details", 5, "DETAILS_LIMITER"],
+    ["tv-schedule", 13, "DETAILS_LIMITER"],
     ["season-details", 1, "DETAILS_LIMITER"],
     ["person-details", 1, "DETAILS_LIMITER"],
   ] as const)("selects the %s category and charges %d work units", async (kind, cost, category) => {

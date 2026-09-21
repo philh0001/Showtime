@@ -2,6 +2,7 @@ import { parseApiRequest } from "../../../shared/tmdb-api/request.mjs";
 import { handleDetails } from "../../../shared/tmdb-api/details.mjs";
 import { handleDiscovery } from "../../../shared/tmdb-api/discovery.mjs";
 import { handleSearch } from "../../../shared/tmdb-api/search.mjs";
+import { handleSchedule } from "../../../shared/tmdb-api/schedule.mjs";
 import { fetchTmdbJson } from "../../../shared/tmdb-api/tmdb.mjs";
 import { accountPreflightHeaders, isAllowedOrigin, parseAllowedOrigins, preflightHeaders } from "./cors";
 import { logEvent, type SafeRoute } from "./logging";
@@ -78,6 +79,7 @@ function routeName(kind: string | undefined): SafeRoute {
     || kind === "tv-details"
     || kind === "season-details"
     || kind === "person-details"
+    || kind === "tv-schedule"
   ) return kind;
   return "unmatched";
 }
@@ -176,6 +178,7 @@ export default {
     const load = () => {
       if (parsed.route.kind === "search") return handleSearch(parsed.route, deps);
       if (parsed.route.kind === "discovery") return handleDiscovery(parsed.route, deps);
+      if (parsed.route.kind === "tv-schedule") return handleSchedule(parsed.route, deps);
       return handleDetails(parsed.route, deps);
     };
     const cached = executionContext

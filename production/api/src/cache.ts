@@ -17,6 +17,12 @@ function ttlFor(route: CacheRoute): number {
   return route.kind === "discovery" ? 1800 : 600;
 }
 
+function hasTemporaryScheduleGap(route: CacheRoute, result: ApiResult): boolean {
+  if (route.kind !== "tv-schedule") return false;
+  const body = result.body as { schedule?: { seasonCoverage?: { status?: string }[] } } | null;
+  return body?.schedule?.seasonCoverage?.some((season) => season.status === "unavailable") === true;
+}
+
 export async function withApiCache(
   route: CacheRoute,
   cache: Cache,
@@ -36,7 +42,7 @@ export async function withApiCache(
   }
 
   const result = await load();
-  if (result.status === 200) {
+  if (result.status === 200 && !hasTemporaryScheduleGap(route, result)) {
     const stored = new Response(JSON.stringify(result.body), {
       status: 200,
       headers: {

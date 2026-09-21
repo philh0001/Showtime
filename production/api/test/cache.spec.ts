@@ -60,4 +60,19 @@ describe("Worker API cache", () => {
     }), context);
     expect(store.put).not.toHaveBeenCalled();
   });
+
+  it("stores complete schedules for ten minutes and bypasses temporary partials", async () => {
+    const store = cache();
+    const route = { kind: "tv-schedule", cacheKey: "/schedule/tv/123" };
+    await withApiCache(route, store, async () => ({ status: 200, body: { schedule: {
+      seasonCoverage: [{ seasonNumber: 1, status: "unavailable" }],
+    } } }), context);
+    expect(store.put).not.toHaveBeenCalled();
+    await withApiCache(route, store, async () => ({ status: 200, body: { schedule: {
+      seasonCoverage: [{ seasonNumber: 1, status: "checked" }],
+    } } }), context);
+    expect(store.put).toHaveBeenCalledOnce();
+    const stored = await store.match(new Request("https://showtime-api.internal/schedule/tv/123"));
+    expect(stored?.headers.get("Cache-Control")).toBe("max-age=600");
+  });
 });
