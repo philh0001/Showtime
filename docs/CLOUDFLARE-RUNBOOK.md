@@ -30,8 +30,8 @@ Confirm:
 
 ## Deploy the website
 
-The legacy hostname returned HTTP 200 rather than the source's expected 301 on
-21 September 2026. Treat the redirect check below as a release acceptance item.
+The old Workers hostname is redirect-only. Verify the 301 and its preserved path
+and query after every web deployment.
 
 ```sh
 npm run production:deploy:web

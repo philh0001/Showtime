@@ -33,9 +33,8 @@ Browser
        -> Resend for account verification/reset email
 ```
 
-The web Worker source redirects the old Workers hostname to the canonical
-website, but the live hostname returned HTTP 200 on 21 September 2026. Verify
-this after the next web deployment. The API CORS allowlist is pinned to
+The web Worker permanently redirects the old Workers hostname to the canonical
+website, preserving paths and queries. The API CORS allowlist is pinned to
 `https://showtimetracker.show`. The deployed identities, custom domain, D1
 database ID and rate-limit bindings are characterized by tests in
 `production/api/test/config.spec.ts`.
