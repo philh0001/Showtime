@@ -5,6 +5,7 @@ export type SafeRoute =
   | "tv-details"
   | "season-details"
   | "person-details"
+  | "tv-schedule"
   | "auth"
   | "sync"
   | "unmatched";

@@ -81,3 +81,27 @@ test('rejects raw noncanonical search paths before URL normalization', async (t)
   assert.equal(await rawRequest(t, '/other/../search?query=Batman'), 404);
   assert.equal(await rawRequest(t, '/other\\..\\search?query=Batman'), 404);
 });
+
+test('serves saved-show schedule metadata through the shared route', async (t) => {
+  const calls = [];
+  const response = await request(t, async (url) => {
+    calls.push(String(url));
+    if (String(url).includes('/season/1')) return Response.json({
+      id: 8, season_number: 1,
+      episodes: [{ id: 9, season_number: 1, episode_number: 1,
+        air_date: '2099-01-02', name: 'Pilot' }],
+    });
+    return Response.json({ id: 123, name: 'Example', seasons: [
+      { id: 8, season_number: 1, episode_count: 1 },
+    ] });
+  }, '/schedule/tv/123');
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  assert.equal(body.schedule.episodes[0].airDate, '2099-01-02');
+  assert.equal(calls.length, 2);
+});
+
+test('rejects invalid schedule paths before contacting TMDB', async (t) => {
+  const response = await request(t, () => { throw new Error('Should not fetch'); }, '/schedule/tv/0');
+  assert.equal(response.status, 400);
+});

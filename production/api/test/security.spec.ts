@@ -143,6 +143,7 @@ describe("Worker security boundary", () => {
     ["/discovery", "discovery", { movies: [{ id: 10, title: "Batman" }], tv: [{ id: 20, title: "Show" }] }, 2],
     ["/details/movie/10", "movie-details", { details: { id: 10, title: "Batman", mediaType: "Movie" } }, 4],
     ["/details/tv/20", "tv-details", { details: { id: 20, title: "Show", mediaType: "TV" } }, 4],
+    ["/schedule/tv/20", "tv-schedule", { schedule: { id: 20, title: "Show", coverage: "complete", episodes: [] } }, 1],
     ["/details/tv/20/season/1", "season-details", { season: { seasonNumber: 1, name: "Season One", episodes: [] } }, 1],
     ["/details/person/40", "person-details", { person: { id: 40, name: "Actor" } }, 1],
   ] as const)("dispatches %s through the shared handler and hardened transport", async (path, route, body, calls) => {

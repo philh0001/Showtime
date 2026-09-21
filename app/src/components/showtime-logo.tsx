@@ -8,7 +8,7 @@ export function ShowtimeLogo({ compact = false, decorative = false }: {
   return <Image
     source={compact
       ? require('@/assets/images/showtime-mark.svg')
-      : require('@/assets/images/showtime-logo.svg')}
+      : require('@/assets/images/showtime-logo.png')}
     style={compact ? styles.mark : styles.logo}
     contentFit="contain"
     accessibilityLabel={decorative ? undefined : 'Showtime'}
@@ -17,6 +17,7 @@ export function ShowtimeLogo({ compact = false, decorative = false }: {
 }
 
 const styles = StyleSheet.create({
-  logo: { width: '100%', maxWidth: 420, height: 96, marginVertical: 4 },
+  // Keep the supplied artwork's full aspect ratio, including the subtitle.
+  logo: { width: '100%', maxWidth: 420, aspectRatio: 1983 / 793 },
   mark: { width: 44, height: 44 },
 });

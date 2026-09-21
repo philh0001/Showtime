@@ -5,10 +5,11 @@ import type { MediaDetails } from './details';
 
 const storage = createTvScheduleStorage(AsyncStorage);
 export const loadTvSchedules = storage.load;
+export const mergeApiTvSchedule = storage.mergeApi;
 
 export async function recordTvSchedule(details: MediaDetails) {
   if (details.mediaType !== 'TV') return;
-  return storage.record({
+  return storage.seedIfMissing({
     id: details.id, mediaType: 'TV', title: details.title,
     year: details.releaseDate?.slice(0, 4) ?? null, posterUrl: details.posterUrl,
     checkedAt: new Date().toISOString(), nextEpisode: details.nextEpisode,
