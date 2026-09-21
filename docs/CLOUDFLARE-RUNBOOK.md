@@ -46,10 +46,11 @@ This deploys only `showtime-web`. Check:
 
 ## Deploy the API
 
-For the pending sync revision release, first review a D1 backup/export and the
-`production/api/migrations/0002_sync_revision.sql` change. From
-`production/api/`, apply the migration to the intended remote database before
-deploying the new API Worker:
+For a future migration, first review a D1 recovery point and the proposed SQL.
+The sync revision migration `production/api/migrations/0002_sync_revision.sql`
+was applied to production on 21 September 2026 and must not be replayed manually.
+From `production/api/`, apply only migrations shown as pending for the intended
+remote database before deploying an API Worker that requires them:
 
 ```sh
 npx --no-install wrangler d1 migrations apply SHOWTIME_DB --remote
@@ -59,7 +60,8 @@ Wrangler will show the migration list and request confirmation. Check the
 Cloudflare account and database identity before accepting. Then deploy the API
 and web Workers as one coordinated release, and verify the guest merge plus a
 second device. A mixed old/new API and website may temporarily report a sync
-error; local edits must remain usable. This release has not been performed.
+error; local edits must remain usable. The 21 September 2026 sync revision
+release is recorded in [the release record](verification/2026-09-21-account-sync-production.md).
 
 ```sh
 npm run production:deploy:api

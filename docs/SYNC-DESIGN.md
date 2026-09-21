@@ -1,6 +1,6 @@
 # Library sync design
 
-This document describes the implementation prepared in the `feature/cloudflare-api` worktree. It has **not** been deployed. Showtime keeps guest mode and the existing email/password account system on the Cloudflare API Worker. D1 remains the account database; no Supabase project or client secret is needed.
+This document describes the implementation released from the `feature/cloudflare-api` worktree on 21 September 2026. Showtime keeps guest mode and the existing email/password account system on the Cloudflare API Worker. D1 remains the account database; no Supabase project or client secret is needed.
 
 ## Data boundary
 
@@ -26,4 +26,4 @@ Signing out revokes the session and retains the current local library, as specif
 
 ## Release order and proof
 
-No live resources were changed while preparing this work. Before a future release, review the migration and make a D1 backup or export. Apply `0002_sync_revision.sql` to the intended database, then deploy the API Worker and web Worker as one coordinated release. During the rollout, a mixed old/new client and API pair may temporarily report a sync error; local edits remain available. A code rollback cannot remove the added D1 column or undo data writes. Verify account isolation, guest-to-account merge, a fresh second device, offline edits, explicit unwatch, error reporting and visible refresh in hosted UAT before production. There is currently no hosted UAT environment in this repository.
+The production release applied `0002_sync_revision.sql` to the verified D1 database, with a Time Travel recovery bookmark captured beforehand and a Wrangler backup captured during migration. The API Worker and web Worker were then deployed. The full repository check and production route smoke suite passed, and the live website, account route and legacy redirect responded as expected. Automated integration tests cover account isolation, guest-to-account merge, a second device, offline edits, explicit unwatch and errors. A real browser/account check across two devices remains outstanding because there is no hosted UAT environment or controlled test account in this repository. A code rollback cannot remove the added D1 column or undo data writes. See the [release record](verification/2026-09-21-account-sync-production.md).

@@ -7,7 +7,7 @@
 - Website: `https://showtimetracker.show`
 - API custom domain: `https://api.showtimetracker.show`
 - Legacy web hostname: `https://showtime-web.showtime-workers.workers.dev`
-  (live HTTP 200 on 21 September 2026; source expects a 301 redirect)
+  (redirect-only; a live request on 21 September 2026 returned 301 with path and query preserved)
 - Workers: `showtime-web` and `showtime-api`
 
 ## Architecture
@@ -55,7 +55,7 @@ npm run production:deploy:api
 
 This targets `showtime-api`. Deployment does not automatically apply D1 migrations. Run the remote smoke sequence in [the Cloudflare runbook](../docs/CLOUDFLARE-RUNBOOK.md).
 
-The sync revision change prepared in this worktree requires `api/migrations/0002_sync_revision.sql` before its API Worker is deployed. The migration adds a revision to existing sync rows; the updated API rejects old clients' unversioned pushes. Release the API and web changes together after hosted acceptance testing. None of these operations has been run against the live database or Workers for this change. See [Library sync design](../docs/SYNC-DESIGN.md).
+The sync revision migration `api/migrations/0002_sync_revision.sql` was applied to the production D1 database on 21 September 2026 before the API and web Workers were deployed. Existing sync rows remained present at revision 1. The updated API rejects old clients' unversioned pushes. The production smoke suite passed, but a real account and second-device merge still needs a hosted acceptance check. See [Library sync design](../docs/SYNC-DESIGN.md) and the [release record](../docs/verification/2026-09-21-account-sync-production.md).
 
 ## Safety and rollback
 
