@@ -104,3 +104,12 @@ test('bounds dated results to 200 and identifies affected seasons', async () => 
   assert.deepEqual(result.body.schedule.seasonCoverage[0], { seasonNumber: 1, status: 'limited' });
   assert.equal(result.body.schedule.coverage, 'partial');
 });
+
+test('rejects an implausibly large season summary rather than returning an unbounded body', async () => {
+  const seasons = Array.from({ length: 101 }, (_, index) => ({
+    id: index + 100, season_number: index + 1, episode_count: 1,
+  }));
+  const result = await load(fixture({ '/3/tv/123': { ...summary, seasons } }));
+  assert.equal(result.status, 502);
+  assert.equal(result.body.schedule, undefined);
+});

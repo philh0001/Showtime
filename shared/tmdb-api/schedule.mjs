@@ -1,5 +1,6 @@
 const MAX_SEASONS = 12;
 const MAX_EPISODES = 200;
+const MAX_SEASON_SUMMARIES = 100;
 
 const textOrNull = (value) => typeof value === 'string' && value.trim() ? value.trim() : null;
 const imageUrl = (path) => typeof path === 'string' && /^\/[\w.-]+$/.test(path)
@@ -38,6 +39,7 @@ function validSeasons(value) {
       || !Number.isSafeInteger(season.episode_count) || season.episode_count < 0) return null;
     if (season.episode_count === 0) continue;
     byNumber.set(season.season_number, { id: season.id, number: season.season_number });
+    if (byNumber.size > MAX_SEASON_SUMMARIES) return null;
   }
   return [...byNumber.values()].sort((a, b) => b.number - a.number);
 }
