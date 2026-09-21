@@ -44,15 +44,21 @@ export function parseTvSchedules(stored: string | null): ScheduleLoadResult {
   }
 }
 
-export function getUpcomingEpisodes(
-  schedules: TvSchedule[], watchlist: WatchlistItem[], progress: ProgressLoadResult, todayIso: string,
-): UpcomingItem[] {
+export function getRelevantTvIds(watchlist: WatchlistItem[], progress: ProgressLoadResult): number[] {
   const included = new Set(watchlist.filter((item) => item.mediaType === 'TV').map((item) => item.id));
   const records = progress.status === 'available' ? progress.records : [];
   for (const record of records) {
     if (calculateTvProgress(record).watched > 0 || record.episodeProgress.some((item) =>
       record.trackableSeasonNumbers.includes(item.seasonNumber) && calculateEpisodeProgress(item).watched > 0)) included.add(record.tvId);
   }
+  return [...included];
+}
+
+export function getUpcomingEpisodes(
+  schedules: TvSchedule[], watchlist: WatchlistItem[], progress: ProgressLoadResult, todayIso: string,
+): UpcomingItem[] {
+  const included = new Set(getRelevantTvIds(watchlist, progress));
+  const records = progress.status === 'available' ? progress.records : [];
   return schedules.flatMap((schedule): UpcomingItem[] => {
     if (!included.has(schedule.id)) return [];
     const record = records.find((item) => item.tvId === schedule.id);

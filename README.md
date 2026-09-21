@@ -2,7 +2,7 @@
 
 Showtime is a web-first movie and TV tracker. The live website is [showtimetracker.show](https://showtimetracker.show). The repository has two explicit environment areas: `production/` for deployable Cloudflare code and `local-uat/` for local-only development and acceptance tooling. Shared product code lives in `app/` and `shared/` and must not be copied into either environment.
 
-The product supports search, discovery, Watchlist, movie and TV progress, viewing history, upcoming episodes, optional accounts, and cloud sync. The current website release is v1.1.2, shown under Profile → About Showtime. Native apps are a possible later direction, not a current release target.
+The product supports search, discovery, Watchlist, movie and TV progress, viewing history, upcoming episodes, optional accounts, and cloud sync. The current website release is v1.1.3, shown under Profile → About Showtime. Native apps are a possible later direction, not a current release target.
 
 ## Repository map
 

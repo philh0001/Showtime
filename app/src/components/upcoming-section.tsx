@@ -9,8 +9,9 @@ import { getUpcomingEpisodes, type ScheduleLoadResult } from '@/services/tv-sche
 import type { ProgressLoadResult } from '@/services/tv-progress-rules';
 import type { WatchlistItem } from '@/services/watchlist-rules';
 
-export function UpcomingSection({ watchlist, progress, cache, onRetry }: {
-  watchlist: WatchlistItem[]; progress: ProgressLoadResult; cache: ScheduleLoadResult; onRetry: () => Promise<void>;
+export function UpcomingSection({ watchlist, progress, cache, checking = false, refreshFailed = false, onRetry }: {
+  watchlist: WatchlistItem[]; progress: ProgressLoadResult; cache: ScheduleLoadResult;
+  checking?: boolean; refreshFailed?: boolean; onRetry: () => Promise<void>;
 }) {
   const [today, setToday] = useState(getDeviceLocalIsoDate);
   useFocusEffect(useCallback(() => {
@@ -41,7 +42,12 @@ export function UpcomingSection({ watchlist, progress, cache, onRetry }: {
         </View>
       </Pressable>
     </Link>)}
-    {cache?.status === 'available' && items.length === 0 && <Text style={styles.meta}>No upcoming episodes in your saved schedules.</Text>}
+    {cache?.status === 'available' && items.length === 0 && checking && <Text style={styles.meta}>Checking your saved shows for upcoming episodes…</Text>}
+    {cache?.status === 'available' && items.length === 0 && !checking && !refreshFailed && <Text style={styles.meta}>No upcoming episodes announced for your saved shows.</Text>}
+    {cache?.status === 'available' && refreshFailed && <View>
+      <Text accessibilityRole="alert" style={styles.meta}>Some saved shows could not be checked for upcoming episodes.</Text>
+      <Pressable accessibilityRole="button" onPress={() => void onRetry()} style={styles.retry}><Text style={styles.title}>Try again</Text></Pressable>
+    </View>}
     {cache?.status === 'unavailable' && <View>
       <Text accessibilityRole="alert" style={styles.meta}>Saved schedules could not be loaded.</Text>
       <Pressable accessibilityRole="button" onPress={() => void onRetry()} style={styles.retry}><Text style={styles.title}>Try again</Text></Pressable>

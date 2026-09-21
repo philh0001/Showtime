@@ -4,7 +4,7 @@ This document describes the implementation released from the `feature/cloudflare
 
 ## Data boundary
 
-The five synced collections are Watchlist, watched movies, TV progress, viewing activity and the `showTrending` setting. They remain local AsyncStorage values and one JSON snapshot per account and collection in D1. TMDB supplies media metadata; the sync database stores only the user's library state and the small title snapshots already used locally. Recent searches, Recently Viewed and schedule caches remain device-local.
+The five synced collections are Watchlist, watched movies, TV progress, viewing activity and the `showTrending` setting. They remain local AsyncStorage values and one JSON snapshot per account and collection in D1. TMDB supplies media metadata; the sync database stores only the user's library state and the small title snapshots already used locally. Recent searches, Recently Viewed and schedule caches remain device-local. Home refills missing or day-old schedule caches for saved TV shows through the existing details API, so a Watchlist restored on another device can show upcoming episodes without opening every show.
 
 The Worker authenticates each sync request from the bearer session and uses the resolved user ID for every D1 query. Browser clients never send a user ID to choose a D1 row. Guest mode makes no sync requests.
 

@@ -12,15 +12,37 @@ import { HomePosterCard, type HomePosterItem } from '@/components/home-poster-ca
 import { DiscoverySection } from '@/components/discovery-section';
 import { UpcomingSection } from '@/components/upcoming-section';
 import { loadHomeData, type HomeData } from '@/services/home-data';
+import { fetchDetails } from '@/services/details';
+import { createHomeScheduleRefresh, selectScheduleIdsToRefresh } from '@/services/home-schedule-refresh';
 import { type WatchedMovie } from '@/services/movie-progress-rules';
 import { loadMovieProgress } from '@/services/movie-progress';
 import { loadRecentlyViewed } from '@/services/recently-viewed';
 import { loadWatchlist } from '@/services/watchlist';
 import { loadTvProgress } from '@/services/tv-progress';
-import { loadTvSchedules } from '@/services/tv-schedule';
+import { loadTvSchedules, recordTvSchedule } from '@/services/tv-schedule';
 import { useSearchController } from '@/services/search-controller';
 import { subscribeLibraryChanges } from '@/services/library-changes';
 import { getContinueWatching, type ViewingProgress } from '@/services/viewing-summary';
+
+async function fetchHomeTvDetails(id: number, signal: AbortSignal) {
+  const controller = new AbortController();
+  const abort = () => controller.abort();
+  signal.addEventListener('abort', abort, { once: true });
+  const timeout = setTimeout(abort, 15000);
+  try {
+    if (signal.aborted) controller.abort();
+    return await fetchDetails('tv', String(id), controller.signal);
+  } finally {
+    clearTimeout(timeout);
+    signal.removeEventListener('abort', abort);
+  }
+}
+
+const refreshHomeSchedules = createHomeScheduleRefresh({
+  fetchTvDetails: fetchHomeTvDetails,
+  recordTvSchedule,
+  loadTvSchedules,
+});
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -28,21 +50,44 @@ export default function HomeScreen() {
   const search = useSearchController();
   const [data, setData] = useState<HomeData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [checkingSchedules, setCheckingSchedules] = useState(false);
+  const [scheduleRefreshFailed, setScheduleRefreshFailed] = useState(false);
   const request = useRef(0);
+  const controller = useRef<AbortController | null>(null);
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (forceSchedules = false) => {
     const current = ++request.current;
+    controller.current?.abort();
+    const nextController = new AbortController();
+    controller.current = nextController;
     setLoading(true);
+    setCheckingSchedules(false);
+    setScheduleRefreshFailed(false);
     const next = await loadHomeData({ loadRecentlyViewed, loadWatchlist, loadMovieProgress, loadTvProgress, loadTvSchedules });
     if (current !== request.current) return;
     setData(next);
     setLoading(false);
+    if (next.tvSchedules.status !== 'available') return;
+
+    const watchlist = next.watchlist.status === 'available' ? next.watchlist.items : [];
+    const nowMs = Date.now();
+    const missing = selectScheduleIdsToRefresh({ watchlist, progress: next.tvProgress, cache: next.tvSchedules, nowMs });
+    if (missing.length === 0) return;
+    setCheckingSchedules(true);
+    const result = await refreshHomeSchedules({
+      watchlist, progress: next.tvProgress, cache: next.tvSchedules,
+      signal: nextController.signal, nowMs, force: forceSchedules,
+    });
+    if (current !== request.current || nextController.signal.aborted) return;
+    setData({ ...next, tvSchedules: result.cache });
+    setCheckingSchedules(false);
+    setScheduleRefreshFailed(result.failed > 0 || result.attempted === 0);
   }, []);
 
   useFocusEffect(useCallback(() => {
     void refresh();
     const unsubscribe = subscribeLibraryChanges((origin) => { if (origin === 'remote') void refresh(); });
-    return () => { unsubscribe(); request.current += 1; };
+    return () => { unsubscribe(); request.current += 1; controller.current?.abort(); };
   }, [refresh]));
 
   const recentItems = data?.recentlyViewed.status === 'available' ? data.recentlyViewed.items : [];
@@ -98,7 +143,8 @@ export default function HomeScreen() {
           <Text style={styles.secondary}>Loading your Home screen…</Text>
         </View>}
 
-        {!loading && data && <UpcomingSection watchlist={watchlistItems} progress={data.tvProgress} cache={data.tvSchedules} onRetry={refresh} />}
+        {!loading && data && <UpcomingSection watchlist={watchlistItems} progress={data.tvProgress} cache={data.tvSchedules}
+          checking={checkingSchedules} refreshFailed={scheduleRefreshFailed} onRetry={() => refresh(true)} />}
 
         {!loading && continueWatching.length > 0 && <PosterRail title="Continue Watching" items={continueWatching.slice(0, 20)} getProgress={(item) => continueWatching.find((show) => show.id === item.id)?.progress} />}
 

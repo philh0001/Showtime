@@ -6,14 +6,13 @@ import { useAuth } from '@/hooks/use-auth';
 
 export function HomeAccountActions() {
   const { width } = useWindowDimensions();
-  const { status, user } = useAuth();
+  const { status } = useAuth();
 
   if (Platform.OS !== 'web' || width < 900 || status === 'loading') return null;
 
   if (status === 'signedIn') {
     return (
       <View style={styles.container}>
-        <Text style={styles.caption}>{user?.emailVerified ? 'Your library follows you' : 'Verify your email to sync'}</Text>
         <Link href="/account" style={styles.accountLink}>Your account</Link>
       </View>
     );

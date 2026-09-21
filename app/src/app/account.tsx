@@ -1,10 +1,19 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { Link, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/hooks/use-auth';
+import type { AccountUser } from '@/services/account-api';
 import { requestPasswordReset, resetPassword } from '@/services/auth';
+import { loadHomeData, type HomeData } from '@/services/home-data';
+import { subscribeLibraryChanges } from '@/services/library-changes';
+import { loadMovieProgress } from '@/services/movie-progress';
+import { loadRecentlyViewed } from '@/services/recently-viewed';
+import { loadTvProgress } from '@/services/tv-progress';
+import { loadTvSchedules } from '@/services/tv-schedule';
+import { getViewingStats } from '@/services/viewing-summary';
+import { loadWatchlist } from '@/services/watchlist';
 
 type Mode = 'sign-in' | 'sign-up' | 'forgot' | 'reset';
 
@@ -69,31 +78,8 @@ export default function AccountScreen() {
   }
 
   if (status === 'signedIn' && user) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <ScrollView contentContainerStyle={styles.content}>
-          <Text style={styles.title}>Signed in</Text>
-          <Text style={styles.subtitle}>{user.email}</Text>
-          {!user.emailVerified && (
-            <View style={styles.banner}>
-              <Text style={styles.bannerText}>Verify your email to sync across devices. Select the link in the email we sent, then refresh your account status.</Text>
-              <PrimaryButton label={busy ? 'Refreshing…' : 'Refresh account status'} onPress={() => void refresh()} disabled={busy} />
-            </View>
-          )}
-          {user.emailVerified && (
-            <View style={styles.section}>
-              <PrimaryButton label={syncing ? 'Syncing…' : 'Sync now'} onPress={() => void syncNow()} disabled={syncing} />
-              {lastSyncError && <Text style={styles.error}>{lastSyncError}</Text>}
-            </View>
-          )}
-          {error && <Text accessibilityRole="alert" style={styles.error}>{error}</Text>}
-          {notice && <Text style={styles.notice}>{notice}</Text>}
-          <Pressable accessibilityRole="button" onPress={() => void signOut()} style={styles.secondaryButton}>
-            <Text style={styles.secondaryText}>Sign out</Text>
-          </Pressable>
-        </ScrollView>
-      </SafeAreaView>
-    );
+    return <SignedInAccount user={user} syncing={syncing} lastSyncError={lastSyncError}
+      refresh={refresh} syncNow={syncNow} signOut={signOut} />;
   }
 
   return (
@@ -173,6 +159,87 @@ export default function AccountScreen() {
   );
 }
 
+function SignedInAccount({ user, syncing, lastSyncError, refresh, syncNow, signOut }: {
+  user: AccountUser;
+  syncing: boolean;
+  lastSyncError: string | null;
+  refresh: () => Promise<void>;
+  syncNow: () => Promise<void>;
+  signOut: () => Promise<void>;
+}) {
+  const [library, setLibrary] = useState<HomeData | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  useFocusEffect(useCallback(() => {
+    let active = true;
+    async function loadLibrary() {
+      const next = await loadHomeData({ loadRecentlyViewed, loadWatchlist, loadMovieProgress, loadTvProgress, loadTvSchedules });
+      if (active) setLibrary(next);
+    }
+    void loadLibrary();
+    const unsubscribe = subscribeLibraryChanges(() => { void loadLibrary(); });
+    return () => { active = false; unsubscribe(); };
+  }, []));
+
+  const stats = library ? getViewingStats(library.watchlist, library.movieProgress, library.tvProgress) : null;
+  const syncStatus = !user.emailVerified ? 'Waiting for verification'
+    : syncing ? 'Syncing…' : lastSyncError ? 'Needs attention' : 'Enabled';
+
+  async function refreshStatus() {
+    setRefreshing(true);
+    try { await refresh(); } finally { setRefreshing(false); }
+  }
+
+  return <SafeAreaView style={styles.container}>
+    <ScrollView contentContainerStyle={styles.content}>
+      <Text style={styles.title}>Account details</Text>
+      <View style={styles.banner}>
+        <Text style={styles.sectionHeading}>Signed in as</Text>
+        <Text style={styles.email}>{user.email}</Text>
+        <AccountRow label="Email verification" value={user.emailVerified ? 'Verified' : 'Pending'} />
+        <AccountRow label="Cloud sync" value={syncStatus} />
+      </View>
+
+      {!user.emailVerified && <View style={styles.banner}>
+        <Text style={styles.bannerText}>Verify your email to sync across devices. Select the link in the email we sent, then refresh your account status.</Text>
+        <PrimaryButton label={refreshing ? 'Refreshing…' : 'Refresh account status'} onPress={() => void refreshStatus()} disabled={refreshing} />
+      </View>}
+      {user.emailVerified && <View style={styles.section}>
+        <PrimaryButton label={syncing ? 'Syncing…' : 'Sync now'} onPress={() => void syncNow()} disabled={syncing} />
+        {lastSyncError && <Text accessibilityRole="alert" style={styles.error}>{lastSyncError}</Text>}
+      </View>}
+
+      <View style={styles.banner}>
+        <Text accessibilityRole="header" style={styles.sectionHeading}>Library on this device</Text>
+        <Text style={styles.subtitle}>{user.emailVerified
+          ? 'These counts are from this device. Your verified account can sync this library.'
+          : 'These counts are from this device. Verify your email to sync this library.'}</Text>
+        <AccountRow label="Watchlist titles" value={displayCount(stats?.watchlist)} />
+        <AccountRow label="Movies watched" value={displayCount(stats?.moviesWatched)} />
+        <AccountRow label="Shows with progress" value={displayCount(stats?.showsTracked)} />
+        <View style={styles.accountLinks}>
+          <Link href="/watchlist" style={styles.link}>Open Watchlist</Link>
+          <Link href="/history" style={styles.link}>View viewing history</Link>
+        </View>
+      </View>
+      <Pressable accessibilityRole="button" onPress={() => void signOut()} style={styles.secondaryButton}>
+        <Text style={styles.secondaryText}>Sign out</Text>
+      </Pressable>
+    </ScrollView>
+  </SafeAreaView>;
+}
+
+function displayCount(count: number | null | undefined) {
+  return count === null || count === undefined ? 'Unavailable' : String(count);
+}
+
+function AccountRow({ label, value }: { label: string; value: string }) {
+  return <View style={styles.accountRow}>
+    <Text style={styles.accountLabel}>{label}</Text>
+    <Text style={styles.accountValue}>{value}</Text>
+  </View>;
+}
+
 function PrimaryButton({ label, onPress, disabled }: { label: string; onPress: () => void; disabled?: boolean }) {
   return (
     <Pressable accessibilityRole="button" onPress={onPress} disabled={disabled} style={[styles.primaryButton, disabled && styles.primaryDisabled]}>
@@ -209,4 +276,10 @@ const styles = StyleSheet.create({
   banner: { backgroundColor: '#191C22', borderRadius: 12, padding: 14, gap: 10, borderWidth: 1, borderColor: '#2B3038' },
   bannerText: { color: '#DDDEE3', fontSize: 14, lineHeight: 20 },
   section: { gap: 10 },
+  sectionHeading: { color: '#FFFFFF', fontSize: 17, fontWeight: '700' },
+  email: { color: '#DDDEE3', fontSize: 15 },
+  accountRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12, paddingVertical: 5 },
+  accountLabel: { color: '#A7A7B0', fontSize: 14, flex: 1 },
+  accountValue: { color: '#FFFFFF', fontSize: 14, fontWeight: '700', textAlign: 'right' },
+  accountLinks: { flexDirection: 'row', flexWrap: 'wrap', gap: 18, paddingTop: 6 },
 });

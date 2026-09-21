@@ -58,6 +58,8 @@ The released sync implementation merges guest and account collections on first l
 
 The website offers an optional iPhone Home Screen experience. Safari and the Home Screen app have separate local storage. To transfer a guest library, create and verify an account in Safari, wait for sync, then sign in from the Home Screen icon. The profile page keeps the installation steps available after the Home tip is dismissed.
 
+Home checks the saved TV shows for upcoming episodes in the background when a local schedule is missing or older than a day. It checks at most eight shows per visit, preserves saved results if a request fails, and offers a retry. The signed-in Account page shows email verification, cloud sync state, and library counts from the current device.
+
 ## Feature rules worth preserving
 
 - Movie and TV records with the same TMDB ID are distinct.
