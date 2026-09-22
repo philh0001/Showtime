@@ -1,0 +1,20 @@
+{
+  "name": "showtime-web-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/export-web.mjs",
+    "verify:bundle": "node scripts/verify-bundle.mjs",
+    "test": "node --no-warnings=ExperimentalWarning --experimental-strip-types --test test/*.test.mjs scripts/*.test.mjs",
+    "bundle": "wrangler deploy --dry-run --outdir worker-dist",
+    "security:scan": "node scripts/scan-secrets.mjs --tracked dist ../api/worker-dist",
+    "smoke": "node scripts/smoke-worker.mjs",
+    "check": "npm run build && npm run verify:bundle && npm test && npm run bundle && npm audit --audit-level=high && npm run security:scan",
+    "versions:list": "wrangler versions list",
+    "rollback": "wrangler rollback",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "4.132.0"
+  }
+}

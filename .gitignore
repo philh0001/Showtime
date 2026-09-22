@@ -1,0 +1,13 @@
+.worktrees/
+.vscode/
+.superpowers/
+**/node_modules/
+**/.expo/
+**/.wrangler/
+**/.wrangler-dry-run/
+**/dist/
+**/worker-dist/
+**/.env.local
+**/.dev.vars
+**/.dev.vars.*
+!**/.env.example

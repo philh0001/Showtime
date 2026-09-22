@@ -1,0 +1,23 @@
+{
+  "name": "showtime-api-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "types": "wrangler types src/worker-configuration.d.ts",
+    "api:test": "node --test ../../shared/tmdb-api/*.test.mjs",
+    "test": "vitest --config vitest.config.ts",
+    "typecheck": "tsc --project tsconfig.json --noEmit",
+    "check": "npm run api:test && npm run types && npm run typecheck && npm test -- --run",
+    "bundle": "wrangler deploy --dry-run --outdir worker-dist",
+    "versions:list": "wrangler versions list",
+    "rollback": "wrangler rollback",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-plugin": "1.1.10",
+    "@types/node": "22.15.21",
+    "typescript": "6.0.3",
+    "vitest": "4.1.11",
+    "wrangler": "4.132.0"
+  }
+}
