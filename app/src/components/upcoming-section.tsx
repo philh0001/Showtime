@@ -120,7 +120,7 @@ export function UpcomingSection({ watchlist, cache, watchlistKnown = true, loadi
       {visibleWeek.length > 0 && <View style={[styles.section, wide && styles.scheduleColumn]}>
         <Text accessibilityRole="header" style={styles.heading}>This Week</Text>
         {visibleWeek.map((day) => <View key={day.date} style={styles.dayGroup}>
-          <Text style={styles.dayHeading}>{dayLabel(day.date, today)}</Text>
+          {!wide && <Text style={styles.dayHeading}>{dayLabel(day.date, today)}</Text>}
           {day.rows.map((row) => <Row key={`${row.id}:${row.date}`} row={row} today={today} wide={wide} />)}
         </View>)}
         {view.weekDays.length > visibleWeek.length && <Pressable accessibilityRole="button"
