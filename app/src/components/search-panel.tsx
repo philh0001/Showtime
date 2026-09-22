@@ -165,7 +165,7 @@ export function SearchPanel({
                     accessibilityRole="link"
                     accessibilityLabel={`View ${item.title}, ${item.mediaType}`}
                     style={Platform.OS === 'web'
-                      ? [styles.resultRow, grid && styles.gridResultRow, grid && { width: resultWidth }]
+                      ? StyleSheet.flatten([styles.resultRow, grid && styles.gridResultRow, grid && { width: resultWidth }])
                       : ({ pressed }) => [styles.resultRow, grid && styles.gridResultRow,
                         grid && { width: resultWidth }, pressed && styles.resultRowPressed]}
                   >
