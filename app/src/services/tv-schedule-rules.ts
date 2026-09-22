@@ -86,6 +86,15 @@ export type HomeScheduleRow = {
   id: number; title: string; posterUrl: string | null; date: string; episodes: NextEpisode[]; stale: boolean;
 };
 
+export function shouldShowTodayScheduleSection(view: {
+  today: HomeScheduleRow[];
+  weekDays: { rows: HomeScheduleRow[] }[];
+  comingSoon: HomeScheduleRow[];
+}): boolean {
+  const hasLaterEpisodes = view.weekDays.some((day) => day.rows.length > 0) || view.comingSoon.length > 0;
+  return view.today.length > 0 || !hasLaterEpisodes;
+}
+
 export function getHomeSchedule(records: TvSchedule[], savedTvIds: Set<number>, todayIso: string): {
   today: HomeScheduleRow[];
   weekDays: { date: string; rows: HomeScheduleRow[] }[];

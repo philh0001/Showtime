@@ -5,7 +5,7 @@ import { AppState, Platform, Pressable, StyleSheet, Text, useWindowDimensions, V
 
 import { BrandColors, ControlSize, Radii, Space } from '@/constants/design';
 import { formatUkDate, getDeviceLocalIsoDate } from '@/services/air-date-rules';
-import { getHomeSchedule, isFreshCompleteHomeSchedule,
+import { getHomeSchedule, isFreshCompleteHomeSchedule, shouldShowTodayScheduleSection,
   type HomeScheduleRow, type ScheduleLoadResult } from '@/services/tv-schedule-rules';
 import type { WatchlistItem } from '@/services/watchlist-rules';
 
@@ -90,61 +90,59 @@ export function UpcomingSection({ watchlist, cache, watchlistKnown = true, loadi
   const freshComplete = isFreshCompleteHomeSchedule(records, savedIds, nowMs);
   const weekRows = view.weekDays.flatMap((day) => day.rows);
   const hasUpcoming = view.today.length + weekRows.length + view.comingSoon.length > 0;
-  const nextKnown = weekRows[0] ?? view.comingSoon[0];
   const visibleWeek = expandedWeek ? view.weekDays : view.weekDays.slice(0, 3);
   const visibleSoon = expandedSoon ? view.comingSoon : view.comingSoon.slice(0, 3);
+  const showToday = shouldShowTodayScheduleSection(view);
 
-  return <View style={[styles.schedule, wide && styles.scheduleWide]}>
-    <View style={[styles.section, wide && styles.scheduleColumn]}>
-      <Text accessibilityRole="header" style={styles.heading}>Today</Text>
-      {view.today.map((row) => <Row key={`${row.id}:${row.date}`} row={row} today={today} wide={wide} />)}
-      {(loading || (checking && !hasUpcoming)) && <SkeletonRows />}
-      {!loading && watchlistKnown && savedIds.size === 0 && <View style={styles.emptyCard}>
-        <Text style={styles.message}>Add TV shows to your Watchlist to see what’s coming up.</Text>
-        <Link href="/search" style={styles.action}>Search shows</Link>
-      </View>}
-      {!loading && savedIds.size > 0 && view.today.length === 0 && hasUpcoming && freshComplete && !refreshFailed &&
-        <View style={styles.emptyCard}>
-          <Text style={styles.message}>Nothing new from your shows today.</Text>
-          {nextKnown && <Text style={styles.meta}>Next: {nextKnown.title} · {formatUkDate(nextKnown.date)}</Text>}
+  return <View style={styles.scheduleGroup}>
+    {savedIds.size > 0 && !freshComplete && !loading &&
+      <Text style={styles.meta}>Schedule may be incomplete.</Text>}
+    {(refreshFailed || cache.status === 'unavailable') && !loading && <View style={styles.errorCard}>
+      <Text accessibilityRole="alert" style={styles.message}>Couldn’t update your schedule.</Text>
+      <Pressable accessibilityRole="button" disabled={checking} onPress={() => void onRetry()}
+        style={({ pressed }) => [styles.retry, (checking || pressed) && styles.pressed]}>
+        <Text style={styles.retryText}>Retry</Text>
+      </Pressable>
+    </View>}
+    <View style={[styles.schedule, wide && styles.scheduleWide]}>
+      {showToday && <View style={[styles.section, wide && styles.scheduleColumn]}>
+        <Text accessibilityRole="header" style={styles.heading}>Today</Text>
+        {view.today.map((row) => <Row key={`${row.id}:${row.date}`} row={row} today={today} wide={wide} />)}
+        {(loading || (checking && !hasUpcoming)) && <SkeletonRows />}
+        {!loading && watchlistKnown && savedIds.size === 0 && <View style={styles.emptyCard}>
+          <Text style={styles.message}>Add TV shows to your Watchlist to see what’s coming up.</Text>
+          <Link href="/search" style={styles.action}>Search shows</Link>
         </View>}
-      {!loading && savedIds.size > 0 && !hasUpcoming && freshComplete && !refreshFailed &&
-        <Text style={styles.meta}>No upcoming episode dates available yet.</Text>}
-      {savedIds.size > 0 && !freshComplete && !loading &&
-        <Text style={styles.meta}>Schedule may be incomplete.</Text>}
-      {(refreshFailed || cache.status === 'unavailable') && !loading && <View style={styles.errorCard}>
-        <Text accessibilityRole="alert" style={styles.message}>Couldn’t update your schedule.</Text>
-        <Pressable accessibilityRole="button" disabled={checking} onPress={() => void onRetry()}
-          style={({ pressed }) => [styles.retry, (checking || pressed) && styles.pressed]}>
-          <Text style={styles.retryText}>Retry</Text>
-        </Pressable>
+        {!loading && savedIds.size > 0 && !hasUpcoming && freshComplete && !refreshFailed &&
+          <Text style={styles.meta}>No upcoming episode dates available yet.</Text>}
+      </View>}
+
+      {visibleWeek.length > 0 && <View style={[styles.section, wide && styles.scheduleColumn]}>
+        <Text accessibilityRole="header" style={styles.heading}>This Week</Text>
+        {visibleWeek.map((day) => <View key={day.date} style={styles.dayGroup}>
+          <Text style={styles.dayHeading}>{dayLabel(day.date, today)}</Text>
+          {day.rows.map((row) => <Row key={`${row.id}:${row.date}`} row={row} today={today} wide={wide} />)}
+        </View>)}
+        {view.weekDays.length > visibleWeek.length && <Pressable accessibilityRole="button"
+          onPress={() => setExpandedWeek(true)} style={styles.expandButton}>
+          <Text style={styles.expandText}>Show the rest of this week</Text>
+        </Pressable>}
+      </View>}
+
+      {visibleSoon.length > 0 && <View style={[styles.section, wide && styles.scheduleColumn]}>
+        <Text accessibilityRole="header" style={styles.heading}>Coming Soon</Text>
+        {visibleSoon.map((row) => <Row key={`${row.id}:${row.date}`} row={row} today={today} wide={wide} />)}
+        {view.comingSoon.length > visibleSoon.length && <Pressable accessibilityRole="button"
+          onPress={() => setExpandedSoon(true)} style={styles.expandButton}>
+          <Text style={styles.expandText}>Show more upcoming episodes</Text>
+        </Pressable>}
       </View>}
     </View>
-
-    {visibleWeek.length > 0 && <View style={[styles.section, wide && styles.scheduleColumn]}>
-      <Text accessibilityRole="header" style={styles.heading}>This Week</Text>
-      {visibleWeek.map((day) => <View key={day.date} style={styles.dayGroup}>
-        <Text style={styles.dayHeading}>{dayLabel(day.date, today)}</Text>
-        {day.rows.map((row) => <Row key={`${row.id}:${row.date}`} row={row} today={today} wide={wide} />)}
-      </View>)}
-      {view.weekDays.length > visibleWeek.length && <Pressable accessibilityRole="button"
-        onPress={() => setExpandedWeek(true)} style={styles.expandButton}>
-        <Text style={styles.expandText}>Show the rest of this week</Text>
-      </Pressable>}
-    </View>}
-
-    {visibleSoon.length > 0 && <View style={[styles.section, wide && styles.scheduleColumn]}>
-      <Text accessibilityRole="header" style={styles.heading}>Coming Soon</Text>
-      {visibleSoon.map((row) => <Row key={`${row.id}:${row.date}`} row={row} today={today} wide={wide} />)}
-      {view.comingSoon.length > visibleSoon.length && <Pressable accessibilityRole="button"
-        onPress={() => setExpandedSoon(true)} style={styles.expandButton}>
-        <Text style={styles.expandText}>Show more upcoming episodes</Text>
-      </Pressable>}
-    </View>}
   </View>;
 }
 
 const styles = StyleSheet.create({
+  scheduleGroup: { gap: Space.sm },
   schedule: { gap: Space.xl },
   scheduleWide: { flexDirection: 'row', alignItems: 'flex-start' },
   scheduleColumn: { flex: 1, minWidth: 0 },

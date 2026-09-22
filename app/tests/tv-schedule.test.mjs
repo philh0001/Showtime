@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { parseTvSchedules, getUpcomingEpisodes, mergeScheduleResponse, getHomeSchedule, isFreshCompleteHomeSchedule } from '../src/services/tv-schedule-rules.ts';
+import { parseTvSchedules, getUpcomingEpisodes, mergeScheduleResponse, getHomeSchedule, isFreshCompleteHomeSchedule,
+  shouldShowTodayScheduleSection } from '../src/services/tv-schedule-rules.ts';
 import { createTvScheduleStorage } from '../src/services/tv-schedule-storage.ts';
 
 const episode = (id, airDate, episodeNumber = id) => ({ id, airDate, episodeNumber, seasonNumber: 1, name: null });
@@ -83,6 +84,25 @@ test('Home groups saved-show dated releases independent of watched progress and 
   assert.deepEqual(view.comingSoon.map((row) => row.date), ['2026-09-28']);
   assert.deepEqual(getHomeSchedule(records, new Set(), '2026-09-21').today, []);
   assert.deepEqual(getHomeSchedule(records, new Set([1]), '2026-09-27').weekDays, []);
+});
+
+test('Home hides an empty Today section only when later episodes can fill the schedule', () => {
+  const laterEpisode = { id: 1, title: 'Show 1', posterUrl: null, date: '2026-09-23', episodes: [episode(1, '2026-09-23')], stale: false };
+  assert.equal(shouldShowTodayScheduleSection({
+    today: [],
+    weekDays: [{ date: '2026-09-23', rows: [laterEpisode] }],
+    comingSoon: [],
+  }), false);
+  assert.equal(shouldShowTodayScheduleSection({
+    today: [laterEpisode],
+    weekDays: [],
+    comingSoon: [],
+  }), true);
+  assert.equal(shouldShowTodayScheduleSection({
+    today: [],
+    weekDays: [],
+    comingSoon: [],
+  }), true);
 });
 
 test('detail visits seed only missing schedule records after API checks', async () => {

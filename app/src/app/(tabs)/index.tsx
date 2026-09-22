@@ -120,18 +120,6 @@ export default function HomeScreen() {
           cache={data?.tvSchedules ?? { status: 'available', records: [] }}
           loading={loading} checking={checkingSchedules} refreshFailed={scheduleRefreshFailed} onRetry={() => refresh(true)} />
 
-        {!loading && <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text accessibilityRole="header" style={styles.sectionTitle}>Your Watchlist</Text>
-            <Link href="/watchlist" style={styles.seeAll}>See all</Link>
-          </View>
-          {watchlistItems.length > 0
-            ? <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.rail}>
-              {watchlistItems.slice(0, 10).map((item) => <HomePosterCard key={`${item.mediaType}:${item.id}`} item={item} />)}
-            </ScrollView>
-            : <Text style={styles.secondary}>Save shows and movies to keep them here.</Text>}
-        </View>}
-
         <IPhoneInstallPrompt />
 
         {!loading && continueWatching.length > 0 && <PosterRail title="Continue Watching" items={continueWatching.slice(0, 20)} getProgress={(item) => continueWatching.find((show) => show.id === item.id)?.progress} />}
@@ -203,7 +191,6 @@ const styles = StyleSheet.create({
   brand: { flex: 1, maxWidth: 420, minWidth: 0 },
   logo: { color: BrandColors.text, fontSize: 30, fontWeight: '800', letterSpacing: 0.5 },
   message: { minHeight: 160, gap: Space.md, alignItems: 'center', justifyContent: 'center' },
-  secondary: { color: BrandColors.textMuted, fontSize: 15, lineHeight: 22 },
   section: { gap: Space.sm },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   sectionTitle: { color: BrandColors.text, fontSize: 20, fontWeight: '800' },
