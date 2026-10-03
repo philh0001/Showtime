@@ -5,7 +5,7 @@
 ## Live services
 
 - Website: `https://showtimetracker.show`
-- Current website version: v1.1.0 (shown under Profile → About Showtime)
+- Current website version: v1.1.9 (shown under Profile → About Showtime)
 - API custom domain: `https://api.showtimetracker.show`
 - Legacy web hostname: `https://showtime-web.showtime-workers.workers.dev`
   (redirect-only; a live request on 21 September 2026 returned 301 with path and query preserved)
@@ -65,3 +65,5 @@ The sync revision migration `api/migrations/0002_sync_revision.sql` was applied 
 Wrangler dry runs do not prove remote secrets, routes, D1 bindings or email configuration. List deployed versions before rollback. A code rollback does not reverse D1 data or migrations, so assess data compatibility separately.
 
 See [Deployment and Distribution](../docs/DEPLOYMENT-AND-DISTRIBUTION.md) for architecture and [the operations runbook](../docs/CLOUDFLARE-RUNBOOK.md) for release and recovery steps.
+
+For setup and review from an iPhone, see the [Codex Cloud workflow](../docs/IPHONE-CLOUD-WORKFLOW.md).

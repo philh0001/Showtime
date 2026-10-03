@@ -1,19 +1,10 @@
-// Run with Node on your computer; never import this script into the app.
-import { loadEnvFile } from 'node:process';
-import { fileURLToPath } from 'node:url';
+// Run with Node on the server side; never import this script into the app.
+import { loadLocalTmdbToken } from './tmdb-token.mjs';
 
 async function main() {
-  try {
-    loadEnvFile(fileURLToPath(new URL('../.env.local', import.meta.url)));
-  } catch {
-    console.error('Create local-uat/.env.local from local-uat/.env.example first.');
-    process.exitCode = 1;
-    return;
-  }
-
-  const token = process.env.TMDB_READ_ACCESS_TOKEN?.trim();
+  const token = loadLocalTmdbToken();
   if (!token) {
-    console.error('Add TMDB_READ_ACCESS_TOKEN to local-uat/.env.local.');
+    console.error('Set TMDB_READ_ACCESS_TOKEN or create local-uat/.env.local from local-uat/.env.example.');
     process.exitCode = 1;
     return;
   }
@@ -36,7 +27,7 @@ async function main() {
   console.log(`TMDB HTTP status: ${response.status}`);
   if (!response.ok) {
     const hint = response.status === 401
-      ? 'Check the API Read Access Token in .env.local (without a Bearer prefix).'
+      ? 'Check the API Read Access Token (without a Bearer prefix).'
       : response.status === 429
         ? 'Too many requests. Wait before trying again.'
         : 'TMDB rejected the request. Check service availability and try again.';

@@ -4,7 +4,7 @@
 
 ## Setup
 
-Copy `local-uat/.env.example` to `local-uat/.env.local` and set only the server-side `TMDB_READ_ACCESS_TOKEN`. The ignored file must never be committed, logged, screenshotted or exposed through an `EXPO_PUBLIC_*` variable.
+Copy `local-uat/.env.example` to `local-uat/.env.local` and set only the server-side `TMDB_READ_ACCESS_TOKEN`. In a cloud environment, supply the same variable securely instead; the local API reads it without requiring a file. The ignored file and token must never be committed, logged, screenshotted or exposed through an `EXPO_PUBLIC_*` variable.
 
 Install the shared client dependencies:
 
@@ -27,7 +27,7 @@ npm run local:api
 npm run local:web
 ```
 
-Expo normally discovers the local API address. If you need to override it, create ignored `app/.env.local` with `EXPO_PUBLIC_SEARCH_API_URL=http://YOUR_COMPUTER_IP:3001`, then restart Expo. Keep the TMDB token only in `local-uat/.env.local`; Expo reads `app/.env.local`, not the local API process's environment.
+Expo normally discovers the local API address. If you need to override it, create ignored `app/.env.local` with `EXPO_PUBLIC_SEARCH_API_URL=http://YOUR_COMPUTER_IP:3001`, then restart Expo. On desktop, keep the TMDB token only in `local-uat/.env.local`; Expo reads `app/.env.local`, not the local API process's environment.
 
 Use `npm run local:tmdb -- "Batman"` for a direct server-side TMDB diagnostic.
 

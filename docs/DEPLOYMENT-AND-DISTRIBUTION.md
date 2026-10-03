@@ -67,7 +67,7 @@ D1 migrations are separate data operations. Review and back up as appropriate be
 
 - `TMDB_READ_ACCESS_TOKEN` is server-side only.
 - Production secrets belong in Cloudflare Worker secrets, never source, app config or generated JavaScript.
-- Local development secrets belong only in ignored `local-uat/.env.local`.
+- Local desktop development secrets belong in ignored `local-uat/.env.local`; cloud local/UAT tasks may receive `TMDB_READ_ACCESS_TOKEN` through a scoped Codex Cloud secret.
 - The production web export may embed only the public API URL.
 - CORS must allow the exact canonical frontend origin.
 - Account email credentials and template configuration remain API Worker concerns.

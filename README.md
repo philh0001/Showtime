@@ -100,6 +100,7 @@ Local development and acceptance testing are owned by [`local-uat/`](local-uat/R
 - [Library sync design](docs/SYNC-DESIGN.md)
 - [Deployment and distribution](docs/DEPLOYMENT-AND-DISTRIBUTION.md)
 - [Cloudflare operations runbook](docs/CLOUDFLARE-RUNBOOK.md)
+- [iPhone-first Codex Cloud workflow](docs/IPHONE-CLOUD-WORKFLOW.md)
 - [Roadmap](docs/ROADMAP.md)
 
 When a path, command, environment boundary, or deployment process changes, update the root README, the owning environment README, current architecture/operations docs, `AGENTS.md`, and `.github/copilot-instructions.md` in the same change.

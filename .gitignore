@@ -7,7 +7,8 @@
 **/.wrangler-dry-run/
 **/dist/
 **/worker-dist/
-**/.env.local
+**/.env
+**/.env.*
 **/.dev.vars
 **/.dev.vars.*
 !**/.env.example

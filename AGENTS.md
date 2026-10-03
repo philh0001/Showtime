@@ -24,6 +24,7 @@ Before editing, classify the change as shared app, shared TMDB core, production,
 - Do not treat a dry-run bundle as proof of a remote deployment or remote binding health.
 - D1 migration `0002_sync_revision.sql` was applied to production on 21 September 2026. For future schema changes, inspect pending migrations and a recovery point before deploying the matching API Worker; coordinate dependent web releases and verify account sync.
 - Do not push directly to `main` during feature work.
+- For desktop-independent Codex Cloud tasks, follow `docs/IPHONE-CLOUD-WORKFLOW.md`. Cloud tasks start from pushed GitHub branches; they do not inherit local worktrees, ignored files, or desktop credentials.
 
 ## Verification
 

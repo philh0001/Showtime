@@ -1,18 +1,11 @@
 import { createServer } from 'node:http';
 import { networkInterfaces } from 'node:os';
-import { loadEnvFile } from 'node:process';
-import { fileURLToPath } from 'node:url';
 import { createSearchHandler } from './search.mjs';
+import { loadLocalTmdbToken } from './tmdb-token.mjs';
 
-try {
-  loadEnvFile(fileURLToPath(new URL('../.env.local', import.meta.url)));
-} catch {
-  console.error('Create local-uat/.env.local from local-uat/.env.example first.');
-  process.exit(1);
-}
-const token = process.env.TMDB_READ_ACCESS_TOKEN?.trim();
+const token = loadLocalTmdbToken();
 if (!token) {
-  console.error('Add TMDB_READ_ACCESS_TOKEN to local-uat/.env.local.');
+  console.error('Set TMDB_READ_ACCESS_TOKEN or create local-uat/.env.local from local-uat/.env.example.');
   process.exit(1);
 }
 

@@ -14,4 +14,5 @@ Showtime is web-first. The live product is the Cloudflare-hosted website; native
 - Run checks for every affected area and never claim a live deployment from a dry run.
 - D1 migration `0002_sync_revision.sql` was applied to production on 21 September 2026. For future schema changes, inspect pending migrations and a recovery point before deploying the matching API Worker; coordinate dependent web releases and verify account sync.
 - When paths, commands, environments, or deployment behaviour change, update the root README, owning environment README, current architecture/operations docs, this file, and `AGENTS.md` in the same commit.
+- For iPhone-first Codex Cloud tasks, follow `docs/IPHONE-CLOUD-WORKFLOW.md`; cloud tasks use pushed GitHub branches and do not inherit desktop files or credentials.
 - Files under `docs/superpowers/` and dated verification records are historical; do not rewrite them merely because current paths changed.
