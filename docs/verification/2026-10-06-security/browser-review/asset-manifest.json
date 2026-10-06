@@ -1,0 +1,32 @@
+[
+  {
+    "file": "browser-review/prod.html",
+    "sha256": "d985a80575810ea50e5087667d2fee537f784a24bf1155c46c62c477e3723121",
+    "bytes": 1781
+  },
+  {
+    "file": "browser-review/prod.js",
+    "sha256": "53db0fe2d8e6dee9788e3f8f1f0396dd7f2d01024e1a71f5dabd1f41d2c1c159",
+    "bytes": 1549590
+  },
+  {
+    "file": "browser-review/sw.js",
+    "sha256": "59e713aa9ae3d5468e709ee1de9b18c801c3b76e6ebc763a0fc8e6c0c75f8cb7",
+    "bytes": 1100
+  },
+  {
+    "file": "browser-review/uat.html",
+    "sha256": "41fdd1f0027bb9ae76cb840810a11f5731986332427d571cb5cc43c26b839052",
+    "bytes": 2090
+  },
+  {
+    "file": "browser-review/uat.js",
+    "sha256": "750d17da7eeaf1da875970475773dbbc68d03300bfb554cb57ada739d1a30221",
+    "bytes": 1538408
+  },
+  {
+    "file": "browser-review/uatsw.js",
+    "sha256": "59e713aa9ae3d5468e709ee1de9b18c801c3b76e6ebc763a0fc8e6c0c75f8cb7",
+    "bytes": 1100
+  }
+]

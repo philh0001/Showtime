@@ -1,0 +1,7 @@
+{
+  "sqliteVersion": "3.53.1",
+  "actualResetSqlExecuted": true,
+  "productionPostResetUnconditionalInsertAccepted": true,
+  "uatConditionalOldHashInsertRejected": true,
+  "usedResetTokenRejected": true
+}

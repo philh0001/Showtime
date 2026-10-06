@@ -1,0 +1,11 @@
+const fs=require('fs'),vm=require('vm'),assert=require('assert');
+const lines=fs.readFileSync(__dirname+'/prod.js','utf8').split('\n');
+let validatorDefinition;vm.runInNewContext(lines[956],{__d:(fn,id,deps)=>validatorDefinition={fn,id,deps}});const validationExports={};validatorDefinition.fn(null,null,null,null,{exports:validationExports},validationExports,[]);
+let definition;vm.runInNewContext(lines[964],{__d:(fn,id,deps)=>definition={fn,id,deps}});
+const moduleExports={};const mocks={854:validationExports,783:{withLibraryWriteLock:fn=>fn()},863:{mergeSyncData:()=>{throw Error('Unexpected merge')}}};
+definition.fn(null,id=>mocks[id],null,null,{exports:moduleExports},moduleExports,definition.deps);
+const originalA=[{id:123,mediaType:'TV',title:'Private A watchlist',year:null,posterUrl:null}];
+const local=new Map([['watchlist',JSON.stringify(originalA)]]);
+const uploads=[];const store={getItem:async key=>local.get(key)??null,setItem:async(key,val)=>local.set(key,val),removeItem:async key=>local.delete(key)};
+const engine=moduleExports.createSyncEngine(store,{pull:async()=>({ok:true,body:{collections:{}}}),push:async(token,collection,data,rev)=>{uploads.push({token,collection,data,rev});return{ok:true,body:{revision:1}}}},{watchlist:'watchlist'});
+(async()=>{const result=await engine.run('synthetic-account-B-session','synthetic-account-B-id');assert.equal(result.ok,true);assert.equal(JSON.stringify(uploads[0].data),JSON.stringify(originalA));assert.equal(uploads[0].token,'synthetic-account-B-session');console.log('PASS: exact deployed sync engine uploads account A local library into new account B when B cloud is empty. Synthetic data only.');})();
