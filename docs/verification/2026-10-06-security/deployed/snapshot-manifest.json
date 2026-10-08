@@ -1,0 +1,44 @@
+{
+  "showtime-uat-notifications": [
+    {
+      "file": "deployed/showtime-uat-notifications-worker.js",
+      "sha256": "f840a7ffe7fe1fcd4ee090ab3494e9767e4a83c78db1a07572975a07b560d398",
+      "bytes": 43648
+    }
+  ],
+  "showtime-api": [
+    {
+      "file": "deployed/showtime-api-index.js",
+      "sha256": "9762668b539ccc143d43184d51db641b97ce427dcd49a7eb7fa462b512065756",
+      "bytes": 81555
+    }
+  ],
+  "showtime-notifications": [
+    {
+      "file": "deployed/showtime-notifications-worker.js",
+      "sha256": "6bd6a98c2d099ab9d88b6d77b621b74b5ef69f855361b22016983b25e93004f6",
+      "bytes": 32634
+    }
+  ],
+  "showtime-web": [
+    {
+      "file": "deployed/showtime-web-worker.js",
+      "sha256": "03fe23f1e5a0c6afa5776ab7628f42af289e8f9de128679fbe0b8a1a685a499a",
+      "bytes": 3361
+    }
+  ],
+  "showtime-uat": [
+    {
+      "file": "deployed/showtime-uat-worker.js",
+      "sha256": "9e4595100bfd81008d00fe81893bb27ab549e7935b07313854c91912fb572b18",
+      "bytes": 10467
+    }
+  ],
+  "showtime-uat-api": [
+    {
+      "file": "deployed/showtime-uat-api-index.js",
+      "sha256": "90082bd60e498d13053f46a173236f377ed8fb6ae536ca0da62bccb1d6ee7c92",
+      "bytes": 98558
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+[
+  {
+    "method": "GET",
+    "url": "https://api.showtimetracker.show/details/tv/0",
+    "status": "400",
+    "body": "{\"error\":\"Choose a valid title or person.\"}",
+    "exitCode": 0,
+    "error": ""
+  },
+  {
+    "method": "GET",
+    "url": "https://api.showtimetracker.show/search?query=x&query=y",
+    "status": "400",
+    "body": "{\"error\":\"Enter a title of 1\u2013100 characters.\"}",
+    "exitCode": 0,
+    "error": ""
+  },
+  {
+    "method": "OPTIONS",
+    "url": "https://api.showtimetracker.show/details/tv/0",
+    "status": "400",
+    "body": "{\"error\":\"Choose a valid title or person.\"}",
+    "exitCode": 0,
+    "error": ""
+  }
+]

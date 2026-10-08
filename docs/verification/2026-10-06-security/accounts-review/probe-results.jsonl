@@ -1,0 +1,3 @@
+{"probe":"deployed login/reset race","oldPasswordLoginStatus":200,"sessionValidAfterReset":true,"sessionTTLdays":30}
+{"probe":"sync tenant isolation","status":200,"boundOwner":"local-user-A","attackerRequestedOwner":"local-user-B"}
+{"probe":"signup enumeration","registeredEmailStatus":409,"response":{"error":"An account with this email already exists."}}

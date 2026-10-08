@@ -1,0 +1,74 @@
+[
+  {
+    "name": "showtime-web",
+    "success": true,
+    "status": 200,
+    "current": [
+      {
+        "version_id": "423aa2cd-b94d-4628-b21d-e4b5b2731c72",
+        "percentage": 100
+      }
+    ],
+    "created_on": "2026-10-04T21:38:53.8861Z"
+  },
+  {
+    "name": "showtime-api",
+    "success": true,
+    "status": 200,
+    "current": [
+      {
+        "version_id": "35fedf1c-5999-4812-a70a-939010b30999",
+        "percentage": 100
+      }
+    ],
+    "created_on": "2026-10-04T11:48:07.722653Z"
+  },
+  {
+    "name": "showtime-notifications",
+    "success": true,
+    "status": 200,
+    "current": [
+      {
+        "version_id": "24e9738e-7a69-49f9-b9fd-a244b46dddca",
+        "percentage": 100
+      }
+    ],
+    "created_on": "2026-10-04T21:37:43.366598Z"
+  },
+  {
+    "name": "showtime-uat",
+    "success": true,
+    "status": 200,
+    "current": [
+      {
+        "version_id": "09015cfd-2057-40a7-b9be-3fb66f38461f",
+        "percentage": 100
+      }
+    ],
+    "created_on": "2026-10-05T17:26:36.56043Z"
+  },
+  {
+    "name": "showtime-uat-api",
+    "success": true,
+    "status": 200,
+    "current": [
+      {
+        "version_id": "76d1d1f0-9772-4b16-af2a-032291dd4890",
+        "percentage": 100
+      }
+    ],
+    "created_on": "2026-10-05T11:49:27.860082Z"
+  },
+  {
+    "name": "showtime-uat-notifications",
+    "success": true,
+    "status": 200,
+    "current": [
+      {
+        "version_id": "c7c89b47-efb5-454b-8dd0-9f11b5d624dc",
+        "percentage": 100
+      }
+    ],
+    "created_on": "2026-10-05T11:50:20.759441Z"
+  }
+]

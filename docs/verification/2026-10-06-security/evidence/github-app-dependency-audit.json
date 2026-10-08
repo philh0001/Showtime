@@ -1,0 +1,1459 @@
+{
+  "auditReportVersion": 2,
+  "vulnerabilities": {
+    "@expo/cli": {
+      "name": "@expo/cli",
+      "severity": "critical",
+      "isDirect": false,
+      "via": [
+        "@expo/code-signing-certificates",
+        "@expo/config",
+        "@expo/config-plugins",
+        "@expo/inline-modules",
+        "@expo/log-box",
+        "@expo/metro",
+        "@expo/metro-config",
+        "@expo/metro-file-map",
+        "@expo/prebuild-config",
+        "@expo/router-server",
+        "expo",
+        "expo-router",
+        "glob",
+        "node-forge",
+        "react-native"
+      ],
+      "effects": [
+        "expo"
+      ],
+      "range": "",
+      "nodes": [
+        "node_modules/expo/node_modules/@expo/cli"
+      ],
+      "fixAvailable": false
+    },
+    "@expo/code-signing-certificates": {
+      "name": "@expo/code-signing-certificates",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "node-forge"
+      ],
+      "effects": [],
+      "range": "",
+      "nodes": [
+        "node_modules/@expo/code-signing-certificates"
+      ],
+      "fixAvailable": true
+    },
+    "@expo/config": {
+      "name": "@expo/config",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@expo/config-plugins",
+        "glob"
+      ],
+      "effects": [
+        "@expo/local-build-cache-provider"
+      ],
+      "range": "",
+      "nodes": [
+        "node_modules/@expo/config"
+      ],
+      "fixAvailable": true
+    },
+    "@expo/config-plugins": {
+      "name": "@expo/config-plugins",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "glob",
+        "xcode"
+      ],
+      "effects": [
+        "@expo/inline-modules",
+        "@expo/prebuild-config"
+      ],
+      "range": "",
+      "nodes": [
+        "node_modules/@expo/config-plugins"
+      ],
+      "fixAvailable": true
+    },
+    "@expo/devtools": {
+      "name": "@expo/devtools",
+      "severity": "critical",
+      "isDirect": false,
+      "via": [
+        "react-native"
+      ],
+      "effects": [],
+      "range": "",
+      "nodes": [
+        "node_modules/@expo/devtools"
+      ],
+      "fixAvailable": true
+    },
+    "@expo/dom-webview": {
+      "name": "@expo/dom-webview",
+      "severity": "critical",
+      "isDirect": false,
+      "via": [
+        "expo",
+        "react-native"
+      ],
+      "effects": [],
+      "range": "",
+      "nodes": [
+        "node_modules/@expo/dom-webview"
+      ],
+      "fixAvailable": true
+    },
+    "@expo/fingerprint": {
+      "name": "@expo/fingerprint",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "glob",
+        "minimatch"
+      ],
+      "effects": [],
+      "range": "",
+      "nodes": [
+        "node_modules/@expo/fingerprint"
+      ],
+      "fixAvailable": true
+    },
+    "@expo/inline-modules": {
+      "name": "@expo/inline-modules",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "@expo/config-plugins"
+      ],
+      "effects": [],
+      "range": "",
+      "nodes": [
+        "node_modules/@expo/inline-modules"
+      ],
+      "fixAvailable": true
+    },
+    "@expo/local-build-cache-provider": {
+      "name": "@expo/local-build-cache-provider",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@expo/config"
+      ],
+      "effects": [],
+      "range": "",
+      "nodes": [
+        "node_modules/@expo/local-build-cache-provider"
+      ],
+      "fixAvailable": true
+    },
+    "@expo/log-box": {
+      "name": "@expo/log-box",
+      "severity": "critical",
+      "isDirect": false,
+      "via": [
+        "@expo/dom-webview",
+        "expo",
+        "react-native"
+      ],
+      "effects": [],
+      "range": "",
+      "nodes": [
+        "node_modules/@expo/log-box"
+      ],
+      "fixAvailable": true
+    },
+    "@expo/metro": {
+      "name": "@expo/metro",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "metro",
+        "metro-config",
+        "metro-file-map",
+        "metro-transform-worker"
+      ],
+      "effects": [],
+      "range": "",
+      "nodes": [
+        "node_modules/@expo/metro"
+      ],
+      "fixAvailable": true
+    },
+    "@expo/metro-config": {
+      "name": "@expo/metro-config",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@expo/config",
+        "@expo/metro",
+        "expo",
+        "glob",
+        "postcss"
+      ],
+      "effects": [],
+      "range": "",
+      "nodes": [
+        "node_modules/@expo/metro-config"
+      ],
+      "fixAvailable": true
+    },
+    "@expo/metro-file-map": {
+      "name": "@expo/metro-file-map",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "micromatch"
+      ],
+      "effects": [],
+      "range": "",
+      "nodes": [
+        "node_modules/@expo/metro-file-map"
+      ],
+      "fixAvailable": true
+    },
+    "@expo/metro-runtime": {
+      "name": "@expo/metro-runtime",
+      "severity": "critical",
+      "isDirect": false,
+      "via": [
+        "@expo/log-box",
+        "expo",
+        "react-native"
+      ],
+      "effects": [],
+      "range": "",
+      "nodes": [
+        "node_modules/@expo/metro-runtime"
+      ],
+      "fixAvailable": true
+    },
+    "@expo/prebuild-config": {
+      "name": "@expo/prebuild-config",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@expo/config",
+        "@expo/config-plugins"
+      ],
+      "effects": [],
+      "range": "",
+      "nodes": [
+        "node_modules/@expo/prebuild-config"
+      ],
+      "fixAvailable": true
+    },
+    "@expo/router-server": {
+      "name": "@expo/router-server",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@expo/metro-runtime",
+        "expo",
+        "expo-constants",
+        "expo-font",
+        "expo-router"
+      ],
+      "effects": [],
+      "range": "",
+      "nodes": [
+        "node_modules/expo/node_modules/@expo/cli/node_modules/@expo/router-server"
+      ],
+      "fixAvailable": true
+    },
+    "@expo/ui": {
+      "name": "@expo/ui",
+      "severity": "critical",
+      "isDirect": true,
+      "via": [
+        "expo",
+        "react-native",
+        "react-native-worklets"
+      ],
+      "effects": [],
+      "range": "",
+      "nodes": [
+        "node_modules/@expo/ui"
+      ],
+      "fixAvailable": false
+    },
+    "@react-native-async-storage/async-storage": {
+      "name": "@react-native-async-storage/async-storage",
+      "severity": "critical",
+      "isDirect": true,
+      "via": [
+        "react-native"
+      ],
+      "effects": [],
+      "range": "",
+      "nodes": [
+        "node_modules/@react-native-async-storage/async-storage"
+      ],
+      "fixAvailable": false
+    },
+    "@react-native-masked-view/masked-view": {
+      "name": "@react-native-masked-view/masked-view",
+      "severity": "critical",
+      "isDirect": false,
+      "via": [
+        "react-native"
+      ],
+      "effects": [],
+      "range": "",
+      "nodes": [
+        "node_modules/@react-native-masked-view/masked-view"
+      ],
+      "fixAvailable": true
+    },
+    "@react-native/community-cli-plugin": {
+      "name": "@react-native/community-cli-plugin",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@react-native/metro-config",
+        "metro",
+        "metro-config"
+      ],
+      "effects": [],
+      "range": "",
+      "nodes": [
+        "node_modules/@react-native/community-cli-plugin"
+      ],
+      "fixAvailable": true
+    },
+    "@react-native/metro-config": {
+      "name": "@react-native/metro-config",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "metro-config"
+      ],
+      "effects": [],
+      "range": "",
+      "nodes": [
+        "node_modules/@react-native/metro-config"
+      ],
+      "fixAvailable": true
+    },
+    "@react-native/virtualized-lists": {
+      "name": "@react-native/virtualized-lists",
+      "severity": "critical",
+      "isDirect": false,
+      "via": [
+        "react-native"
+      ],
+      "effects": [],
+      "range": "",
+      "nodes": [
+        "node_modules/@react-native/virtualized-lists"
+      ],
+      "fixAvailable": true
+    },
+    "@typescript-eslint/eslint-plugin": {
+      "name": "@typescript-eslint/eslint-plugin",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@typescript-eslint/parser",
+        "@typescript-eslint/type-utils",
+        "@typescript-eslint/utils"
+      ],
+      "effects": [],
+      "range": "",
+      "nodes": [
+        "node_modules/@typescript-eslint/eslint-plugin"
+      ],
+      "fixAvailable": true
+    },
+    "@typescript-eslint/parser": {
+      "name": "@typescript-eslint/parser",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@typescript-eslint/typescript-estree"
+      ],
+      "effects": [
+        "eslint-config-expo"
+      ],
+      "range": "",
+      "nodes": [
+        "node_modules/@typescript-eslint/parser"
+      ],
+      "fixAvailable": false
+    },
+    "@typescript-eslint/type-utils": {
+      "name": "@typescript-eslint/type-utils",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@typescript-eslint/typescript-estree",
+        "@typescript-eslint/utils"
+      ],
+      "effects": [
+        "@typescript-eslint/eslint-plugin"
+      ],
+      "range": "",
+      "nodes": [
+        "node_modules/@typescript-eslint/type-utils"
+      ],
+      "fixAvailable": true
+    },
+    "@typescript-eslint/typescript-estree": {
+      "name": "@typescript-eslint/typescript-estree",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "minimatch"
+      ],
+      "effects": [
+        "@typescript-eslint/parser",
+        "@typescript-eslint/type-utils",
+        "@typescript-eslint/utils"
+      ],
+      "range": "",
+      "nodes": [
+        "node_modules/@typescript-eslint/typescript-estree"
+      ],
+      "fixAvailable": false
+    },
+    "@typescript-eslint/utils": {
+      "name": "@typescript-eslint/utils",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@typescript-eslint/typescript-estree"
+      ],
+      "effects": [
+        "eslint-plugin-expo"
+      ],
+      "range": "",
+      "nodes": [
+        "node_modules/@typescript-eslint/utils"
+      ],
+      "fixAvailable": true
+    },
+    "babel-preset-expo": {
+      "name": "babel-preset-expo",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "expo"
+      ],
+      "effects": [],
+      "range": "",
+      "nodes": [
+        "node_modules/babel-preset-expo"
+      ],
+      "fixAvailable": true
+    },
+    "brace-expansion": {
+      "name": "brace-expansion",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1240100,
+          "name": "brace-expansion",
+          "dependency": "brace-expansion",
+          "title": "brace-expansion: Quadratic-time expansion of the `{a},b}` rewrite causes CPU denial of service",
+          "url": "https://github.com/advisories/GHSA-q2hr-2g5m-vwhr",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-400",
+            "CWE-407"
+          ],
+          "cvss": {
+            "score": 5.3,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L"
+          },
+          "range": "<1.1.21"
+        },
+        {
+          "source": 1240103,
+          "name": "brace-expansion",
+          "dependency": "brace-expansion",
+          "title": "brace-expansion: Quadratic-time expansion of the `{a},b}` rewrite causes CPU denial of service",
+          "url": "https://github.com/advisories/GHSA-q2hr-2g5m-vwhr",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-400",
+            "CWE-407"
+          ],
+          "cvss": {
+            "score": 5.3,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L"
+          },
+          "range": ">=4.0.0 <5.0.12"
+        },
+        {
+          "source": 1240104,
+          "name": "brace-expansion",
+          "dependency": "brace-expansion",
+          "title": "brace-expansion: DoS via uncontrolled recursion on nested brace groups causing stack exhaustion",
+          "url": "https://github.com/advisories/GHSA-qhr7-859c-m2p7",
+          "severity": "high",
+          "cwe": [
+            "CWE-400",
+            "CWE-674"
+          ],
+          "cvss": {
+            "score": 7.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          },
+          "range": "<1.1.20"
+        },
+        {
+          "source": 1240107,
+          "name": "brace-expansion",
+          "dependency": "brace-expansion",
+          "title": "brace-expansion: DoS via uncontrolled recursion on nested brace groups causing stack exhaustion",
+          "url": "https://github.com/advisories/GHSA-qhr7-859c-m2p7",
+          "severity": "high",
+          "cwe": [
+            "CWE-400",
+            "CWE-674"
+          ],
+          "cvss": {
+            "score": 7.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          },
+          "range": ">=4.0.0 <5.0.11"
+        },
+        {
+          "source": 1240108,
+          "name": "brace-expansion",
+          "dependency": "brace-expansion",
+          "title": "brace-expansion: DoS via uncontrolled recursion in parseCommaParts causing stack exhaustion",
+          "url": "https://github.com/advisories/GHSA-6j4f-fj2g-mc7p",
+          "severity": "high",
+          "cwe": [
+            "CWE-400",
+            "CWE-674"
+          ],
+          "cvss": {
+            "score": 7.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          },
+          "range": "<1.1.19"
+        },
+        {
+          "source": 1240111,
+          "name": "brace-expansion",
+          "dependency": "brace-expansion",
+          "title": "brace-expansion: DoS via uncontrolled recursion in parseCommaParts causing stack exhaustion",
+          "url": "https://github.com/advisories/GHSA-6j4f-fj2g-mc7p",
+          "severity": "high",
+          "cwe": [
+            "CWE-400",
+            "CWE-674"
+          ],
+          "cvss": {
+            "score": 7.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          },
+          "range": ">=4.0.0 <5.0.10"
+        }
+      ],
+      "effects": [
+        "minimatch"
+      ],
+      "range": "",
+      "nodes": [
+        "node_modules/@eslint/config-array/node_modules/brace-expansion",
+        "node_modules/@eslint/eslintrc/node_modules/brace-expansion",
+        "node_modules/brace-expansion",
+        "node_modules/eslint-plugin-import/node_modules/brace-expansion",
+        "node_modules/eslint-plugin-react/node_modules/brace-expansion",
+        "node_modules/eslint/node_modules/brace-expansion"
+      ],
+      "fixAvailable": false
+    },
+    "braces": {
+      "name": "braces",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1240992,
+          "name": "braces",
+          "dependency": "braces",
+          "title": "braces vulnerable to stack-exhaustion denial of service through deeply nested patterns",
+          "url": "https://github.com/advisories/GHSA-vfj7-8cjw-p6xm",
+          "severity": "high",
+          "cwe": [
+            "CWE-674"
+          ],
+          "cvss": {
+            "score": 7.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          },
+          "range": "<=3.0.3"
+        }
+      ],
+      "effects": [
+        "micromatch"
+      ],
+      "range": "",
+      "nodes": [
+        "node_modules/braces"
+      ],
+      "fixAvailable": true
+    },
+    "decode-uri-component": {
+      "name": "decode-uri-component",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1147955,
+          "name": "decode-uri-component",
+          "dependency": "decode-uri-component",
+          "title": "decode-uri-component: Denial of service via exponential decoding of malformed percent-encoded input",
+          "url": "https://github.com/advisories/GHSA-vcc3-ghjq-m6fr",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-400",
+            "CWE-405",
+            "CWE-407",
+            "CWE-1176"
+          ],
+          "cvss": {
+            "score": 0,
+            "vectorString": null
+          },
+          "range": "<=0.4.2"
+        }
+      ],
+      "effects": [
+        "query-string"
+      ],
+      "range": "",
+      "nodes": [
+        "node_modules/decode-uri-component"
+      ],
+      "fixAvailable": false
+    },
+    "eslint-config-expo": {
+      "name": "eslint-config-expo",
+      "severity": "high",
+      "isDirect": true,
+      "via": [
+        "@typescript-eslint/eslint-plugin",
+        "@typescript-eslint/parser",
+        "eslint-plugin-expo"
+      ],
+      "effects": [],
+      "range": "",
+      "nodes": [
+        "node_modules/eslint-config-expo"
+      ],
+      "fixAvailable": false
+    },
+    "eslint-plugin-expo": {
+      "name": "eslint-plugin-expo",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@typescript-eslint/utils"
+      ],
+      "effects": [],
+      "range": "",
+      "nodes": [
+        "node_modules/eslint-plugin-expo"
+      ],
+      "fixAvailable": true
+    },
+    "expo": {
+      "name": "expo",
+      "severity": "critical",
+      "isDirect": true,
+      "via": [
+        "@expo/cli",
+        "@expo/config",
+        "@expo/config-plugins",
+        "@expo/devtools",
+        "@expo/dom-webview",
+        "@expo/fingerprint",
+        "@expo/local-build-cache-provider",
+        "@expo/log-box",
+        "@expo/metro",
+        "@expo/metro-config",
+        "@expo/metro-runtime",
+        "babel-preset-expo",
+        "expo-asset",
+        "expo-constants",
+        "expo-file-system",
+        "expo-font",
+        "expo-keep-awake",
+        "expo-modules-core",
+        "react-native"
+      ],
+      "effects": [
+        "@expo/dom-webview",
+        "@expo/log-box",
+        "@expo/metro-runtime",
+        "@expo/ui",
+        "babel-preset-expo",
+        "expo-asset",
+        "expo-constants",
+        "expo-device",
+        "expo-file-system",
+        "expo-font",
+        "expo-glass-effect",
+        "expo-image",
+        "expo-keep-awake",
+        "expo-splash-screen",
+        "expo-status-bar",
+        "expo-symbols",
+        "expo-system-ui",
+        "expo-web-browser"
+      ],
+      "range": "",
+      "nodes": [
+        "node_modules/expo"
+      ],
+      "fixAvailable": false
+    },
+    "expo-asset": {
+      "name": "expo-asset",
+      "severity": "critical",
+      "isDirect": false,
+      "via": [
+        "expo",
+        "expo-constants",
+        "react-native"
+      ],
+      "effects": [],
+      "range": "",
+      "nodes": [
+        "node_modules/expo-asset"
+      ],
+      "fixAvailable": true
+    },
+    "expo-constants": {
+      "name": "expo-constants",
+      "severity": "critical",
+      "isDirect": true,
+      "via": [
+        "expo",
+        "react-native"
+      ],
+      "effects": [],
+      "range": "",
+      "nodes": [
+        "node_modules/expo-constants"
+      ],
+      "fixAvailable": false
+    },
+    "expo-device": {
+      "name": "expo-device",
+      "severity": "high",
+      "isDirect": true,
+      "via": [
+        "expo"
+      ],
+      "effects": [],
+      "range": "",
+      "nodes": [
+        "node_modules/expo-device"
+      ],
+      "fixAvailable": false
+    },
+    "expo-file-system": {
+      "name": "expo-file-system",
+      "severity": "critical",
+      "isDirect": false,
+      "via": [
+        "expo",
+        "react-native"
+      ],
+      "effects": [],
+      "range": "",
+      "nodes": [
+        "node_modules/expo-file-system"
+      ],
+      "fixAvailable": true
+    },
+    "expo-font": {
+      "name": "expo-font",
+      "severity": "critical",
+      "isDirect": true,
+      "via": [
+        "expo",
+        "react-native"
+      ],
+      "effects": [],
+      "range": "",
+      "nodes": [
+        "node_modules/expo-font"
+      ],
+      "fixAvailable": false
+    },
+    "expo-glass-effect": {
+      "name": "expo-glass-effect",
+      "severity": "critical",
+      "isDirect": true,
+      "via": [
+        "expo",
+        "react-native"
+      ],
+      "effects": [],
+      "range": "",
+      "nodes": [
+        "node_modules/expo-glass-effect"
+      ],
+      "fixAvailable": false
+    },
+    "expo-image": {
+      "name": "expo-image",
+      "severity": "critical",
+      "isDirect": true,
+      "via": [
+        "expo",
+        "react-native"
+      ],
+      "effects": [],
+      "range": "",
+      "nodes": [
+        "node_modules/expo-image"
+      ],
+      "fixAvailable": false
+    },
+    "expo-keep-awake": {
+      "name": "expo-keep-awake",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "expo"
+      ],
+      "effects": [],
+      "range": "",
+      "nodes": [
+        "node_modules/expo-keep-awake"
+      ],
+      "fixAvailable": true
+    },
+    "expo-linking": {
+      "name": "expo-linking",
+      "severity": "critical",
+      "isDirect": true,
+      "via": [
+        "expo-constants",
+        "react-native"
+      ],
+      "effects": [],
+      "range": "",
+      "nodes": [
+        "node_modules/expo-linking"
+      ],
+      "fixAvailable": false
+    },
+    "expo-modules-core": {
+      "name": "expo-modules-core",
+      "severity": "critical",
+      "isDirect": false,
+      "via": [
+        "expo-modules-jsi",
+        "react-native",
+        "react-native-worklets"
+      ],
+      "effects": [],
+      "range": "",
+      "nodes": [
+        "node_modules/expo-modules-core"
+      ],
+      "fixAvailable": true
+    },
+    "expo-modules-jsi": {
+      "name": "expo-modules-jsi",
+      "severity": "critical",
+      "isDirect": false,
+      "via": [
+        "react-native"
+      ],
+      "effects": [],
+      "range": "",
+      "nodes": [
+        "node_modules/expo-modules-jsi"
+      ],
+      "fixAvailable": true
+    },
+    "expo-router": {
+      "name": "expo-router",
+      "severity": "critical",
+      "isDirect": true,
+      "via": [
+        "@expo/log-box",
+        "@expo/metro-runtime",
+        "@expo/ui",
+        "@react-native-masked-view/masked-view",
+        "expo",
+        "expo-constants",
+        "expo-glass-effect",
+        "expo-linking",
+        "expo-symbols",
+        "query-string",
+        "react-native",
+        "react-native-drawer-layout",
+        "react-native-gesture-handler",
+        "react-native-reanimated",
+        "react-native-safe-area-context",
+        "react-native-screens"
+      ],
+      "effects": [
+        "@expo/router-server"
+      ],
+      "range": "",
+      "nodes": [
+        "node_modules/expo-router"
+      ],
+      "fixAvailable": false
+    },
+    "expo-splash-screen": {
+      "name": "expo-splash-screen",
+      "severity": "high",
+      "isDirect": true,
+      "via": [
+        "@expo/config-plugins",
+        "expo"
+      ],
+      "effects": [],
+      "range": "",
+      "nodes": [
+        "node_modules/expo-splash-screen"
+      ],
+      "fixAvailable": false
+    },
+    "expo-status-bar": {
+      "name": "expo-status-bar",
+      "severity": "critical",
+      "isDirect": true,
+      "via": [
+        "expo",
+        "react-native"
+      ],
+      "effects": [],
+      "range": "",
+      "nodes": [
+        "node_modules/expo-status-bar"
+      ],
+      "fixAvailable": false
+    },
+    "expo-symbols": {
+      "name": "expo-symbols",
+      "severity": "critical",
+      "isDirect": true,
+      "via": [
+        "expo",
+        "expo-font",
+        "react-native"
+      ],
+      "effects": [],
+      "range": "",
+      "nodes": [
+        "node_modules/expo-symbols"
+      ],
+      "fixAvailable": false
+    },
+    "expo-system-ui": {
+      "name": "expo-system-ui",
+      "severity": "critical",
+      "isDirect": true,
+      "via": [
+        "expo",
+        "react-native"
+      ],
+      "effects": [],
+      "range": "",
+      "nodes": [
+        "node_modules/expo-system-ui"
+      ],
+      "fixAvailable": false
+    },
+    "expo-web-browser": {
+      "name": "expo-web-browser",
+      "severity": "critical",
+      "isDirect": true,
+      "via": [
+        "expo",
+        "react-native"
+      ],
+      "effects": [],
+      "range": "",
+      "nodes": [
+        "node_modules/expo-web-browser"
+      ],
+      "fixAvailable": false
+    },
+    "glob": {
+      "name": "glob",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "minimatch"
+      ],
+      "effects": [
+        "@expo/config"
+      ],
+      "range": "",
+      "nodes": [
+        "node_modules/glob"
+      ],
+      "fixAvailable": true
+    },
+    "metro": {
+      "name": "metro",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "metro-config",
+        "metro-file-map",
+        "metro-transform-worker"
+      ],
+      "effects": [
+        "@react-native/community-cli-plugin",
+        "metro-config",
+        "metro-transform-worker"
+      ],
+      "range": "",
+      "nodes": [
+        "node_modules/metro",
+        "node_modules/metro-config/node_modules/metro"
+      ],
+      "fixAvailable": true
+    },
+    "metro-config": {
+      "name": "metro-config",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "metro"
+      ],
+      "effects": [
+        "@react-native/metro-config"
+      ],
+      "range": "",
+      "nodes": [
+        "node_modules/@expo/metro/node_modules/metro-config",
+        "node_modules/metro-config",
+        "node_modules/metro/node_modules/metro-config"
+      ],
+      "fixAvailable": true
+    },
+    "metro-file-map": {
+      "name": "metro-file-map",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "micromatch"
+      ],
+      "effects": [
+        "@expo/metro",
+        "metro"
+      ],
+      "range": "",
+      "nodes": [
+        "node_modules/metro-config/node_modules/metro-file-map",
+        "node_modules/metro-file-map"
+      ],
+      "fixAvailable": true
+    },
+    "metro-transform-worker": {
+      "name": "metro-transform-worker",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "metro"
+      ],
+      "effects": [],
+      "range": "",
+      "nodes": [
+        "node_modules/metro-config/node_modules/metro-transform-worker",
+        "node_modules/metro-transform-worker"
+      ],
+      "fixAvailable": true
+    },
+    "micromatch": {
+      "name": "micromatch",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "braces"
+      ],
+      "effects": [
+        "@expo/metro-file-map",
+        "metro-file-map"
+      ],
+      "range": "",
+      "nodes": [
+        "node_modules/micromatch"
+      ],
+      "fixAvailable": true
+    },
+    "minimatch": {
+      "name": "minimatch",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "brace-expansion"
+      ],
+      "effects": [
+        "@expo/fingerprint",
+        "@typescript-eslint/typescript-estree",
+        "glob"
+      ],
+      "range": "",
+      "nodes": [
+        "node_modules/minimatch"
+      ],
+      "fixAvailable": false
+    },
+    "node-forge": {
+      "name": "node-forge",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1240912,
+          "name": "node-forge",
+          "dependency": "node-forge",
+          "title": "node-forge RSA PKCS#1 v1.5 signature verification accepts extra nested DigestAlgorithm elements",
+          "url": "https://github.com/advisories/GHSA-86w9-cpqp-85rv",
+          "severity": "high",
+          "cwe": [
+            "CWE-347"
+          ],
+          "cvss": {
+            "score": 7.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N"
+          },
+          "range": "<=1.4.0"
+        }
+      ],
+      "effects": [
+        "@expo/cli",
+        "@expo/code-signing-certificates"
+      ],
+      "range": "",
+      "nodes": [
+        "node_modules/node-forge"
+      ],
+      "fixAvailable": false
+    },
+    "postcss": {
+      "name": "postcss",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "source-map-js"
+      ],
+      "effects": [
+        "@expo/metro-config"
+      ],
+      "range": "",
+      "nodes": [
+        "node_modules/postcss"
+      ],
+      "fixAvailable": true
+    },
+    "query-string": {
+      "name": "query-string",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "decode-uri-component"
+      ],
+      "effects": [
+        "expo-router"
+      ],
+      "range": "",
+      "nodes": [
+        "node_modules/query-string"
+      ],
+      "fixAvailable": false
+    },
+    "react-devtools-core": {
+      "name": "react-devtools-core",
+      "severity": "critical",
+      "isDirect": false,
+      "via": [
+        "shell-quote"
+      ],
+      "effects": [
+        "react-native"
+      ],
+      "range": "",
+      "nodes": [
+        "node_modules/react-devtools-core"
+      ],
+      "fixAvailable": false
+    },
+    "react-native": {
+      "name": "react-native",
+      "severity": "critical",
+      "isDirect": true,
+      "via": [
+        "@react-native/community-cli-plugin",
+        "@react-native/virtualized-lists",
+        "react-devtools-core"
+      ],
+      "effects": [
+        "@expo/devtools",
+        "@react-native-async-storage/async-storage",
+        "@react-native-masked-view/masked-view",
+        "@react-native/virtualized-lists",
+        "expo-linking",
+        "expo-modules-core",
+        "expo-modules-jsi",
+        "react-native-drawer-layout",
+        "react-native-gesture-handler",
+        "react-native-is-edge-to-edge",
+        "react-native-reanimated",
+        "react-native-safe-area-context",
+        "react-native-screens",
+        "react-native-worklets"
+      ],
+      "range": "",
+      "nodes": [
+        "node_modules/react-native"
+      ],
+      "fixAvailable": false
+    },
+    "react-native-drawer-layout": {
+      "name": "react-native-drawer-layout",
+      "severity": "critical",
+      "isDirect": false,
+      "via": [
+        "react-native",
+        "react-native-gesture-handler",
+        "react-native-reanimated"
+      ],
+      "effects": [],
+      "range": "",
+      "nodes": [
+        "node_modules/react-native-drawer-layout"
+      ],
+      "fixAvailable": true
+    },
+    "react-native-gesture-handler": {
+      "name": "react-native-gesture-handler",
+      "severity": "critical",
+      "isDirect": true,
+      "via": [
+        "react-native"
+      ],
+      "effects": [],
+      "range": "",
+      "nodes": [
+        "node_modules/react-native-gesture-handler"
+      ],
+      "fixAvailable": false
+    },
+    "react-native-is-edge-to-edge": {
+      "name": "react-native-is-edge-to-edge",
+      "severity": "critical",
+      "isDirect": false,
+      "via": [
+        "react-native"
+      ],
+      "effects": [],
+      "range": "",
+      "nodes": [
+        "node_modules/react-native-is-edge-to-edge"
+      ],
+      "fixAvailable": true
+    },
+    "react-native-reanimated": {
+      "name": "react-native-reanimated",
+      "severity": "critical",
+      "isDirect": true,
+      "via": [
+        "react-native",
+        "react-native-is-edge-to-edge",
+        "react-native-worklets"
+      ],
+      "effects": [],
+      "range": "",
+      "nodes": [
+        "node_modules/react-native-reanimated"
+      ],
+      "fixAvailable": false
+    },
+    "react-native-safe-area-context": {
+      "name": "react-native-safe-area-context",
+      "severity": "critical",
+      "isDirect": true,
+      "via": [
+        "react-native"
+      ],
+      "effects": [],
+      "range": "",
+      "nodes": [
+        "node_modules/react-native-safe-area-context"
+      ],
+      "fixAvailable": false
+    },
+    "react-native-screens": {
+      "name": "react-native-screens",
+      "severity": "critical",
+      "isDirect": true,
+      "via": [
+        "react-native"
+      ],
+      "effects": [],
+      "range": "",
+      "nodes": [
+        "node_modules/react-native-screens"
+      ],
+      "fixAvailable": false
+    },
+    "react-native-worklets": {
+      "name": "react-native-worklets",
+      "severity": "critical",
+      "isDirect": true,
+      "via": [
+        "@react-native/metro-config",
+        "react-native"
+      ],
+      "effects": [],
+      "range": "",
+      "nodes": [
+        "node_modules/react-native-worklets"
+      ],
+      "fixAvailable": false
+    },
+    "shell-quote": {
+      "name": "shell-quote",
+      "severity": "critical",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1241332,
+          "name": "shell-quote",
+          "dependency": "shell-quote",
+          "title": "shell-quote: `quote()` command injection via a line terminator in a token after a `{ comment }` token",
+          "url": "https://github.com/advisories/GHSA-pqg4-j6r4-53mv",
+          "severity": "critical",
+          "cwe": [
+            "CWE-78"
+          ],
+          "cvss": {
+            "score": 8.1,
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H"
+          },
+          "range": ">=1.8.4 <1.11.0"
+        }
+      ],
+      "effects": [
+        "react-devtools-core"
+      ],
+      "range": "",
+      "nodes": [
+        "node_modules/shell-quote"
+      ],
+      "fixAvailable": false
+    },
+    "source-map-js": {
+      "name": "source-map-js",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1241209,
+          "name": "source-map-js",
+          "dependency": "source-map-js",
+          "title": "source-map-js allows event-loop denial of service through indexed source-map section offsets",
+          "url": "https://github.com/advisories/GHSA-68fv-2mgg-jv7q",
+          "severity": "high",
+          "cwe": [
+            "CWE-1284"
+          ],
+          "cvss": {
+            "score": 7.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          },
+          "range": ">=1.0.0 <1.2.2"
+        }
+      ],
+      "effects": [
+        "postcss"
+      ],
+      "range": "",
+      "nodes": [
+        "node_modules/source-map-js"
+      ],
+      "fixAvailable": true
+    },
+    "uuid": {
+      "name": "uuid",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1119441,
+          "name": "uuid",
+          "dependency": "uuid",
+          "title": "uuid: Missing buffer bounds check in v3/v5/v6 when buf is provided",
+          "url": "https://github.com/advisories/GHSA-w5hq-g745-h8pq",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-787",
+            "CWE-1285"
+          ],
+          "cvss": {
+            "score": 7.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N"
+          },
+          "range": "<11.1.1"
+        }
+      ],
+      "effects": [
+        "xcode"
+      ],
+      "range": "",
+      "nodes": [
+        "node_modules/uuid"
+      ],
+      "fixAvailable": true
+    },
+    "xcode": {
+      "name": "xcode",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "uuid"
+      ],
+      "effects": [
+        "@expo/config-plugins"
+      ],
+      "range": "",
+      "nodes": [
+        "node_modules/xcode"
+      ],
+      "fixAvailable": true
+    }
+  },
+  "metadata": {
+    "vulnerabilities": {
+      "info": 0,
+      "low": 0,
+      "moderate": 5,
+      "high": 35,
+      "critical": 34,
+      "total": 74
+    },
+    "dependencies": {
+      "prod": 599,
+      "dev": 258,
+      "optional": 38,
+      "peer": 11,
+      "peerOptional": 0,
+      "total": 878
+    }
+  }
+}
